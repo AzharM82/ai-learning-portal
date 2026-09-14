@@ -43,7 +43,7 @@ def main():
         f'  <div class="tdate">{args.date}</div>\n'
         f'  <h3><a href="topics/{args.slug}.html">{args.title}</a></h3>\n'
         f'  <p>{args.summary}</p>\n'
-        f'  <div class="tskill">${args.skill}</div>\n'
+        f'  <div class="tskill">{args.skill}</div>\n'
         "</article>\n    <!-- TOPIC-GRID -->"
     )
     html = html.replace("<!-- TOPIC-GRID -->", card, 1)
