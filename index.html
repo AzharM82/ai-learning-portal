@@ -1,0 +1,779 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="color-scheme" content="light" />
+  <link rel="icon" href="data:," />
+  <title>Loop, Graph, and Harness Engineering</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Source+Sans+3:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #14212b;
+      --muted: #53636f;
+      --paper: #f6f8f7;
+      --white: #ffffff;
+      --line: #cbd5d8;
+      --navy: #163247;
+      --navy-2: #21465e;
+      --teal: #0b8174;
+      --teal-soft: #dff2ee;
+      --orange: #d66332;
+      --orange-soft: #f8e4d8;
+      --gold: #d8a524;
+      --gold-soft: #f7edc8;
+      --blue-soft: #e3eef4;
+      --shadow: 0 18px 45px rgba(20, 33, 43, .09);
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        linear-gradient(rgba(20,33,43,.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(20,33,43,.035) 1px, transparent 1px),
+        var(--paper);
+      background-size: 28px 28px;
+      font-family: "Source Sans 3", sans-serif;
+      font-size: 17px;
+      line-height: 1.58;
+      overflow-x: hidden;
+    }
+
+    a { color: inherit; }
+    button { font: inherit; }
+    .shell { width: min(1180px, calc(100% - 40px)); margin: 0 auto; }
+
+    .hero {
+      padding: 72px 0 50px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(246,248,247,.88);
+    }
+    .hero-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.16fr) minmax(340px, .84fr);
+      gap: 54px;
+      align-items: center;
+    }
+    .chapter-mark {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--navy);
+      font: 600 12px/1.2 "IBM Plex Mono", monospace;
+      letter-spacing: .09em;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+    .chapter-mark::before {
+      content: "";
+      width: 42px;
+      height: 3px;
+      background: var(--orange);
+    }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 {
+      margin-bottom: 22px;
+      max-width: 790px;
+      font-size: clamp(43px, 6vw, 76px);
+      line-height: .98;
+      letter-spacing: -.045em;
+      font-weight: 700;
+    }
+    .hero-copy > p {
+      max-width: 720px;
+      margin-bottom: 28px;
+      color: var(--muted);
+      font-size: clamp(19px, 2vw, 24px);
+      line-height: 1.42;
+    }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 48px;
+      padding: 11px 18px;
+      border: 1px solid var(--navy);
+      border-radius: 8px;
+      text-decoration: none;
+      color: white;
+      background: var(--navy);
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .btn.secondary { color: var(--navy); background: transparent; }
+    .btn:focus-visible, .copy-btn:focus-visible, .lesson-tab:focus-visible, summary:focus-visible {
+      outline: 3px solid var(--gold);
+      outline-offset: 3px;
+    }
+
+    .system-map {
+      position: relative;
+      min-height: 380px;
+      padding: 26px;
+      background: var(--navy);
+      color: white;
+      box-shadow: var(--shadow);
+      border-radius: 4px 28px 4px 28px;
+      overflow: hidden;
+    }
+    .system-map::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image: radial-gradient(rgba(255,255,255,.13) 1px, transparent 1px);
+      background-size: 18px 18px;
+      pointer-events: none;
+    }
+    .map-label { position: relative; z-index: 1; font: 500 12px "IBM Plex Mono", monospace; color: #bad2dc; }
+    .map-flow { position: relative; z-index: 1; margin-top: 28px; display: grid; gap: 14px; }
+    .map-node {
+      position: relative;
+      display: grid;
+      grid-template-columns: 48px 1fr;
+      gap: 14px;
+      align-items: center;
+      padding: 15px;
+      border: 1px solid rgba(255,255,255,.2);
+      background: rgba(255,255,255,.07);
+    }
+    .map-node:not(:last-child)::after {
+      content: "↓";
+      position: absolute;
+      left: 34px;
+      bottom: -22px;
+      color: #9fc1cf;
+      font-family: "IBM Plex Mono", monospace;
+    }
+    .node-num {
+      display: grid;
+      place-items: center;
+      width: 42px;
+      height: 42px;
+      border: 1px solid currentColor;
+      color: var(--gold);
+      border-radius: 50%;
+      font: 600 15px "IBM Plex Mono", monospace;
+    }
+    .map-node strong { display: block; font-size: 19px; }
+    .map-node span:last-child { display: block; color: #bfd0d8; font-size: 14px; }
+
+    .anchor-nav {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: rgba(246,248,247,.95);
+      border-bottom: 1px solid var(--line);
+      backdrop-filter: blur(10px);
+    }
+    .anchor-inner {
+      min-height: 58px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+    }
+    .anchor-inner > span { color: var(--muted); font: 500 12px "IBM Plex Mono", monospace; }
+    .links { display: flex; flex-wrap: wrap; gap: 6px; }
+    .links a {
+      padding: 8px 11px;
+      color: var(--muted);
+      text-decoration: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .links a:hover { background: var(--blue-soft); color: var(--navy); }
+
+    .section { padding: 82px 0; }
+    .section.dark { background: var(--navy); color: white; }
+    .section-head {
+      display: grid;
+      grid-template-columns: 130px minmax(0, 1fr);
+      gap: 28px;
+      align-items: start;
+      margin-bottom: 42px;
+    }
+    .section-index {
+      padding-top: 8px;
+      color: var(--orange);
+      font: 600 13px "IBM Plex Mono", monospace;
+    }
+    .dark .section-index { color: #f0b487; }
+    h2 {
+      margin-bottom: 12px;
+      font-size: clamp(34px, 5vw, 57px);
+      line-height: 1.04;
+      letter-spacing: -.035em;
+    }
+    .lede { max-width: 760px; margin-bottom: 0; color: var(--muted); font-size: 20px; }
+    .dark .lede { color: #c7d5dc; }
+
+    .definition {
+      display: grid;
+      grid-template-columns: 1.02fr .98fr;
+      gap: 34px;
+      align-items: stretch;
+      margin-bottom: 36px;
+    }
+    .explain {
+      padding: 30px;
+      background: var(--white);
+      border-top: 5px solid var(--teal);
+      box-shadow: 0 10px 30px rgba(20,33,43,.06);
+    }
+    .dark .explain { background: var(--navy-2); border-color: var(--gold); }
+    .explain h3 { font-size: 25px; margin-bottom: 14px; }
+    .explain p:last-child { margin-bottom: 0; }
+    .principles { display: grid; gap: 1px; background: var(--line); border: 1px solid var(--line); }
+    .principle { display: grid; grid-template-columns: 40px 1fr; gap: 14px; padding: 18px; background: var(--white); }
+    .dark .principles { background: rgba(255,255,255,.14); border-color: rgba(255,255,255,.14); }
+    .dark .principle { background: #1c3b50; }
+    .principle .glyph { color: var(--teal); font: 600 15px "IBM Plex Mono", monospace; }
+    .dark .principle .glyph { color: var(--gold); }
+    .principle strong { display: block; margin-bottom: 3px; }
+    .principle small { display: block; color: var(--muted); font-size: 15px; line-height: 1.42; }
+    .dark .principle small { color: #c2d1d9; }
+
+    .diagram {
+      margin: 30px 0 42px;
+      padding: 28px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.72);
+    }
+    .diagram-title { margin-bottom: 24px; font: 600 12px "IBM Plex Mono", monospace; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+    .loop-wheel { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 22px; }
+    .loop-step { position: relative; padding: 18px 16px; background: var(--teal-soft); border-top: 3px solid var(--teal); min-height: 122px; }
+    .loop-step:nth-child(2) { background: var(--blue-soft); border-color: var(--navy-2); }
+    .loop-step:nth-child(3) { background: var(--orange-soft); border-color: var(--orange); }
+    .loop-step:nth-child(4) { background: var(--gold-soft); border-color: var(--gold); }
+    .loop-step:not(:last-child)::after { content: "→"; position: absolute; right: -18px; top: 43px; font: 600 20px "IBM Plex Mono"; color: var(--navy); z-index: 2; }
+    .loop-step b { display: block; margin-bottom: 6px; font-size: 18px; }
+    .loop-step span { color: var(--muted); font-size: 14px; line-height: 1.35; display: block; }
+
+    .graph-board { display: grid; grid-template-columns: 1fr 76px 1fr 76px 1fr; align-items: center; gap: 8px; }
+    .graph-node { padding: 20px; min-height: 140px; background: #1d4056; border: 1px solid rgba(255,255,255,.22); }
+    .graph-node b { display: block; color: #fff; margin-bottom: 8px; font-size: 18px; }
+    .graph-node span { color: #bdd0d9; font-size: 14px; }
+    .edge { color: var(--gold); text-align: center; font: 600 13px/1.3 "IBM Plex Mono"; }
+
+    .harness-stack { max-width: 880px; margin: 0 auto; display: grid; gap: 9px; }
+    .stack-layer { padding: 15px 20px; border-left: 6px solid var(--navy); background: var(--blue-soft); display: grid; grid-template-columns: 170px 1fr; gap: 18px; }
+    .stack-layer:nth-child(2) { margin-inline: 22px; border-color: var(--teal); background: var(--teal-soft); }
+    .stack-layer:nth-child(3) { margin-inline: 44px; border-color: var(--orange); background: var(--orange-soft); }
+    .stack-layer:nth-child(4) { margin-inline: 66px; border-color: var(--gold); background: var(--gold-soft); }
+    .stack-layer b { font: 600 14px "IBM Plex Mono", monospace; }
+    .stack-layer span { color: var(--muted); font-size: 15px; }
+
+    .prompt-lab { margin-top: 34px; border: 1px solid var(--line); background: #0e202b; color: white; box-shadow: var(--shadow); }
+    .prompt-top { display: flex; justify-content: space-between; gap: 18px; align-items: center; padding: 16px 18px; border-bottom: 1px solid rgba(255,255,255,.14); }
+    .prompt-top strong { font: 600 13px "IBM Plex Mono", monospace; color: #d4e2e8; }
+    .copy-btn { border: 1px solid #6c8796; background: transparent; color: white; border-radius: 6px; padding: 7px 11px; cursor: pointer; font-weight: 700; font-size: 14px; }
+    .copy-btn:hover { background: rgba(255,255,255,.1); }
+    pre { margin: 0; padding: 22px; white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere; color: #eaf1f4; font: 400 14px/1.6 "IBM Plex Mono", monospace; }
+    .token { color: #8bd7c9; }
+    .prompt-note { padding: 13px 18px; color: #aac0ca; background: #132b39; font-size: 14px; }
+
+    .example-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 36px; }
+    .example { padding: 24px; background: white; border-bottom: 4px solid var(--orange); }
+    .dark .example { background: #1c3b50; border-color: var(--gold); }
+    .example .tag { color: var(--muted); font: 600 11px "IBM Plex Mono", monospace; text-transform: uppercase; letter-spacing: .05em; }
+    .dark .example .tag { color: #afc4ce; }
+    .example h3 { margin: 12px 0 9px; font-size: 21px; }
+    .example p { margin-bottom: 0; color: var(--muted); font-size: 15px; }
+    .dark .example p { color: #c3d2d9; }
+
+    .comparison { padding-top: 74px; padding-bottom: 84px; }
+    .matrix { display: grid; grid-template-columns: 1.15fr repeat(3, 1fr); border-top: 1px solid var(--line); border-left: 1px solid var(--line); background: white; }
+    .cell { min-width: 0; padding: 17px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+    .cell.header { background: var(--navy); color: white; font-weight: 700; }
+    .cell.label { font-weight: 700; background: #edf1f2; }
+    .cell small { display: block; color: var(--muted); font-size: 14px; line-height: 1.38; }
+    .cell.header small { color: #c5d4dc; }
+
+    .learning-studio { padding: 78px 0; background: #e8eeef; border-top: 1px solid var(--line); }
+    .studio-grid { display: grid; grid-template-columns: .78fr 1.22fr; gap: 34px; }
+    .studio-intro h2 { font-size: clamp(34px,4.8vw,53px); }
+    .studio-intro p { color: var(--muted); }
+    .lesson-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+    .lesson-tab { border: 1px solid var(--navy); border-radius: 99px; background: transparent; color: var(--navy); padding: 9px 14px; cursor: pointer; font-weight: 700; }
+    .lesson-tab[aria-selected="true"] { background: var(--navy); color: white; }
+    .lesson-panel { display: none; padding: 28px; background: white; border-top: 5px solid var(--orange); box-shadow: var(--shadow); }
+    .lesson-panel.active { display: block; }
+    .lesson-panel h3 { font-size: 27px; margin-bottom: 10px; }
+    .lesson-panel ol { padding-left: 21px; }
+    .lesson-panel li { margin-bottom: 12px; }
+
+    .recipe { padding: 82px 0; }
+    .recipe-steps { display: grid; grid-template-columns: repeat(4,1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); }
+    .recipe-step { padding: 24px; background: white; }
+    .recipe-step .n { color: var(--orange); font: 600 13px "IBM Plex Mono"; }
+    .recipe-step h3 { margin: 14px 0 8px; font-size: 20px; }
+    .recipe-step p { margin: 0; color: var(--muted); font-size: 15px; }
+
+    details { border-top: 1px solid var(--line); }
+    details:last-child { border-bottom: 1px solid var(--line); }
+    summary { cursor: pointer; list-style: none; padding: 18px 4px; font-weight: 700; font-size: 18px; }
+    summary::-webkit-details-marker { display: none; }
+    summary::after { content: "+"; float: right; color: var(--orange); font-family: "IBM Plex Mono"; }
+    details[open] summary::after { content: "−"; }
+    details p { max-width: 850px; color: var(--muted); padding: 0 4px 18px; margin-bottom: 0; }
+
+    .closing { padding: 65px 0 76px; background: var(--navy); color: white; }
+    .closing-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; }
+    .closing h2 { margin-bottom: 15px; font-size: clamp(35px,5vw,58px); }
+    .closing p { color: #c6d6dd; }
+    .formula { padding: 28px; border: 1px solid rgba(255,255,255,.2); font: 500 clamp(16px,2.1vw,24px)/1.7 "IBM Plex Mono"; }
+    .formula .a { color: #8bd7c9; }.formula .b { color: #f0b487; }.formula .c { color: #f1cf6d; }
+
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
+    @media (max-width: 900px) {
+      .hero-grid, .definition, .studio-grid, .closing-grid { grid-template-columns: 1fr; }
+      .hero { padding-top: 54px; }
+      .system-map { min-height: 0; }
+      .section-head { grid-template-columns: 84px minmax(0,1fr); }
+      .example-grid { grid-template-columns: 1fr; }
+      .graph-board { grid-template-columns: 1fr; }
+      .edge { padding: 4px; }
+      .edge::after { content: " ↓"; }
+      .matrix { grid-template-columns: 1fr 1fr; }
+      .cell.header:first-child { display: none; }
+      .cell.header { font-size: 14px; }
+      .cell.label { grid-column: 1 / -1; }
+      .recipe-steps { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 640px) {
+      body { font-size: 16px; }
+      .shell { width: min(100% - 24px, 1180px); }
+      .hero { padding: 42px 0 36px; }
+      h1 { font-size: clamp(39px, 12vw, 56px); }
+      .hero-copy > p { font-size: 18px; }
+      .hero-actions { display: grid; grid-template-columns: 1fr; }
+      .btn { width: 100%; }
+      .anchor-inner { padding: 8px 0; align-items: flex-start; flex-direction: column; gap: 2px; }
+      .anchor-inner > span { display: none; }
+      .links { width: 100%; display: grid; grid-template-columns: repeat(3,1fr); }
+      .links a { text-align: center; padding: 8px 3px; font-size: 13px; }
+      .section { padding: 58px 0; }
+      .section-head { grid-template-columns: 1fr; gap: 4px; margin-bottom: 28px; }
+      .section-index { padding-top: 0; }
+      .explain, .diagram, .lesson-panel { padding: 20px; }
+      .loop-wheel { grid-template-columns: 1fr; gap: 14px; }
+      .loop-step { min-height: 0; }
+      .loop-step:not(:last-child)::after { content: "↓"; left: 50%; right: auto; top: auto; bottom: -20px; }
+      .stack-layer, .stack-layer:nth-child(2), .stack-layer:nth-child(3), .stack-layer:nth-child(4) { margin-inline: 0; grid-template-columns: 1fr; gap: 5px; }
+      .matrix { grid-template-columns: 1fr; }
+      .cell.header { display: none; }
+      .cell { padding: 15px; }
+      .cell:not(.label)::before { content: attr(data-col); display: block; margin-bottom: 4px; color: var(--orange); font: 600 11px "IBM Plex Mono"; text-transform: uppercase; }
+      .recipe-steps { grid-template-columns: 1fr; }
+      .prompt-top { align-items: flex-start; }
+      pre { font-size: 12px; padding: 18px; }
+      .closing { padding: 56px 0; }
+    }
+
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  </style>
+  <style>
+    .portal-nav{position:sticky;top:0;z-index:50;background:rgba(22,50,71,.97);border-bottom:1px solid rgba(255,255,255,.12)}
+    .portal-nav-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;flex-wrap:wrap}
+    .portal-brand{color:#fff;text-decoration:none;font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:15px}
+    .portal-brand span{color:var(--gold);font-weight:400}
+    .portal-links{display:flex;gap:18px;flex-wrap:wrap}
+    .portal-links a{color:#dbe7ee;text-decoration:none;font-size:14.5px}
+    .portal-links a:hover{color:#fff;text-decoration:underline}
+    .daily-section{padding:64px 0 80px;border-top:1px solid var(--line)}
+    .section-lede{color:var(--muted);max-width:62ch}
+    .topic-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:18px;margin:28px 0 40px}
+    .tcard{background:var(--white);border:1px solid var(--line);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:10px}
+    .tcard .tdate{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+    .tcard h3{margin:0;font-size:19px}
+    .tcard h3 a{color:var(--navy);text-decoration:none}
+    .tcard h3 a:hover{text-decoration:underline}
+    .tcard p{margin:0;color:var(--muted);font-size:15px;flex:1}
+    .tcard .tskill{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--teal)}
+    .upcoming-h{font-size:20px;margin:8px 0 12px}
+    .upcoming-list{margin:0;padding-left:20px;color:var(--muted);display:grid;gap:6px}
+    .shell{max-width:1120px;margin:0 auto;padding:0 20px}
+  </style>
+</head>
+<body>
+<nav class="portal-nav">
+  <div class="shell portal-nav-inner">
+    <a class="portal-brand" href="index.html">AI Engineering <span>· Learning Portal</span></a>
+    <div class="portal-links">
+      <a href="index.html#loop">Loop</a>
+      <a href="index.html#graph">Graph</a>
+      <a href="index.html#harness">Harness</a>
+      <a href="#daily-topics">Daily topics</a>
+    </div>
+  </div>
+</nav>
+  <header class="hero">
+    <div class="shell hero-grid">
+      <div class="hero-copy">
+        <div class="chapter-mark">A practical field guide</div>
+        <h1>Three layers that make AI agents dependable.</h1>
+        <p>Learn the difference between an agent that merely “tries,” a workflow that knows where it is, and a system you can trust in production.</p>
+        <div class="hero-actions">
+          <a class="btn" href="#loop">Start with the loop</a>
+          <a class="btn secondary" href="#prompts">Jump to learning prompts</a>
+        </div>
+      </div>
+      <div class="system-map" role="img" aria-label="A three layer model: loop engineering controls repetition, graph engineering controls paths, and harness engineering controls the environment">
+        <div class="map-label">DEPENDABLE AGENT SYSTEM</div>
+        <div class="map-flow">
+          <div class="map-node"><span class="node-num">01</span><div><strong>Loop engineering</strong><span>How the agent improves its next move</span></div></div>
+          <div class="map-node"><span class="node-num">02</span><div><strong>Graph engineering</strong><span>How work branches, joins, and recovers</span></div></div>
+          <div class="map-node"><span class="node-num">03</span><div><strong>Harness engineering</strong><span>How the environment constrains and verifies</span></div></div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <nav class="anchor-nav" aria-label="Page sections">
+    <div class="shell anchor-inner">
+      <span>READING MAP</span>
+      <div class="links">
+        <a href="#loop">01 Loop</a>
+        <a href="#graph">02 Graph</a>
+        <a href="#harness">03 Harness</a>
+        <a href="#compare">Compare</a>
+        <a href="#prompts">Prompts</a>
+        <a href="#practice">Practice</a>
+      </div>
+    </div>
+  </nav>
+
+  <main>
+    <section class="section" id="loop">
+      <div class="shell">
+        <div class="section-head">
+          <div class="section-index">01 / LOOP</div>
+          <div><h2>Engineer the repetition, not just the first answer.</h2><p class="lede">Loop engineering designs the cycle by which an agent observes a result, judges it, and decides what to do next.</p></div>
+        </div>
+        <div class="definition">
+          <article class="explain">
+            <h3>The core idea</h3>
+            <p>A prompt gives a model one shot. A loop gives it a process. Instead of “write the code,” the system says: inspect the repository, form a plan, make one change, run the relevant check, study the result, and repeat until a stopping condition is met.</p>
+            <p><strong>The engineering challenge:</strong> make each iteration produce new information. A loop that repeats the same failed action is only an expensive spinner.</p>
+          </article>
+          <div class="principles">
+            <div class="principle"><span class="glyph">A</span><div><strong>State</strong><small>What the agent knows now: goal, files changed, errors, test evidence.</small></div></div>
+            <div class="principle"><span class="glyph">B</span><div><strong>Feedback</strong><small>A grounded signal: test output, compiler error, reviewer critique, user response.</small></div></div>
+            <div class="principle"><span class="glyph">C</span><div><strong>Policy</strong><small>The rule for choosing the next action from the current state.</small></div></div>
+            <div class="principle"><span class="glyph">D</span><div><strong>Stop condition</strong><small>Done, blocked, unsafe, out of budget, or no meaningful progress.</small></div></div>
+          </div>
+        </div>
+
+        <div class="diagram">
+          <div class="diagram-title">A useful agent loop</div>
+          <div class="loop-wheel">
+            <div class="loop-step"><b>Observe</b><span>Read the task, environment, and latest evidence.</span></div>
+            <div class="loop-step"><b>Decide</b><span>Choose the smallest action that reduces uncertainty.</span></div>
+            <div class="loop-step"><b>Act</b><span>Use a tool, edit a file, or ask a precise question.</span></div>
+            <div class="loop-step"><b>Verify</b><span>Test the outcome; stop or feed the result back in.</span></div>
+          </div>
+        </div>
+
+        <div class="prompt-lab">
+          <div class="prompt-top"><strong>CODEX-STYLE LEARNING PROMPT · LOOP ENGINEERING</strong><button class="copy-btn" data-copy="prompt-loop">Copy prompt</button></div>
+          <pre id="prompt-loop">Act as my senior agent-systems mentor. Teach me loop engineering through one realistic coding task.
+
+1. Define the loop's state, actions, feedback signals, and stop conditions.
+2. Show one naïve loop and explain exactly why it stalls or thrashes.
+3. Redesign it as Observe → Decide → Act → Verify.
+4. Trace three iterations using a compact state table.
+5. Add failure budgets, retry limits, and an escalation rule.
+6. End with a 10-minute exercise where I must repair a broken loop.
+
+Do not move on until I can explain what new information enters on each iteration.</pre>
+          <div class="prompt-note">Why it works: it asks for a concrete trace and forces every cycle to earn its cost.</div>
+        </div>
+
+        <div class="example-grid">
+          <article class="example"><span class="tag">Good loop</span><h3>Code repair</h3><p>Edit one fault, run the narrow test, inspect the failure delta, then broaden verification.</p></article>
+          <article class="example"><span class="tag">Bad loop</span><h3>Retry blindly</h3><p>Send the same prompt after every error with no state update or changed hypothesis.</p></article>
+          <article class="example"><span class="tag">Design test</span><h3>Ask what changed</h3><p>If iteration two has no new evidence, the loop needs a better observation or action.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section dark" id="graph">
+      <div class="shell">
+        <div class="section-head">
+          <div class="section-index">02 / GRAPH</div>
+          <div><h2>Make the route through the work explicit.</h2><p class="lede">Graph engineering models a workflow as nodes and transitions so branches, approvals, parallel work, and recovery are visible—not buried in a giant prompt.</p></div>
+        </div>
+        <div class="definition">
+          <article class="explain">
+            <h3>The core idea</h3>
+            <p>A loop answers “what happens again?” A graph answers “what can happen next?” Nodes represent meaningful states or operations. Edges represent the conditions that move work between them.</p>
+            <p>Graphs become valuable when the happy path is not the only path: a test may pass or fail, a tool may return partial data, a human may approve or reject, and independent tasks may run in parallel before joining.</p>
+          </article>
+          <div class="principles">
+            <div class="principle"><span class="glyph">N</span><div><strong>Nodes</strong><small>Focused jobs with clear inputs, outputs, and ownership.</small></div></div>
+            <div class="principle"><span class="glyph">E</span><div><strong>Edges</strong><small>Conditions that route state: success, failure, confidence, approval.</small></div></div>
+            <div class="principle"><span class="glyph">J</span><div><strong>Joins</strong><small>How parallel findings are reconciled without losing provenance.</small></div></div>
+            <div class="principle"><span class="glyph">R</span><div><strong>Recovery</strong><small>Known routes for retry, fallback, escalation, and safe termination.</small></div></div>
+          </div>
+        </div>
+
+        <div class="diagram" style="background:#18364a;border-color:rgba(255,255,255,.18)">
+          <div class="diagram-title" style="color:#bcd0d9">A research-to-decision graph</div>
+          <div class="graph-board">
+            <div class="graph-node"><b>Gather evidence</b><span>Search primary sources and record provenance.</span></div>
+            <div class="edge">confidence<br>gate →</div>
+            <div class="graph-node"><b>Challenge findings</b><span>Look for contradictions, missing cases, and stale claims.</span></div>
+            <div class="edge">review<br>gate →</div>
+            <div class="graph-node"><b>Synthesize</b><span>Merge only supported conclusions; expose uncertainty.</span></div>
+          </div>
+        </div>
+
+        <div class="prompt-lab">
+          <div class="prompt-top"><strong>CODEX-STYLE LEARNING PROMPT · GRAPH ENGINEERING</strong><button class="copy-btn" data-copy="prompt-graph">Copy prompt</button></div>
+          <pre id="prompt-graph">Teach me graph engineering by converting this workflow into an explicit state graph: “research a technical decision, challenge the evidence, get approval, implement, and verify.”
+
+For every node, specify:
+- purpose and owner
+- required input schema
+- output schema
+- success and failure edges
+- retry policy and idempotency risk
+
+Then:
+1. Draw the graph in Mermaid syntax.
+2. Walk through the happy path and two failure paths.
+3. Identify where parallelism helps and where it creates race conditions.
+4. Show how state should be checkpointed at each boundary.
+5. Quiz me by removing three edge conditions and asking me to restore them.</pre>
+          <div class="prompt-note">Why it works: schemas and failure edges turn a vague diagram into an executable design.</div>
+        </div>
+
+        <div class="example-grid">
+          <article class="example"><span class="tag">Use a graph when</span><h3>Paths diverge</h3><p>Different evidence, approvals, or risk levels should lead to different actions.</p></article>
+          <article class="example"><span class="tag">Avoid complexity when</span><h3>The path is linear</h3><p>A three-step deterministic script rarely needs a workflow engine.</p></article>
+          <article class="example"><span class="tag">Design test</span><h3>Name every edge</h3><p>If “otherwise” is doing too much work, an important state is probably hidden.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="harness">
+      <div class="shell">
+        <div class="section-head">
+          <div class="section-index">03 / HARNESS</div>
+          <div><h2>Build the environment that makes good behavior easier.</h2><p class="lede">Harness engineering surrounds the model with the tools, context, constraints, tests, and observability required to turn capability into reliable work.</p></div>
+        </div>
+        <div class="definition">
+          <article class="explain">
+            <h3>The core idea</h3>
+            <p>The model is only one component. The harness decides what it can see, what it can change, how tools are called, which checks must pass, what gets logged, and when a human must intervene.</p>
+            <p>For coding agents, the repository structure, instructions, tests, sandbox, patch review, and command timeouts often matter as much as the model. Better harnesses reduce ambiguity before asking the model to be “smarter.”</p>
+          </article>
+          <div class="principles">
+            <div class="principle"><span class="glyph">T</span><div><strong>Tool contract</strong><small>Small, typed actions with explicit effects and useful errors.</small></div></div>
+            <div class="principle"><span class="glyph">C</span><div><strong>Context contract</strong><small>The right files and rules, revealed when needed—not a context dump.</small></div></div>
+            <div class="principle"><span class="glyph">V</span><div><strong>Verification contract</strong><small>Tests and evaluators that can reject plausible-looking failures.</small></div></div>
+            <div class="principle"><span class="glyph">G</span><div><strong>Governance contract</strong><small>Permissions, budgets, audit logs, and human checkpoints.</small></div></div>
+          </div>
+        </div>
+
+        <div class="diagram">
+          <div class="diagram-title">The model sits inside the harness</div>
+          <div class="harness-stack">
+            <div class="stack-layer"><b>OBSERVABILITY</b><span>Trace actions, costs, errors, state transitions, and evidence.</span></div>
+            <div class="stack-layer"><b>GUARDRAILS</b><span>Permissions, sandboxes, budgets, approvals, and stop rules.</span></div>
+            <div class="stack-layer"><b>TOOLS + CONTEXT</b><span>APIs, repository instructions, retrieval, schemas, and fixtures.</span></div>
+            <div class="stack-layer"><b>MODEL</b><span>Reasoning and generation inside a controlled operating environment.</span></div>
+          </div>
+        </div>
+
+        <div class="prompt-lab">
+          <div class="prompt-top"><strong>CODEX-STYLE LEARNING PROMPT · HARNESS ENGINEERING</strong><button class="copy-btn" data-copy="prompt-harness">Copy prompt</button></div>
+          <pre id="prompt-harness">Act as a principal engineer reviewing an AI coding-agent harness. Use this scenario: the agent may inspect a repository, edit files, run tests, and propose a pull request—but cannot deploy.
+
+1. Define the tool surface with precise inputs, outputs, and side effects.
+2. Design progressive context loading: what is always loaded, retrieved on demand, and never exposed.
+3. Specify sandbox, permission, timeout, and budget boundaries.
+4. Create a verification ladder from lint → unit tests → integration tests → human review.
+5. Add observability fields that would let us reconstruct a failed run.
+6. Red-team the harness with five realistic failure modes.
+7. Finish with the smallest viable harness and a roadmap for hardening it.</pre>
+          <div class="prompt-note">Why it works: it treats reliability as system design, not a clever sentence sent to the model.</div>
+        </div>
+
+        <div class="example-grid">
+          <article class="example"><span class="tag">Strong harness</span><h3>Narrow tools</h3><p>“Apply patch to these files” is easier to govern than unrestricted shell access.</p></article>
+          <article class="example"><span class="tag">Weak harness</span><h3>Hidden success</h3><p>If the agent cannot observe whether its change worked, fluent failure looks complete.</p></article>
+          <article class="example"><span class="tag">Design test</span><h3>Replay the run</h3><p>If an engineer cannot reconstruct the failure, the harness lacks observability.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="comparison" id="compare">
+      <div class="shell">
+        <div class="section-head">
+          <div class="section-index">COMPARE</div>
+          <div><h2>Same system, different questions.</h2><p class="lede">The concepts overlap, but they solve different design problems.</p></div>
+        </div>
+        <div class="matrix" role="table" aria-label="Comparison of loop, graph, and harness engineering">
+          <div class="cell header">Question</div><div class="cell header">Loop<small>Iteration</small></div><div class="cell header">Graph<small>Coordination</small></div><div class="cell header">Harness<small>Environment</small></div>
+          <div class="cell label">Primary concern</div><div class="cell" data-col="Loop">What happens next iteration?</div><div class="cell" data-col="Graph">Which path is valid now?</div><div class="cell" data-col="Harness">What is allowed and trusted?</div>
+          <div class="cell label">Core primitive</div><div class="cell" data-col="Loop">State + feedback</div><div class="cell" data-col="Graph">Node + edge</div><div class="cell" data-col="Harness">Tool + constraint</div>
+          <div class="cell label">Common failure</div><div class="cell" data-col="Loop">Thrashing</div><div class="cell" data-col="Graph">Uncontrolled branching</div><div class="cell" data-col="Harness">Plausible but unverified output</div>
+          <div class="cell label">Key metric</div><div class="cell" data-col="Loop">Progress per iteration</div><div class="cell" data-col="Graph">Correct routing and recovery</div><div class="cell" data-col="Harness">Verified task success</div>
+          <div class="cell label">Best first question</div><div class="cell" data-col="Loop">What new evidence changes the next action?</div><div class="cell" data-col="Graph">What are the states and transition conditions?</div><div class="cell" data-col="Harness">How do we know the result is safe and correct?</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="learning-studio" id="prompts">
+      <div class="shell studio-grid">
+        <div class="studio-intro">
+          <div class="chapter-mark">Prompt studio</div>
+          <h2>Change the prompt to change how you learn.</h2>
+          <p>Use these modes with any of the three topics. They are designed like good Codex tasks: grounded, scoped, verifiable, and iterative.</p>
+        </div>
+        <div>
+          <div class="lesson-tabs" role="tablist" aria-label="Learning prompt modes">
+            <button class="lesson-tab" role="tab" aria-selected="true" aria-controls="panel-visual" id="tab-visual">Visual map</button>
+            <button class="lesson-tab" role="tab" aria-selected="false" aria-controls="panel-socratic" id="tab-socratic">Socratic</button>
+            <button class="lesson-tab" role="tab" aria-selected="false" aria-controls="panel-build" id="tab-build">Build it</button>
+            <button class="lesson-tab" role="tab" aria-selected="false" aria-controls="panel-review" id="tab-review">Review me</button>
+          </div>
+          <section class="lesson-panel active" role="tabpanel" id="panel-visual" aria-labelledby="tab-visual">
+            <h3>Visual map prompt</h3>
+            <p>Best when you need a mental model before details.</p>
+            <div class="prompt-lab">
+              <div class="prompt-top"><strong>PROMPT</strong><button class="copy-btn" data-copy="visual-text">Copy</button></div>
+              <pre id="visual-text">Teach me [TOPIC] as a visual systems map. Start with one sentence, then show components, flows, feedback, failure points, and boundaries. Use one concrete software example throughout. After the map, ask me to redraw it from memory and correct my version.</pre>
+            </div>
+          </section>
+          <section class="lesson-panel" role="tabpanel" id="panel-socratic" aria-labelledby="tab-socratic">
+            <h3>Socratic prompt</h3>
+            <p>Best for exposing gaps in your understanding.</p>
+            <div class="prompt-lab">
+              <div class="prompt-top"><strong>PROMPT</strong><button class="copy-btn" data-copy="socratic-text">Copy</button></div>
+              <pre id="socratic-text">Teach me [TOPIC] Socratically. Ask one diagnostic question at a time. Adapt the next question to my answer. Do not reveal the full explanation early. Make me distinguish it from adjacent concepts, predict a failure, and design a fix. End with a concise model answer and my remaining gaps.</pre>
+            </div>
+          </section>
+          <section class="lesson-panel" role="tabpanel" id="panel-build" aria-labelledby="tab-build">
+            <h3>Build-it prompt</h3>
+            <p>Best when understanding must survive contact with code.</p>
+            <div class="prompt-lab">
+              <div class="prompt-top"><strong>PROMPT</strong><button class="copy-btn" data-copy="build-text">Copy</button></div>
+              <pre id="build-text">Teach me [TOPIC] by pairing with me on the smallest working implementation. First define acceptance tests. Then give me one step at a time, waiting for my result. Prefer visible state and deterministic checks. After it works, introduce one failure and make me diagnose it before explaining.</pre>
+            </div>
+          </section>
+          <section class="lesson-panel" role="tabpanel" id="panel-review" aria-labelledby="tab-review">
+            <h3>Review-me prompt</h3>
+            <p>Best for turning passive familiarity into durable skill.</p>
+            <div class="prompt-lab">
+              <div class="prompt-top"><strong>PROMPT</strong><button class="copy-btn" data-copy="review-text">Copy</button></div>
+              <pre id="review-text">Review my explanation or design for [TOPIC] as a strict principal engineer. Separate: correct, incomplete, confused, and risky. Quote the exact sentence or decision you are reacting to. Ask me to repair the top three issues. Re-score only after I respond.</pre>
+            </div>
+          </section>
+        </div>
+      </div>
+    </section>
+
+    <section class="recipe" id="practice">
+      <div class="shell">
+        <div class="section-head">
+          <div class="section-index">PRACTICE</div>
+          <div><h2>A 90-minute learning sprint.</h2><p class="lede">One small build is worth more than ten abstract summaries.</p></div>
+        </div>
+        <div class="recipe-steps">
+          <article class="recipe-step"><span class="n">00–15 MIN</span><h3>Map</h3><p>Draw a bug-fixing agent as a loop. Name its state, feedback, and stop rule.</p></article>
+          <article class="recipe-step"><span class="n">15–35 MIN</span><h3>Branch</h3><p>Add graph paths for test pass, test fail, blocked dependency, and review.</p></article>
+          <article class="recipe-step"><span class="n">35–70 MIN</span><h3>Harness</h3><p>Define tools, file permissions, command timeout, and verification ladder.</p></article>
+          <article class="recipe-step"><span class="n">70–90 MIN</span><h3>Break it</h3><p>Inject a flaky test or ambiguous error. Observe the failure and redesign one layer.</p></article>
+        </div>
+
+        <div style="margin-top:54px">
+          <div class="chapter-mark">Self-check</div>
+          <details><summary>Can a loop exist without a graph?</summary><p>Yes. A simple retry or refinement cycle may have one repeated path. It becomes graph-like when the system needs explicit branches, joins, approvals, or recovery routes.</p></details>
+          <details><summary>Can a graph replace a harness?</summary><p>No. A graph describes coordination, but it does not by itself limit permissions, provide tools, expose context, verify results, or log the run. Those are harness responsibilities.</p></details>
+          <details><summary>What should you improve first?</summary><p>Start with the failing layer. Repeated mistakes with no learning suggest the loop. Confused routing suggests the graph. Unsafe actions or unverified outputs suggest the harness. Often, the highest-return fix is better feedback inside the harness.</p></details>
+          <details><summary>Where do prompts fit?</summary><p>Prompts are part of the harness's context and policy, but they are not the whole system. A strong prompt cannot compensate for missing evidence, unsafe permissions, or tests that never run.</p></details>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="closing">
+    <div class="shell closing-grid">
+      <div><h2>The shortest useful mental model.</h2><p>Loops create learning, graphs create coordination, and harnesses create trust. Mature agent systems need all three—and clear boundaries between them.</p></div>
+      <div class="formula"><span class="a">feedback</span> × <span class="b">routing</span> × <span class="c">verification</span><br>= dependable agency</div>
+    </div>
+  </footer>
+
+  <div class="sr-only" aria-live="polite" id="live-status"></div>
+  <script>
+    const status = document.getElementById('live-status');
+
+    document.querySelectorAll('.copy-btn').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const target = document.getElementById(button.dataset.copy);
+        const text = target.innerText;
+        try {
+          await navigator.clipboard.writeText(text);
+          const original = button.textContent;
+          button.textContent = 'Copied';
+          status.textContent = 'Prompt copied to clipboard.';
+          setTimeout(() => button.textContent = original, 1600);
+        } catch {
+          const range = document.createRange();
+          range.selectNodeContents(target);
+          const selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+          status.textContent = 'Prompt selected. Copy it with your device copy command.';
+        }
+      });
+    });
+
+    const tabs = [...document.querySelectorAll('.lesson-tab')];
+    tabs.forEach((tab, index) => {
+      tab.addEventListener('click', () => activateTab(tab));
+      tab.addEventListener('keydown', (event) => {
+        if (!['ArrowRight', 'ArrowLeft'].includes(event.key)) return;
+        event.preventDefault();
+        const next = event.key === 'ArrowRight' ? (index + 1) % tabs.length : (index - 1 + tabs.length) % tabs.length;
+        tabs[next].focus();
+        activateTab(tabs[next]);
+      });
+    });
+
+    function activateTab(selected) {
+      tabs.forEach(tab => {
+        const active = tab === selected;
+        tab.setAttribute('aria-selected', active);
+        document.getElementById(tab.getAttribute('aria-controls')).classList.toggle('active', active);
+      });
+    }
+  </script>
+<section class="daily-section" id="daily-topics">
+  <div class="shell">
+    <div class="chapter-mark">One new topic every day</div>
+    <h2>Daily topics</h2>
+    <p class="section-lede">A new hands-on topic lands here every morning — each one with references, sample prompts, a quiz, and flashcards.</p>
+    <div class="topic-grid">
+      <!-- TOPIC-GRID -->
+    </div>
+    <h3 class="upcoming-h">Coming up next</h3>
+    <ul class="upcoming-list">
+      <!-- UPCOMING -->
+    </ul>
+  </div>
+</section>
+</body>
+</html>
