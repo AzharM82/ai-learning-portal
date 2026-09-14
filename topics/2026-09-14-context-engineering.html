@@ -1,0 +1,594 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="color-scheme" content="light" />
+  <link rel="icon" href="data:," />
+  <title>Context engineering: what actually goes into the window &mdash; AI Engineering Learning Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Source+Sans+3:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #14212b; --muted: #53636f; --paper: #f6f8f7; --white: #ffffff;
+      --line: #cbd5d8; --navy: #163247; --navy-2: #21465e; --teal: #0b8174;
+      --teal-soft: #dff2ee; --orange: #d66332; --orange-soft: #f8e4d8;
+      --gold: #d8a524; --gold-soft: #f7edc8; --blue-soft: #e3eef4;
+      --red: #b3402e; --red-soft: #f9e3de; --green: #1e7a3c; --green-soft: #e2f2e6;
+      --shadow: 0 18px 45px rgba(20, 33, 43, .09); --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; color: var(--ink);
+      background: linear-gradient(rgba(20,33,43,.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(20,33,43,.035) 1px, transparent 1px), var(--paper);
+      background-size: 28px 28px;
+      font-family: "Source Sans 3", sans-serif; font-size: 17px; line-height: 1.58;
+    }
+    .shell { width: min(960px, calc(100% - 40px)); margin: 0 auto; }
+    .portal-nav{position:sticky;top:0;z-index:50;background:rgba(22,50,71,.97);border-bottom:1px solid rgba(255,255,255,.12)}
+    .portal-nav-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;flex-wrap:wrap}
+    .portal-brand{color:#fff;text-decoration:none;font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:15px}
+    .portal-brand span{color:var(--gold);font-weight:400}
+    .portal-links{display:flex;gap:18px;flex-wrap:wrap}
+    .portal-links a{color:#dbe7ee;text-decoration:none;font-size:14.5px}
+    .portal-links a:hover{color:#fff;text-decoration:underline}
+    .hero { padding: 56px 0 36px; }
+    .chapter-mark { display:inline-flex;align-items:center;gap:10px;color:var(--navy);
+      font:600 12px/1.2 "IBM Plex Mono",monospace;letter-spacing:.09em;text-transform:uppercase;margin-bottom:18px; }
+    .chapter-mark::before { content:"";width:42px;height:3px;background:var(--orange); }
+    h1 { font-size: clamp(36px, 5vw, 58px); line-height: 1.02; letter-spacing:-.03em; margin:0 0 14px; }
+    .lede { color: var(--muted); font-size: clamp(18px,2vw,22px); max-width: 64ch; margin:0 0 8px; }
+    .date-line { font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--muted); }
+    section.block { margin: 44px 0; }
+    h2 { font-size: 26px; letter-spacing:-.02em; margin:0 0 6px; display:flex;align-items:center;gap:12px; }
+    h2 .num { font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:600;color:var(--white);
+      background:var(--navy);border-radius:999px;min-width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center; }
+    .sub { color:var(--muted); margin:0 0 18px; max-width: 68ch; }
+    .card { background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+      padding:24px;box-shadow:var(--shadow); }
+    .skill-card { background:var(--navy);color:#eaf2f7;border-radius:var(--radius);padding:22px 24px;
+      font-family:"IBM Plex Mono",monospace;font-size:14.5px;overflow-x:auto;box-shadow:var(--shadow); }
+    .skill-card .k { color:var(--gold); }
+    .idea { font-size:21px;line-height:1.5;border-left:4px solid var(--teal);padding:6px 0 6px 20px;max-width:62ch; }
+    .idea strong { color:var(--navy); }
+    .mechanics { display:grid;gap:14px; }
+    .mech { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:18px 20px;
+      display:grid;grid-template-columns:44px 1fr;gap:14px;align-items:start; }
+    .mech .mnum { font-family:"IBM Plex Mono",monospace;font-weight:600;color:var(--teal);
+      background:var(--teal-soft);border-radius:10px;width:44px;height:44px;display:flex;align-items:center;justify-content:center; }
+    .mech h3 { margin:0 0 6px;font-size:18px; }
+    .mech p { margin:0;color:var(--muted);font-size:15.5px; }
+    .mech code, .inline-code { font-family:"IBM Plex Mono",monospace;font-size:.88em;background:var(--blue-soft);
+      padding:2px 7px;border-radius:6px;color:var(--navy); }
+    pre.code { background:#0f2233;color:#e8f1f5;border-radius:14px;padding:20px 22px;overflow-x:auto;
+      font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.6;margin:0; }
+    pre.code .c { color:#8ba3b0; } pre.code .s { color:#ffd479; } pre.code .k { color:#7fd6c2; }
+    .fail { border-left:4px solid var(--orange); }
+    .fail h3 .fix { display:block;margin-top:8px;font-size:15px;font-weight:500;color:var(--green); }
+    .ref-list { display:grid;gap:12px; }
+    .ref { display:flex;gap:14px;align-items:flex-start;background:var(--white);border:1px solid var(--line);
+      border-radius:14px;padding:16px 18px;text-decoration:none;color:inherit; }
+    .ref:hover { border-color:var(--teal); }
+    .ref .badge { flex:none;font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;letter-spacing:.06em;
+      padding:5px 10px;border-radius:999px;text-transform:uppercase; }
+    .badge.doc { background:var(--blue-soft);color:var(--navy); }
+    .badge.vid { background:var(--orange-soft);color:var(--orange); }
+    .ref h3 { margin:0 0 4px;font-size:17px; }
+    .ref p { margin:0;color:var(--muted);font-size:14.5px; }
+    .prompt-block { background:#0f2233;border-radius:var(--radius);overflow:hidden;margin-bottom:18px;box-shadow:var(--shadow); }
+    .prompt-top { display:flex;justify-content:space-between;align-items:center;gap:12px;
+      padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.12); }
+    .prompt-top strong { color:#fff;font-size:13px;letter-spacing:.06em;font-family:"IBM Plex Mono",monospace; }
+    .copy-btn { border:1px solid #6c8796;background:transparent;color:#fff;border-radius:6px;padding:7px 11px;
+      cursor:pointer;font-weight:700;font-size:14px; }
+    .copy-btn:hover { background:rgba(255,255,255,.1); }
+    .copy-btn:focus-visible { outline:2px solid var(--gold);outline-offset:2px; }
+    .prompt-text { color:#e8f1f5;font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.65;
+      padding:18px;white-space:pre-wrap;margin:0; }
+    .sr-only { position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0); }
+    /* quiz */
+    .quiz-q { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px; }
+    .quiz-q .qq { font-weight:700;margin:0 0 12px;font-size:18px; }
+    .qopts { display:grid;gap:8px; }
+    .qopt { text-align:left;background:var(--paper);border:1px solid var(--line);border-radius:10px;
+      padding:12px 14px;cursor:pointer;font-size:15.5px;color:var(--ink); }
+    .qopt:hover:not(:disabled) { border-color:var(--navy); }
+    .qopt:disabled { cursor:default;opacity:.85; }
+    .qopt.correct { background:var(--green-soft);border-color:var(--green); }
+    .qopt.wrong { background:var(--red-soft);border-color:var(--red); }
+    .qexp { margin:12px 0 0;font-size:15px;color:var(--muted); }
+    .qexp strong.ok { color:var(--green); } .qexp strong.no { color:var(--red); }
+    #quiz-score { display:none;margin-top:8px;background:var(--navy);color:#fff;border-radius:14px;
+      padding:20px 24px;font-size:19px; }
+    #quiz-score strong { color:var(--gold); }
+    /* flashcards */
+    .fgrid { display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px; }
+    .fcard { perspective:900px;cursor:pointer;min-height:170px; }
+    .fcard-inner { position:relative;width:100%;height:100%;min-height:170px;transform-style:preserve-3d;transition:transform .45s; }
+    .fcard.flipped .fcard-inner { transform:rotateY(180deg); }
+    .fface { position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+      border-radius:14px;padding:18px;display:flex;align-items:center;justify-content:center;text-align:center;
+      border:1px solid var(--line);background:var(--white);box-shadow:var(--shadow);font-size:15.5px; }
+    .fface.front { font-weight:700;color:var(--navy); }
+    .fface.back { transform:rotateY(180deg);background:var(--teal-soft);color:var(--ink);font-size:14.5px; }
+    .fcard:focus-visible { outline:2px solid var(--teal);outline-offset:3px;border-radius:14px; }
+    .triggers { display:grid;gap:10px; }
+    .trigger { background:var(--gold-soft);border-radius:12px;padding:14px 18px;font-size:16px; }
+    .trigger strong { color:var(--navy); }
+    .back-link { display:inline-block;margin:8px 0 60px;font-weight:600;color:var(--teal);text-decoration:none;font-size:17px; }
+    .back-link:hover { text-decoration:underline; }
+    .fig { background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+      padding:12px;box-shadow:var(--shadow);overflow-x:auto; }
+    .fig svg { display:block;width:100%;height:auto; }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior:auto; } .fcard-inner{transition:none;} }
+  </style>
+
+</head>
+<body>
+<nav class="portal-nav">
+    <div class="shell portal-nav-inner">
+      <a class="portal-brand" href="../index.html">AI Engineering <span>· Learning Portal</span></a>
+      <div class="portal-links">
+        <a href="../index.html#daily-topics">Daily topics</a>
+        <a href="../index.html#loop">Loop</a>
+        <a href="../index.html#graph">Graph</a>
+        <a href="../index.html#harness">Harness</a>
+      </div>
+    </div>
+  </nav>
+  <div class="shell">
+
+    <header class="hero">
+      <div class="chapter-mark">Daily topic · AI engineering</div>
+      <h1>Context engineering: what actually goes into the window</h1>
+      <p class="lede">Prompt engineering asks how to phrase the request. Context engineering asks what the model gets to see — and ruthlessly curates it. Master the attention budget and your agents get sharper instead of noisier.</p>
+      <p class="date-line">2026-09-14 · Topic 002</p>
+    </header>
+
+    <section class="block">
+      <h2><span class="num">01</span> The skill card</h2>
+      <p class="sub">Every topic on this portal is designed like a Codex skill: a name, a trigger, and concrete steps.</p>
+      <div class="skill-card"><pre style="margin:0">---
+<span class="k">name:</span> context-engineering
+<span class="k">description:</span> Reach for this when an agent degrades over long runs,
+  calls the wrong tools, or drowns in its own tool outputs — before you
+  reach for a bigger context window.
+---</pre></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">02</span> The one-idea version</h2>
+      <p class="idea">An LLM can only attend to so much at once — <strong>every token in the window competes for its focus</strong>. Context engineering is the discipline of giving the model the smallest set of high-signal tokens it needs at each step: the right instructions, the right tools, the right facts, and nothing else. <strong>Curate, don't dump.</strong></p>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">03</span> The visual</h2>
+      <p class="sub">The universe of possible information is huge. The window is finite. Everything between them is a curation decision.</p>
+      <div class="fig">
+      <svg viewBox="0 0 900 330" role="img" aria-label="Context engineering: curating the universe of information into a finite window">
+        <defs>
+          <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 1 L 9 5 L 0 9 z" fill="#53636f"/>
+          </marker>
+        </defs>
+        <g font-family="IBM Plex Mono, monospace" font-size="12">
+          <text x="20" y="34" fill="#163247" font-weight="600">UNIVERSE OF POSSIBLE INFO</text>
+          <rect x="20" y="48" width="230" height="34" rx="8" fill="#e3eef4" stroke="#163247"/>
+          <text x="32" y="70" fill="#163247">system prompt (pinned)</text>
+          <rect x="20" y="90" width="230" height="34" rx="8" fill="#f6f8f7" stroke="#53636f"/>
+          <text x="32" y="112" fill="#53636f">40 tool definitions</text>
+          <rect x="20" y="132" width="230" height="34" rx="8" fill="#f6f8f7" stroke="#53636f"/>
+          <text x="32" y="154" fill="#53636f">full chat history</text>
+          <rect x="20" y="174" width="230" height="34" rx="8" fill="#f6f8f7" stroke="#53636f"/>
+          <text x="32" y="196" fill="#53636f">all retrieved docs</text>
+          <rect x="20" y="216" width="230" height="34" rx="8" fill="#f6f8f7" stroke="#53636f"/>
+          <text x="32" y="238" fill="#53636f">memory facts + notes</text>
+          <rect x="20" y="258" width="230" height="34" rx="8" fill="#f9e3de" stroke="#b3402e"/>
+          <text x="32" y="280" fill="#b3402e">2 GB log dump</text>
+          <line x1="28" y1="262" x2="242" y2="288" stroke="#b3402e" stroke-width="2.5"/>
+          <line x1="242" y1="262" x2="28" y2="288" stroke="#b3402e" stroke-width="2.5"/>
+
+          <polygon points="270,120 330,160 330,230 270,270 285,195" fill="#f7edc8" stroke="#163247" stroke-width="2"/>
+          <line x1="330" y1="195" x2="420" y2="195" stroke="#53636f" stroke-width="2" marker-end="url(#arr)"/>
+          <line x1="330" y1="195" x2="420" y2="195" stroke="#d66332" stroke-width="2" stroke-dasharray="5 5">
+            <animate attributeName="stroke-dashoffset" from="20" to="0" dur="1.2s" repeatCount="indefinite"/>
+          </line>
+          <text x="300" y="120" text-anchor="middle" fill="#163247" font-weight="600">CURATE</text>
+          <text x="300" y="300" text-anchor="middle" fill="#53636f">write · select</text>
+          <text x="300" y="318" text-anchor="middle" fill="#53636f">compress · isolate</text>
+
+          <text x="450" y="34" fill="#163247" font-weight="600">THE WINDOW (finite)</text>
+          <rect x="450" y="48" width="430" height="240" rx="16" fill="#ffffff" stroke="#163247" stroke-width="2.5"/>
+          <rect x="470" y="66" width="200" height="34" rx="8" fill="#e3eef4" stroke="#163247"/>
+          <text x="482" y="88" fill="#163247">pinned rules</text>
+          <rect x="682" y="66" width="178" height="34" rx="8" fill="#dff2ee" stroke="#0b8174"/>
+          <text x="694" y="88" fill="#0b8174">5 tools, not 40</text>
+          <rect x="470" y="110" width="200" height="34" rx="8" fill="#dff2ee" stroke="#0b8174"/>
+          <text x="482" y="132" fill="#0b8174">JIT references</text>
+          <rect x="682" y="110" width="178" height="34" rx="8" fill="#f7edc8" stroke="#163247"/>
+          <text x="694" y="132" fill="#163247">compaction summary</text>
+          <rect x="470" y="154" width="390" height="52" rx="8" fill="#f6f8f7" stroke="#53636f"/>
+          <text x="482" y="176" fill="#53636f">essential history + facts —</text>
+          <text x="482" y="196" fill="#53636f">ordered, trimmed, tagged</text>
+          <text x="470" y="232" fill="#163247" font-weight="600">attention budget</text>
+          <rect x="470" y="242" width="390" height="16" rx="8" fill="#f6f8f7" stroke="#53636f"/>
+          <rect x="470" y="242" width="250" height="16" rx="8" fill="#0b8174">
+            <animate attributeName="width" values="250;265;250" dur="2.4s" repeatCount="indefinite"/>
+          </rect>
+          <text x="470" y="276" fill="#53636f">~65% used · smallest high-signal set</text>
+        </g>
+      </svg>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">04</span> How it works</h2>
+      <p class="sub">Seven mechanics, straight from Anthropic's canonical framing and the practitioner consensus. Apply them in order.</p>
+      <div class="mechanics">
+        <div class="mech"><div class="mnum">1</div><div>
+          <h3>Treat the window as an attention budget, not storage</h3>
+          <p>Every token competes for focus, and recall precision degrades as the window fills — <span class="inline-code">context rot</span>. The goal is the <em>smallest</em> set of high-signal tokens that maximizes the chance of the desired outcome, not the largest set that fits.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">2</div><div>
+          <h3>Write system prompts at the right altitude</h3>
+          <p>Too rigid and you get brittle, hardcoded behavior; too vague and the model hallucinates your intent. Aim for the Goldilocks zone: specific heuristics, organized into labeled sections (<span class="inline-code">&lt;instructions&gt;</span>, <span class="inline-code">## Tool guidance</span>), and refined by watching real failures — never by stuffing in every edge case.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">3</div><div>
+          <h3>Keep a minimal, unambiguous tool set</h3>
+          <p>Tools are context too — their definitions and every output consume the budget. Give tools clear names, self-contained behavior, and <span class="inline-code">token-efficient returns</span>. Rule of thumb: if you, the engineer, can't say which tool fits a situation, neither can the model. Cut until each tool's job is obvious.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">4</div><div>
+          <h3>Retrieve just in time, not just in case</h3>
+          <p>Don't preload everything. Carry lightweight references — file paths, record IDs, saved queries — and let the agent load slices on demand with tools (<span class="inline-code">head</span>, <span class="inline-code">tail</span>, <span class="inline-code">grep</span>, targeted queries). This mirrors human cognition: we don't memorize the filing cabinet, we remember where it is.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">5</div><div>
+          <h3>Compact before you hit the cliff</h3>
+          <p>For long-horizon work, watch utilization and <span class="inline-code">compact</span> near the limit: summarize the trajectory (decisions, state, open questions), then restart with the summary plus pinned essentials. Waiting for a bigger window just delays the same degradation.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">6</div><div>
+          <h3>Externalize state; bring back only what's needed now</h3>
+          <p>Use structured note-taking, scratchpads, and durable memory outside the window as the agent's long-term store. Each step loads only the slice relevant to the current decision — progressive disclosure, layer by layer, instead of one exhaustive dump.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">7</div><div>
+          <h3>Isolate noisy work in subagents</h3>
+          <p>Exploratory, conflicting, or distracting material gets its own fresh context. A subagent chews through the mess and returns only the verdict upstream. The main agent's window stays clean; context gained and lost is engineered, not accidental.</p>
+        </div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">05</span> Code sketch</h2>
+      <p class="sub">A minimal context-window manager: token budgeting, pinned essentials, and compaction at 80%. The same three operations every production agent loop needs.</p>
+      <pre class="code">class ContextWindow:
+    def __init__(self, budget_tokens, summarizer):
+        self.budget = budget_tokens
+        self.summarizer = summarizer  # cheap model call
+        self.sections = {}            # name -&gt; text
+        self.pinned = set()           # never compacted
+
+    def used(self):
+        return sum(len(t) // 4 for t in self.sections.values())
+
+    def add(self, name, text, pin=False):
+        self.sections[name] = text
+        if pin:
+            self.pinned.add(name)
+        if self.used() &gt; self.budget * 0.8:
+            self.compact()
+
+    def compact(self):
+        keep = {k: v for k, v in self.sections.items() if k in self.pinned}
+        rest = {k: v for k, v in self.sections.items() if k not in self.pinned}
+        summary = self.summarizer(
+            "\n\n".join(f"[{k}]\n{v}" for k, v in rest.items()))
+        keep["compaction_summary"] = summary
+        self.sections = keep</pre>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">06</span> Failure modes</h2>
+      <p class="sub">Named pitfalls, each with a one-line fix. Check these before you blame the model.</p>
+      <div class="mechanics">
+        <div class="mech fail"><div class="mnum">✕</div><div>
+          <h3>Context rot <span class="fix">Fix: prune to the smallest high-signal set; put load-bearing facts first or last, never buried in the middle.</span></h3>
+          <p>More tokens, worse recall. The middle of a long context gets skimmed and the agent starts forgetting or mixing up details.</p>
+        </div></div>
+        <div class="mech fail"><div class="mnum">✕</div><div>
+          <h3>Bloated tool sets <span class="fix">Fix: cut to a minimal viable set — no two tools with the same job, no ambiguous choice points.</span></h3>
+          <p>Forty overlapping tools force a decision the model can't reliably make. Anthropic calls this the most common failure mode they see.</p>
+        </div></div>
+        <div class="mech fail"><div class="mnum">✕</div><div>
+          <h3>Poisoning <span class="fix">Fix: sanitize tool and RAG outputs; tag provenance; never treat retrieved data as instructions.</span></h3>
+          <p>Untrusted content smuggles instructions or garbage into the window — injected prompts, leaked secrets, corrupted facts — and the agent obeys it.</p>
+        </div></div>
+        <div class="mech fail"><div class="mnum">✕</div><div>
+          <h3>Distraction <span class="fix">Fix: make tool returns token-efficient — bounded pages, head/tail, summaries instead of raw dumps.</span></h3>
+          <p>Verbose tool outputs (full logs, giant tables) dominate the window and drown the actual task in noise the model must wade through.</p>
+        </div></div>
+        <div class="mech fail"><div class="mnum">✕</div><div>
+          <h3>Confusion and clash <span class="fix">Fix: isolate in a subagent with a fresh context; merge only the verdict back upstream.</span></h3>
+          <p>Contradictory instructions or conflicting facts fight inside one window and the agent flip-flops. One context, one coherent story.</p>
+        </div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">07</span> Go deeper</h2>
+      <p class="sub">Curated and real — the canonical engineering post, two practitioner guides, and two videos that earn their runtime.</p>
+      <div class="ref-list">
+        <a class="ref" href="https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents">
+          <span class="badge doc">Guide</span>
+          <div><h3>Anthropic — Effective context engineering for AI agents</h3><p>The canonical framing: context as a finite attention budget, context rot, the "right altitude" for system prompts, just-in-time retrieval, and compaction for long-horizon tasks.</p></div>
+        </a>
+        <a class="ref" href="https://www.pinecone.io/learn/context-engineering/">
+          <span class="badge doc">Guide</span>
+          <div><h3>Pinecone — What is Context Engineering?</h3><p>Maps hard-won RAG lessons (chunking, reranking, memory, compaction) onto agentic systems, with a clean building-block model of what competes for the window.</p></div>
+        </a>
+        <a class="ref" href="https://huggingface.co/blog/jsemrau/context-engineering-for-agents">
+          <span class="badge doc">Guide</span>
+          <div><h3>HuggingFace — Advanced Context Engineering for LLM Agents</h3><p>A concrete four-part architecture to steal from: context store, context manager, retrieval system, and window optimizer — with relevance-aware summarization and persistence policies.</p></div>
+        </a>
+        <a class="ref" href="https://www.youtube.com/watch?v=BBPQYtR7oUk">
+          <span class="badge doc">Video</span>
+          <div><h3>Google Cloud Tech — "Context engineering explained: What every AI developer should know" (Smitha Kolan)</h3><p>Ten minutes, tightly structured: the four failure modes (poisoning, distraction, confusion, clash) and the four-step framework — write, select, compress, isolate.</p></div>
+        </a>
+        <a class="ref" href="http://youtube.com/watch?v=nkJXADeI62c">
+          <span class="badge doc">Video</span>
+          <div><h3>Dave Ebbelaar — "Effective Context Engineering for AI Agents (why agents still fail in practice)"</h3><p>Walks Anthropic's post into practice: flexible system prompts, common engineering pitfalls, and memory strategies for agents that must stay sharp across long runs.</p></div>
+        </a>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">08</span> Sample prompts</h2>
+      <p class="sub">Copy-paste starters. Each one demonstrates a mechanic from section 04.</p>
+
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>THE CONTEXT AUDIT</strong><button class="copy-btn" data-copy="px-audit">Copy</button></div>
+        <p class="prompt-text" id="px-audit">Audit the context assembled below as a context engineer.
+For EACH section, give a verdict: KEEP / SHRINK / DROP, with a one-line reason
+and a rough token estimate.
+Rules: the window is a finite attention budget — every kept token must earn its
+place. Flag duplicates, contradictions, and anything load-bearing that is
+buried in the middle.
+&lt;context_sections&gt;
+{{paste your assembled context here, one section per block}}
+&lt;/context_sections&gt;</p>
+      </div>
+
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>THE COMPACTOR</strong><button class="copy-btn" data-copy="px-compact">Copy</button></div>
+        <p class="prompt-text" id="px-compact">Summarize this agent trajectory for a FRESH context window so work can
+continue without losing signal. Return exactly these sections, nothing else:
+1. Goal — one sentence.
+2. Decisions made — bullet list with the reasoning behind each.
+3. Current state — what is done, what is open, what failed and why.
+4. Key facts — only facts a future step will need (ids, paths, numbers).
+5. Next action — the single most important next step.
+Be ruthless: drop reasoning traces, tool chatter, and anything already superseded.
+&lt;trajectory&gt;{{paste the conversation here}}&lt;/trajectory&gt;</p>
+      </div>
+
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>THE TOOL-SET REVIEW</strong><button class="copy-btn" data-copy="px-tools">Copy</button></div>
+        <p class="prompt-text" id="px-tools">Review this agent's tool set like a context engineer.
+For each tool, answer: what unique job does it do, and could a human engineer
+unambiguously pick it over the others in a real situation?
+Then recommend: which tools to MERGE, which to DROP, and which returns are too
+verbose and must become token-efficient (bounded pages, summaries).
+&lt;tools&gt;{{paste tool names + descriptions here}}&lt;/tools&gt;</p>
+      </div>
+      <p class="sr-only" aria-live="polite" id="live-status"></p>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">09</span> Quiz</h2>
+      <p class="sub">Five questions on judgment, not trivia. Click an answer to check yourself.</p>
+      <div id="quiz">
+        <div class="quiz-q" data-answer="1">
+          <p class="qq">1. Why does stuffing MORE context into the window usually make an agent LESS reliable?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">Bigger windows solved the problem — more context always helps now.</button>
+            <button class="qopt" data-i="1">Attention is finite: recall precision degrades as the window fills, so noise drowns the signal.</button>
+            <button class="qopt" data-i="2">Models charge more per token, so the agent gives up early to save money.</button>
+            <button class="qopt" data-i="3">Longer contexts make the model slower, but never less accurate.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="1">
+          <p class="qq">2. Your agent has 40 tools and keeps invoking the wrong one. What's the highest-leverage fix?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">Rewrite every tool description to be longer and more detailed.</button>
+            <button class="qopt" data-i="1">Shrink to the minimal viable set — if you can't say which tool fits, neither can the model.</button>
+            <button class="qopt" data-i="2">Add a 41st tool whose job is picking the right tool.</button>
+            <button class="qopt" data-i="3">Raise the temperature so it explores more options.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="1">
+          <p class="qq">3. The agent needs facts from a 2 GB log file. What should land in its context?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">The full log — the model needs everything to be safe.</button>
+            <button class="qopt" data-i="1">A file path plus grep/head slices pulled on demand — just-in-time retrieval, not a dump.</button>
+            <button class="qopt" data-i="2">Nothing — the model can guess log formats from its training.</button>
+            <button class="qopt" data-i="3">A compressed summary written once before the agent starts.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="2">
+          <p class="qq">4. A long-running agent is at 85% of its context window and still mid-task. Best move?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">Let it keep going — modern windows are huge.</button>
+            <button class="qopt" data-i="1">Stop the task and restart with a shorter prompt.</button>
+            <button class="qopt" data-i="2">Compact: summarize the trajectory, then restart with the summary plus pinned essentials.</button>
+            <button class="qopt" data-i="3">Delete the system prompt to free up space.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="1">
+          <p class="qq">5. Two tools return contradictory facts and the agent flip-flops between them. Best fix?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">Merge both outputs into one bigger context section.</button>
+            <button class="qopt" data-i="1">Isolate: hand the comparison to a subagent with a fresh context, take back only its verdict.</button>
+            <button class="qopt" data-i="2">Add a system-prompt rule: "always trust tool A".</button>
+            <button class="qopt" data-i="3">Call both tools twice and take the majority answer.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+      </div>
+      <div id="quiz-score" role="status"></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">10</span> Flashcards</h2>
+      <p class="sub">Click a card — or tab to it and press Enter — to flip it.</p>
+      <div class="fgrid">
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: context engineering"><div class="fcard-inner">
+          <div class="fface front">Context engineering</div>
+          <div class="fface back">Curating and maintaining the optimal set of tokens the model sees at each inference step — instructions, tools, facts, history — inside a finite window.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: attention budget"><div class="fcard-inner">
+          <div class="fface front">Attention budget</div>
+          <div class="fface back">The finite focus of a transformer: every token attends to every other, so each added token dilutes attention across the whole window.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: context rot"><div class="fcard-inner">
+          <div class="fface front">Context rot</div>
+          <div class="fface back">The measured effect that as tokens in the window increase, the model's recall and reasoning precision degrade. More context ≠ better performance.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: right altitude"><div class="fcard-inner">
+          <div class="fface front">Right altitude</div>
+          <div class="fface back">The Goldilocks zone for system prompts: specific enough to steer behavior, flexible enough to avoid brittle hardcoded logic.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: just-in-time retrieval"><div class="fcard-inner">
+          <div class="fface front">Just-in-time retrieval</div>
+          <div class="fface back">Carry lightweight references (paths, IDs, queries) and load data at runtime via tools, instead of preloading everything up front.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: compaction"><div class="fcard-inner">
+          <div class="fface front">Compaction</div>
+          <div class="fface back">Summarizing a near-limit conversation and restarting with the summary plus pinned essentials — the key technique for long-horizon agents.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: minimal tool set"><div class="fcard-inner">
+          <div class="fface front">Minimal tool set</div>
+          <div class="fface back">If you, the engineer, can't say which tool fits a situation, neither can the model. Bloated, overlapping tools are the #1 failure mode.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: structured note-taking"><div class="fcard-inner">
+          <div class="fface front">Structured note-taking</div>
+          <div class="fface back">Persisting agent state (decisions, facts, open questions) outside the window as durable memory, so each step loads only what it needs now.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: poisoning"><div class="fcard-inner">
+          <div class="fface front">Poisoning</div>
+          <div class="fface back">Untrusted tool or RAG content corrupting the context — injected instructions, garbage facts. Fix: sanitize, tag provenance, treat data as data.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: isolation"><div class="fcard-inner">
+          <div class="fface front">Isolation (subagents)</div>
+          <div class="fface back">Giving noisy, exploratory, or conflicting work its own fresh context and returning only the verdict upstream — keeping the main window clean.</div>
+        </div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">11</span> Reach for this when…</h2>
+      <div class="triggers">
+        <div class="trigger"><strong>An agent works at step 5 and wanders by step 50</strong> — the fix is context management (compaction, note-taking, isolation), not a better prompt.</div>
+        <div class="trigger"><strong>Tool outputs dominate your window</strong> — when logs and dumps fill most of it, carry references and load just-in-time instead.</div>
+        <div class="trigger"><strong>You're eyeing a bigger context window to fix reliability</strong> — curate first. A bigger window full of the same noise still rots.</div>
+      </div>
+    </section>
+
+    <a class="back-link" href="../index.html#daily-topics">← Back to the learning portal</a>
+  </div>
+
+  <script>
+    // copy buttons
+    const status = document.getElementById('live-status');
+    document.querySelectorAll('.copy-btn').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const target = document.getElementById(button.dataset.copy);
+        const text = target.innerText;
+        try {
+          await navigator.clipboard.writeText(text);
+          const original = button.textContent;
+          button.textContent = 'Copied';
+          status.textContent = 'Prompt copied to clipboard.';
+          setTimeout(() => button.textContent = original, 1600);
+        } catch {
+          const range = document.createRange();
+          range.selectNodeContents(target);
+          const selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+          status.textContent = 'Prompt selected. Copy it with your device copy command.';
+        }
+      });
+    });
+
+    // quiz
+    const explanations = [
+      ["Bigger windows help, but they don't erase the gradient — recall and reasoning precision still degrade as the window fills.",
+       "Right. Finite attention budget: every added token competes for focus, and recall accuracy falls as the window fills — that's context rot.",
+       "Cost hits your bill, not the model's accuracy — price doesn't explain degraded reasoning.",
+       "Speed drops, but so does accuracy — that's exactly the problem context engineering solves."],
+      ["Longer descriptions add tokens without removing ambiguity — the overlap is the problem.",
+       "Right. Anthropic's rule: bloated, overlapping tool sets are the most common failure mode. Cut until each tool's job is unambiguous.",
+       "A router tool just moves the ambiguity one layer up.",
+       "Randomness doesn't fix a decision problem — temperature can't choose the right tool."],
+      ["2 GB can't fit, and even a fraction would rot the context — dumping is the anti-pattern.",
+       "Right. Carry lightweight references and pull slices at runtime — file navigation beats full dumps, the way Claude Code works.",
+       "Training knowledge can't cover your specific log file.",
+       "A static summary can't answer follow-up questions — let the agent pull what it needs, when it needs it."],
+      ["Huge windows still degrade — and at 100% the run dies, possibly mid-thought.",
+       "Restarting discards hard-won progress; compaction preserves it.",
+       "Right. Summarize near-limit state, reinitiate with the summary plus pinned rules — the run continues without the bloat.",
+       "The system prompt is the one thing you keep — it's the pinned steering layer."],
+      ["Merging contradictions into one window is exactly how confusion happens.",
+       "Right. Isolation: conflicting or distracting material gets its own context; the main agent only sees the verdict.",
+       "Hardcoded trust rules are brittle — and which source is right varies by case.",
+       "Voting on contradictory facts doesn't resolve which source is correct."]
+    ];
+    const questions = [...document.querySelectorAll('.quiz-q')];
+    let score = 0, answered = 0;
+    questions.forEach((q, qi) => {
+      const correct = parseInt(q.dataset.answer, 10);
+      const exp = q.querySelector('.qexp');
+      q.querySelectorAll('.qopt').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          if (q.dataset.done) return;
+          q.dataset.done = "1";
+          const chosen = parseInt(btn.dataset.i, 10);
+          const ok = chosen === correct;
+          q.querySelectorAll('.qopt').forEach((b) => {
+            b.disabled = true;
+            if (parseInt(b.dataset.i, 10) === correct) b.classList.add('correct');
+          });
+          if (!ok) btn.classList.add('wrong');
+          else score++;
+          answered++;
+          exp.hidden = false;
+          exp.innerHTML = (ok ? '<strong class="ok">Correct.</strong> ' : '<strong class="no">Not quite.</strong> ') + explanations[qi][chosen];
+          if (answered === questions.length) {
+            const box = document.getElementById('quiz-score');
+            box.style.display = 'block';
+            const verdict = score === 5 ? "Flawless — you curate context like an engineer."
+              : score >= 3 ? "Solid. Re-read the two you missed; they're the highest-leverage fixes."
+              : "Worth a second pass — sections 04 and 06 are the short path back.";
+            box.innerHTML = 'You scored <strong>' + score + ' / 5</strong>. ' + verdict;
+            box.scrollIntoView({behavior: 'smooth', block: 'nearest'});
+          }
+        });
+      });
+    });
+
+    // flashcards
+    document.querySelectorAll('.fcard').forEach((card) => {
+      const flip = () => card.classList.toggle('flipped');
+      card.addEventListener('click', flip);
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); }
+      });
+    });
+  </script>
+
+</body>
+</html>
