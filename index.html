@@ -403,6 +403,35 @@
     .upcoming-h{font-size:20px;margin:8px 0 12px}
     .upcoming-list{margin:0;padding-left:20px;color:var(--muted);display:grid;gap:6px}
     .shell{max-width:1120px;margin:0 auto;padding:0 20px}
+    .date-browser{display:grid;grid-template-columns:300px minmax(0,1fr);gap:22px;margin:28px 0 40px;align-items:start}
+    .date-pane{background:var(--white);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px}
+    .cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+    .cal-head button{border:1px solid var(--navy);background:transparent;color:var(--navy);border-radius:8px;width:38px;height:38px;font-size:20px;line-height:1;cursor:pointer;font-weight:700}
+    .cal-head button:hover:not(:disabled){background:var(--blue-soft)}
+    .cal-head button:disabled{opacity:.25;cursor:default}
+    #cal-title{font:600 14px "IBM Plex Mono",monospace;color:var(--navy)}
+    .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+    .cal-dow{font:600 10px "IBM Plex Mono",monospace;color:var(--muted);text-align:center;padding:4px 0;text-transform:uppercase}
+    .cal-day{position:relative;aspect-ratio:1;border:1px solid transparent;background:transparent;border-radius:8px;font:500 13px "IBM Plex Mono",monospace;color:#9aa7ae;min-height:34px;padding:0}
+    .cal-day.has-topics{cursor:pointer;color:var(--navy);font-weight:600;border-color:var(--line);background:#fff}
+    .cal-day.has-topics:hover{background:var(--blue-soft)}
+    .cal-day.has-topics .dot{position:absolute;left:50%;bottom:5px;transform:translateX(-50%);width:5px;height:5px;border-radius:50%;background:var(--orange)}
+    .cal-day[aria-pressed="true"]{background:var(--navy);color:#fff;border-color:var(--navy)}
+    .cal-day[aria-pressed="true"] .dot{background:var(--gold)}
+    .cal-day:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+    .cal-hint{margin:12px 0 0;font-size:13px;color:var(--muted);display:flex;align-items:center;gap:8px}
+    .dot-key{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--orange)}
+    .topic-pane{background:var(--white);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px;min-height:280px}
+    .topic-pane h3{margin:0 0 4px;font-size:22px}
+    .topic-count{font:500 12px "IBM Plex Mono",monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px}
+    .topic-list{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+    .topic-list li{border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+    .topic-list h4{margin:0 0 6px;font-size:18px}
+    .topic-list h4 a{color:var(--navy);text-decoration:none}
+    .topic-list h4 a:hover{text-decoration:underline}
+    .topic-list p{margin:0 0 8px;color:var(--muted);font-size:15px}
+    .topic-list .tskill{font:500 12px "IBM Plex Mono",monospace;color:var(--teal)}
+    @media (max-width:900px){.date-browser{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
@@ -760,27 +789,120 @@ Then:
         document.getElementById(tab.getAttribute('aria-controls')).classList.toggle('active', active);
       });
     }
+
+    // Date-based topic browser
+    (function () {
+      const dataEl = document.getElementById('topic-data');
+      const grid = document.getElementById('cal-grid');
+      if (!dataEl || !grid) return;
+      let topics = [];
+      try { topics = JSON.parse(dataEl.textContent); } catch { return; }
+      const byDate = {};
+      topics.forEach(t => { (byDate[t.date] = byDate[t.date] || []).push(t); });
+      const dates = Object.keys(byDate).sort();
+      if (!dates.length) return;
+
+      const title = document.getElementById('cal-title');
+      const prev = document.getElementById('cal-prev');
+      const next = document.getElementById('cal-next');
+      const listWrap = document.getElementById('topic-list');
+      const dateHead = document.getElementById('topics-for-date');
+      const countEl = document.getElementById('topic-count');
+      const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+      const DOW = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+
+      let parts = dates[dates.length - 1].split('-').map(Number);
+      let y = parts[0], m = parts[1];
+      let selected = dates[dates.length - 1];
+
+      const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+      const fmtDate = iso => {
+        const p = iso.split('-').map(Number);
+        return new Date(p[0], p[1] - 1, p[2]).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+      };
+      const isoOf = d => y + '-' + String(m).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+
+      function renderCal() {
+        title.textContent = MONTHS[m - 1] + ' ' + y;
+        grid.innerHTML = '';
+        DOW.forEach(d => {
+          const s = document.createElement('div');
+          s.className = 'cal-dow';
+          s.textContent = d;
+          grid.appendChild(s);
+        });
+        const first = new Date(y, m - 1, 1).getDay();
+        const days = new Date(y, m, 0).getDate();
+        for (let i = 0; i < first; i++) grid.appendChild(document.createElement('div'));
+        for (let d = 1; d <= days; d++) {
+          const iso = isoOf(d);
+          const n = (byDate[iso] || []).length;
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'cal-day';
+          if (n) {
+            b.classList.add('has-topics');
+            b.setAttribute('aria-pressed', iso === selected ? 'true' : 'false');
+            b.setAttribute('aria-label', fmtDate(iso) + ' — ' + n + ' topic' + (n > 1 ? 's' : ''));
+            b.innerHTML = d + '<span class="dot" aria-hidden="true"></span>';
+            b.addEventListener('click', () => { selected = iso; renderCal(); renderTopics(); });
+          } else {
+            b.disabled = true;
+            b.textContent = d;
+            b.setAttribute('aria-label', fmtDate(iso) + ' — no topics');
+          }
+          grid.appendChild(b);
+        }
+        const cur = y + '-' + String(m).padStart(2, '0');
+        prev.disabled = cur <= dates[0].slice(0, 7);
+        next.disabled = cur >= dates[dates.length - 1].slice(0, 7);
+      }
+
+      function renderTopics() {
+        const items = byDate[selected] || [];
+        dateHead.textContent = fmtDate(selected);
+        countEl.textContent = items.length + ' topic' + (items.length === 1 ? '' : 's');
+        listWrap.innerHTML = items.map(t =>
+          '<li><h4><a href="topics/' + esc(t.slug) + '.html">' + esc(t.title) + '</a></h4>' +
+          '<p>' + esc(t.summary) + '</p><div class="tskill">' + esc(t.skill) + '</div></li>'
+        ).join('');
+      }
+
+      prev.addEventListener('click', () => { m--; if (m < 1) { m = 12; y--; } renderCal(); });
+      next.addEventListener('click', () => { m++; if (m > 12) { m = 1; y++; } renderCal(); });
+      renderCal();
+      renderTopics();
+    })();
   </script>
 <section class="daily-section" id="daily-topics">
   <div class="shell">
     <div class="chapter-mark">One new topic every day</div>
     <h2>Daily topics</h2>
-    <p class="section-lede">A new hands-on topic lands here every morning — each one with references, sample prompts, a quiz, and flashcards.</p>
-    <div class="topic-grid">
-      <article class="tcard">
-  <div class="tdate">2026-09-14</div>
-  <h3><a href="topics/2026-09-14-prompt-engineering.html">Prompt engineering: instructions, few-shot, and output contracts</a></h3>
-  <p>Write prompts that behave like reliable function calls: clear instructions, well-chosen examples, and an output shape your code can trust.</p>
-  <div class="tskill">prompt-engineering</div>
-</article>
-    <article class="tcard">
-  <div class="tdate">2026-09-14</div>
-  <h3><a href="topics/2026-09-14-context-engineering.html">Context engineering: what actually goes into the window</a></h3>
-  <p>Prompt engineering asks how to phrase the request — context engineering asks what the model gets to see. The attention-budget mental model, the write/select/compress/isolate toolkit, and the five failure modes that break agents.</p>
-  <div class="tskill">context-engineering</div>
-</article>
-    <!-- TOPIC-GRID -->
+    <p class="section-lede">Pick a date to browse what was published that day — every topic ships with references, sample prompts, a quiz, and flashcards.</p>
+    <div class="date-browser">
+      <div class="date-pane">
+        <div class="cal-head">
+          <button type="button" id="cal-prev" aria-label="Previous month">‹</button>
+          <div id="cal-title" aria-live="polite"></div>
+          <button type="button" id="cal-next" aria-label="Next month">›</button>
+        </div>
+        <div class="cal-grid" id="cal-grid" role="group" aria-label="Publication dates"></div>
+        <p class="cal-hint"><span class="dot-key" aria-hidden="true"></span>Dates with a dot have topics.</p>
+      </div>
+      <div class="topic-pane" aria-live="polite">
+        <h3 id="topics-for-date"></h3>
+        <div class="topic-count" id="topic-count"></div>
+        <ul class="topic-list" id="topic-list"></ul>
+        <noscript>
+          <ul class="topic-list">
+            <!-- TOPIC-NOSCRIPT -->
+            <li><h4><a href="topics/2026-09-14-prompt-engineering.html">Prompt engineering: instructions, few-shot, and output contracts</a></h4><p>Write prompts that behave like reliable function calls: clear instructions, well-chosen examples, and an output shape your code can trust.</p><div class="tskill">prompt-engineering</div></li>
+            <li><h4><a href="topics/2026-09-14-context-engineering.html">Context engineering: what actually goes into the window</a></h4><p>Prompt engineering asks how to phrase the request — context engineering asks what the model gets to see. The attention-budget mental model, the write/select/compress/isolate toolkit, and the five failure modes that break agents.</p><div class="tskill">context-engineering</div></li>
+          </ul>
+        </noscript>
+      </div>
     </div>
+    <script type="application/json" id="topic-data"><!-- TOPIC-DATA -->[{"slug": "2026-09-14-prompt-engineering", "title": "Prompt engineering: instructions, few-shot, and output contracts", "date": "2026-09-14", "summary": "Write prompts that behave like reliable function calls: clear instructions, well-chosen examples, and an output shape your code can trust.", "skill": "prompt-engineering"}, {"slug": "2026-09-14-context-engineering", "title": "Context engineering: what actually goes into the window", "date": "2026-09-14", "summary": "Prompt engineering asks how to phrase the request — context engineering asks what the model gets to see. The attention-budget mental model, the write/select/compress/isolate toolkit, and the five failure modes that break agents.", "skill": "context-engineering"}]</script>
     <h3 class="upcoming-h">Coming up next</h3>
     <ul class="upcoming-list">
       <!-- UPCOMING -->

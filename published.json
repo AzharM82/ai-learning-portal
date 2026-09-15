@@ -2,11 +2,15 @@
   {
     "slug": "2026-09-14-prompt-engineering",
     "title": "Prompt engineering: instructions, few-shot, and output contracts",
-    "date": "2026-09-14"
+    "date": "2026-09-14",
+    "summary": "Write prompts that behave like reliable function calls: clear instructions, well-chosen examples, and an output shape your code can trust.",
+    "skill": "prompt-engineering"
   },
   {
     "slug": "2026-09-14-context-engineering",
     "title": "Context engineering: what actually goes into the window",
-    "date": "2026-09-14"
+    "date": "2026-09-14",
+    "summary": "Prompt engineering asks how to phrase the request \u2014 context engineering asks what the model gets to see. The attention-budget mental model, the write/select/compress/isolate toolkit, and the five failure modes that break agents.",
+    "skill": "context-engineering"
   }
 ]
