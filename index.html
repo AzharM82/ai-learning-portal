@@ -791,7 +791,7 @@ Then:
     }
 
     // Date-based topic browser
-    (function () {
+    document.addEventListener('DOMContentLoaded', function () {
       const dataEl = document.getElementById('topic-data');
       const grid = document.getElementById('cal-grid');
       if (!dataEl || !grid) return;
@@ -872,7 +872,7 @@ Then:
       next.addEventListener('click', () => { m++; if (m > 12) { m = 1; y++; } renderCal(); });
       renderCal();
       renderTopics();
-    })();
+    });
   </script>
 <section class="daily-section" id="daily-topics">
   <div class="shell">
