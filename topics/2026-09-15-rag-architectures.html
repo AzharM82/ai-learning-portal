@@ -1,0 +1,590 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="color-scheme" content="light" />
+  <link rel="icon" href="data:," />
+  <title>RAG architectures: naive, advanced, and when to skip RAG &mdash; AI Engineering Learning Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Source+Sans+3:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #14212b; --muted: #53636f; --paper: #f6f8f7; --white: #ffffff;
+      --line: #cbd5d8; --navy: #163247; --navy-2: #21465e; --teal: #0b8174;
+      --teal-soft: #dff2ee; --orange: #d66332; --orange-soft: #f8e4d8;
+      --gold: #d8a524; --gold-soft: #f7edc8; --blue-soft: #e3eef4;
+      --red: #b3402e; --red-soft: #f9e3de; --green: #1e7a3c; --green-soft: #e2f2e6;
+      --shadow: 0 18px 45px rgba(20, 33, 43, .09); --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; color: var(--ink);
+      background: linear-gradient(rgba(20,33,43,.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(20,33,43,.035) 1px, transparent 1px), var(--paper);
+      background-size: 28px 28px;
+      font-family: "Source Sans 3", sans-serif; font-size: 17px; line-height: 1.58;
+    }
+    .shell { width: min(960px, calc(100% - 40px)); margin: 0 auto; }
+    .portal-nav{position:sticky;top:0;z-index:50;background:rgba(22,50,71,.97);border-bottom:1px solid rgba(255,255,255,.12)}
+    .portal-nav-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;flex-wrap:wrap}
+    .portal-brand{color:#fff;text-decoration:none;font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:15px}
+    .portal-brand span{color:var(--gold);font-weight:400}
+    .portal-links{display:flex;gap:18px;flex-wrap:wrap}
+    .portal-links a{color:#dbe7ee;text-decoration:none;font-size:14.5px}
+    .portal-links a:hover{color:#fff;text-decoration:underline}
+    .hero { padding: 56px 0 36px; }
+    .chapter-mark { display:inline-flex;align-items:center;gap:10px;color:var(--navy);
+      font:600 12px/1.2 "IBM Plex Mono",monospace;letter-spacing:.09em;text-transform:uppercase;margin-bottom:18px; }
+    .chapter-mark::before { content:"";width:42px;height:3px;background:var(--orange); }
+    h1 { font-size: clamp(36px, 5vw, 58px); line-height: 1.02; letter-spacing:-.03em; margin:0 0 14px; }
+    .lede { color: var(--muted); font-size: clamp(18px,2vw,22px); max-width: 64ch; margin:0 0 8px; }
+    .date-line { font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--muted); }
+    section.block { margin: 44px 0; }
+    h2 { font-size: 26px; letter-spacing:-.02em; margin:0 0 6px; display:flex;align-items:center;gap:12px; }
+    h2 .num { font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:600;color:var(--white);
+      background:var(--navy);border-radius:999px;min-width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center; }
+    .sub { color:var(--muted); margin:0 0 18px; max-width: 68ch; }
+    .card { background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+      padding:24px;box-shadow:var(--shadow); }
+    .skill-card { background:var(--navy);color:#eaf2f7;border-radius:var(--radius);padding:22px 24px;
+      font-family:"IBM Plex Mono",monospace;font-size:14.5px;overflow-x:auto;box-shadow:var(--shadow); }
+    .skill-card .k { color:var(--gold); }
+    .idea { font-size:21px;line-height:1.5;border-left:4px solid var(--teal);padding:6px 0 6px 20px;max-width:62ch; }
+    .idea strong { color:var(--navy); }
+    .mechanics { display:grid;gap:14px; }
+    .mech { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:18px 20px;
+      display:grid;grid-template-columns:44px 1fr;gap:14px;align-items:start; }
+    .mech .mnum { font-family:"IBM Plex Mono",monospace;font-weight:600;color:var(--teal);
+      background:var(--teal-soft);border-radius:10px;width:44px;height:44px;display:flex;align-items:center;justify-content:center; }
+    .mech h3 { margin:0 0 6px;font-size:18px; }
+    .mech p { margin:0;color:var(--muted);font-size:15.5px; }
+    .mech code, .inline-code { font-family:"IBM Plex Mono",monospace;font-size:.88em;background:var(--blue-soft);
+      padding:2px 7px;border-radius:6px;color:var(--navy); }
+    pre.code { background:#0f2233;color:#e8f1f5;border-radius:14px;padding:20px 22px;overflow-x:auto;
+      font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.6;margin:0; }
+    pre.code .c { color:#8ba3b0; } pre.code .s { color:#ffd479; } pre.code .k { color:#7fd6c2; }
+    .fail { border-left:4px solid var(--orange); }
+    .fail h3 .fix { display:block;margin-top:8px;font-size:15px;font-weight:500;color:var(--green); }
+    .ref-list { display:grid;gap:12px; }
+    .ref { display:flex;gap:14px;align-items:flex-start;background:var(--white);border:1px solid var(--line);
+      border-radius:14px;padding:16px 18px;text-decoration:none;color:inherit; }
+    .ref:hover { border-color:var(--teal); }
+    .ref .badge { flex:none;font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;letter-spacing:.06em;
+      padding:5px 10px;border-radius:999px;text-transform:uppercase; }
+    .badge.doc { background:var(--blue-soft);color:var(--navy); }
+    .badge.vid { background:var(--orange-soft);color:var(--orange); }
+    .ref h3 { margin:0 0 4px;font-size:17px; }
+    .ref p { margin:0;color:var(--muted);font-size:14.5px; }
+    .prompt-block { background:#0f2233;border-radius:var(--radius);overflow:hidden;margin-bottom:18px;box-shadow:var(--shadow); }
+    .prompt-top { display:flex;justify-content:space-between;align-items:center;gap:12px;
+      padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.12); }
+    .prompt-top strong { color:#fff;font-size:13px;letter-spacing:.06em;font-family:"IBM Plex Mono",monospace; }
+    .copy-btn { border:1px solid #6c8796;background:transparent;color:#fff;border-radius:6px;padding:7px 11px;
+      cursor:pointer;font-weight:700;font-size:14px; }
+    .copy-btn:hover { background:rgba(255,255,255,.1); }
+    .copy-btn:focus-visible { outline:2px solid var(--gold);outline-offset:2px; }
+    .prompt-text { color:#e8f1f5;font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.65;
+      padding:18px;white-space:pre-wrap;margin:0; }
+    .sr-only { position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0); }
+    .quiz-q { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px; }
+    .quiz-q .qq { font-weight:700;margin:0 0 12px;font-size:18px; }
+    .qopts { display:grid;gap:8px; }
+    .qopt { text-align:left;background:var(--paper);border:1px solid var(--line);border-radius:10px;
+      padding:12px 14px;cursor:pointer;font-size:15.5px;color:var(--ink); }
+    .qopt:hover:not(:disabled) { border-color:var(--navy); }
+    .qopt:disabled { cursor:default;opacity:.85; }
+    .qopt.correct { background:var(--green-soft);border-color:var(--green); }
+    .qopt.wrong { background:var(--red-soft);border-color:var(--red); }
+    .qexp { margin:12px 0 0;font-size:15px;color:var(--muted); }
+    .qexp strong.ok { color:var(--green); } .qexp strong.no { color:var(--red); }
+    #quiz-score { display:none;margin-top:8px;background:var(--navy);color:#fff;border-radius:14px;
+      padding:20px 24px;font-size:19px; }
+    #quiz-score strong { color:var(--gold); }
+    .fgrid { display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px; }
+    .fcard { perspective:900px;cursor:pointer;min-height:170px; }
+    .fcard-inner { position:relative;width:100%;height:100%;min-height:170px;transform-style:preserve-3d;transition:transform .45s; }
+    .fcard.flipped .fcard-inner { transform:rotateY(180deg); }
+    .fface { position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+      border-radius:14px;padding:18px;display:flex;align-items:center;justify-content:center;text-align:center;
+      border:1px solid var(--line);background:var(--white);box-shadow:var(--shadow);font-size:15.5px; }
+    .fface.front { font-weight:700;color:var(--navy); }
+    .fface.back { transform:rotateY(180deg);background:var(--teal-soft);color:var(--ink);font-size:14.5px; }
+    .fcard:focus-visible { outline:2px solid var(--teal);outline-offset:3px;border-radius:14px; }
+    .triggers { display:grid;gap:10px; }
+    .trigger { background:var(--gold-soft);border-radius:12px;padding:14px 18px;font-size:16px; }
+    .trigger strong { color:var(--navy); }
+    .back-link { display:inline-block;margin:8px 0 60px;font-weight:600;color:var(--teal);text-decoration:none;font-size:17px; }
+    .back-link:hover { text-decoration:underline; }
+    .fig { background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+      padding:12px;box-shadow:var(--shadow);overflow-x:auto; }
+    .fig svg { display:block;width:100%;height:auto; }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior:auto; } .fcard-inner{transition:none;} }
+  </style>
+
+</head>
+<body>
+<nav class="portal-nav">
+    <div class="shell portal-nav-inner">
+      <a class="portal-brand" href="../index.html">AI Engineering <span>· Learning Portal</span></a>
+      <div class="portal-links">
+        <a href="../index.html#daily-topics">Daily topics</a>
+        <a href="../index.html#loop">Loop</a>
+        <a href="../index.html#graph">Graph</a>
+        <a href="../index.html#harness">Harness</a>
+      </div>
+    </div>
+  </nav>
+  <div class="shell">
+
+    <header class="hero">
+      <div class="chapter-mark">Daily topic · AI engineering</div>
+      <h1>RAG architectures: naive, advanced, and when to skip RAG</h1>
+      <p class="lede">Don't teach the model your data — hand it the right pages at query time. Retrieval-augmented generation grounds answers in your corpus, but the naive pipeline misses answers constantly. Here's how to make retrieval actually work, and when not to bother.</p>
+      <p class="date-line">2026-09-15 · Topic 003</p>
+    </header>
+
+    <section class="block">
+      <h2><span class="num">01</span> The skill card</h2>
+      <p class="sub">Every topic on this portal is designed like a Codex skill: a name, a trigger, and concrete steps.</p>
+      <div class="skill-card"><pre style="margin:0">---
+<span class="k">name:</span> rag-architectures
+<span class="k">description:</span> Reach for this when answers must come from YOUR data
+  (docs, code, policies, product knowledge) — before stuffing everything
+  into a prompt, and before reaching for fine-tuning.
+---</pre></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">02</span> The one-idea version</h2>
+      <p class="idea">The model's weights are <strong>frozen knowledge</strong>; your corpus is <strong>live knowledge</strong>. RAG bridges them: at query time, retrieve the most relevant passages from your corpus and inject them into the context, so the model reasons over <em>your</em> facts instead of guessing from training data. <strong>Retrieval does the remembering; the model does the reasoning.</strong></p>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">03</span> The visual</h2>
+      <p class="sub">Same question, two pipelines — and the decision diamond that asks whether you needed retrieval at all.</p>
+      <div class="fig">
+      <svg viewBox="0 0 900 478" role="img" aria-label="Naive RAG versus advanced RAG pipelines, and when to skip RAG">
+        <defs>
+          <marker id="arr2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 1 L 9 5 L 0 9 z" fill="#53636f"/>
+          </marker>
+        </defs>
+        <g font-family="IBM Plex Mono, monospace" font-size="12">
+          <!-- Naive lane -->
+          <text x="20" y="30" fill="#b3402e" font-weight="600">NAIVE RAG</text>
+          <rect x="20" y="42" width="400" height="250" rx="14" fill="#f9e3de" stroke="#b3402e" stroke-width="1.5"/>
+          <rect x="40" y="62" width="150" height="34" rx="8" fill="#ffffff" stroke="#b3402e"/>
+          <text x="52" y="84" fill="#b3402e">chunk docs</text>
+          <rect x="40" y="108" width="150" height="34" rx="8" fill="#ffffff" stroke="#b3402e"/>
+          <text x="52" y="130" fill="#b3402e">embed + index</text>
+          <rect x="40" y="154" width="150" height="34" rx="8" fill="#ffffff" stroke="#b3402e"/>
+          <text x="52" y="176" fill="#b3402e">vector top-k</text>
+          <rect x="40" y="200" width="150" height="34" rx="8" fill="#ffffff" stroke="#b3402e"/>
+          <text x="52" y="222" fill="#b3402e">stuff in prompt</text>
+          <rect x="250" y="120" width="150" height="52" rx="8" fill="#ffffff" stroke="#b3402e"/>
+          <text x="262" y="142" fill="#b3402e">answer</text>
+          <text x="262" y="160" fill="#b3402e">(hope it helps)</text>
+          <line x1="190" y1="137" x2="248" y2="137" stroke="#b3402e" stroke-width="2" marker-end="url(#arr2)"/>
+          <text x="52" y="266" fill="#b3402e">✕ misses answers, cites nothing</text>
+
+          <!-- Advanced lane -->
+          <text x="480" y="30" fill="#0b8174" font-weight="600">ADVANCED RAG</text>
+          <rect x="480" y="42" width="400" height="250" rx="14" fill="#dff2ee" stroke="#0b8174" stroke-width="1.5"/>
+          <rect x="500" y="62" width="150" height="34" rx="8" fill="#ffffff" stroke="#0b8174"/>
+          <text x="512" y="84" fill="#0b8174">query rewrite</text>
+          <rect x="500" y="108" width="150" height="34" rx="8" fill="#ffffff" stroke="#0b8174"/>
+          <text x="512" y="130" fill="#0b8174">hybrid search</text>
+          <rect x="500" y="154" width="150" height="34" rx="8" fill="#ffffff" stroke="#0b8174"/>
+          <text x="512" y="176" fill="#0b8174">rerank top-100→5</text>
+          <rect x="500" y="200" width="150" height="34" rx="8" fill="#ffffff" stroke="#0b8174"/>
+          <text x="512" y="222" fill="#0b8174">cite + verify</text>
+          <rect x="710" y="120" width="150" height="52" rx="8" fill="#0b8174"/>
+          <text x="722" y="142" fill="#ffffff">grounded</text>
+          <text x="722" y="160" fill="#ffffff">answer</text>
+          <line x1="650" y1="137" x2="708" y2="137" stroke="#0b8174" stroke-width="2" marker-end="url(#arr2)"/>
+          <text x="512" y="266" fill="#0b8174">✓ retrieval hit-rate + groundedness gates</text>
+
+          <!-- Decision diamond -->
+          <text x="20" y="330" fill="#163247" font-weight="600">SKIP RAG?</text>
+          <polygon points="60,352 210,352 250,384 210,416 60,416 20,384" fill="#f7edc8" stroke="#163247" stroke-width="2"/>
+          <text x="52" y="390" fill="#163247">does the answer need YOUR data?</text>
+          <line x1="250" y1="384" x2="330" y2="384" stroke="#163247" stroke-width="2" marker-end="url(#arr2)"/>
+          <rect x="330" y="362" width="140" height="44" rx="8" fill="#ffffff" stroke="#1e7a3c"/>
+          <text x="342" y="384" fill="#1e7a3c">YES → build RAG</text>
+          <line x1="135" y1="416" x2="135" y2="432" stroke="#163247" stroke-width="2" marker-end="url(#arr2)"/>
+          <text x="150" y="414" fill="#53636f">no</text>
+          <text x="135" y="452" text-anchor="middle" fill="#53636f">NO → direct prompt, in-context dump,</text>
+          <text x="135" y="470" text-anchor="middle" fill="#53636f">SQL, or fine-tune instead</text>
+        </g>
+      </svg>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">04</span> How it works</h2>
+      <p class="sub">Six mechanics. The first four build the advanced pipeline; the last two decide the architecture.</p>
+      <div class="mechanics">
+        <div class="mech"><div class="mnum">1</div><div>
+          <h3>Chunk so that retrieval can win</h3>
+          <p>Retrieval finds <em>chunks</em>, not documents — and chunking is the unglamorous 80% of RAG quality. Cut at semantic boundaries (headings, paragraphs), keep 200–500 tokens per chunk, and attach metadata (source, title, date) so the answer can cite it. Test recall with real user questions, not vibes.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">2</div><div>
+          <h3>Embed query and chunks into one vector space</h3>
+          <p>A good embedding model puts "refund policy" and "can I get my money back?" near each other. Pick one embedding model for the whole corpus, store vectors in an <span class="inline-code">ANN index</span> (HNSW for recall, IVF for speed), and re-embed everything if the model changes — mixed embeddings silently break similarity.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">3</div><div>
+          <h3>Search hybrid: dense + keyword, then fuse</h3>
+          <p>Pure vector search misses exact terms (model numbers, names, error codes); pure keyword search misses synonyms. Run both — <span class="inline-code">dense embeddings + BM25</span> — and fuse the rankings with <span class="inline-code">reciprocal rank fusion</span>. Each catches what the other misses; hybrid is the single cheapest recall upgrade there is.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">4</div><div>
+          <h3>Retrieve wide, then rerank narrow</h3>
+          <p>Two-stage retrieval: a cheap ANN pass pulls the top 50–100 candidates, then a <span class="inline-code">cross-encoder reranker</span> scores each candidate against the full question and keeps the top 3–5. Most of your retrieval precision lives in the reranker, not the embeddings.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">5</div><div>
+          <h3>Rewrite the query before you search</h3>
+          <p>Users ask ambiguous questions; databases store answers. Expand terse queries, decompose multi-hop questions into sub-queries, and consider <span class="inline-code">HyDE</span> (generate a hypothetical answer, then search with its embedding). One bad query rarely retrieves what a good query would.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">6</div><div>
+          <h3>Generate with citations, then verify groundedness</h3>
+          <p>Require the model to cite which chunk supports each claim, then run a <span class="inline-code">groundedness check</span>: does every answer claim appear in the retrieved passages? The RAG triad — context relevance, groundedness, answer relevance — is how you eval; fail closed (say "I don't know") when the check fails.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">7</div><div>
+          <h3>Choose the retrieval surface deliberately</h3>
+          <p>Not every knowledge problem is a RAG problem. Small corpus that fits in context? In-context dump. Exact answers from structured data? <span class="inline-code">SQL</span> / API calls, not vectors. Stable behavior change? Fine-tuning. Volatile, proprietary, or long-tail facts? That's RAG's home turf.</p>
+        </div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">05</span> Code sketch</h2>
+      <p class="sub">A minimal naive RAG in under 30 lines — then imagine replacing <code class="inline-code">search()</code> with the hybrid + rerank pipeline from section 04.</p>
+      <pre class="code"><span class="k">def</span> answer(question, docs, embed, search, llm):
+    <span class="c"># 1. chunk (200-500 tokens, semantic boundaries)</span>
+    chunks = [c <span class="k">for</span> d <span class="k">in</span> docs <span class="k">for</span> c <span class="k">in</span> chunk(d, size=400)]
+    <span class="c"># 2. embed once, index with ANN (HNSW)</span>
+    index = AnnIndex([embed(c.text) <span class="k">for</span> c <span class="k">in</span> chunks])
+    <span class="c"># 3. hybrid search: dense top-100 + BM25, fuse ranks</span>
+    cands = reciprocal_rank_fusion(
+        index.query(embed(question), k=100),
+        bm25(question, chunks, k=100))
+    <span class="c"># 4. cross-encoder rerank -&gt; top 5</span>
+    top = rerank(question, cands, k=5)
+    context = <span class="s">"\n\n"</span>.join(f<span class="s">"[</span>{c.id}<span class="s">] </span>{c.text}<span class="s">"</span> <span class="k">for</span> c <span class="k">in</span> top)
+    <span class="c"># 5. generate with citation requirement</span>
+    prompt = (f<span class="s">"Answer using ONLY the sources below. Cite [id] per claim.\n"
+              f"If unsupported, say so.\n\n</span>{context}<span class="s">\n\nQ: </span>{question}<span class="s">"</span>)
+    <span class="k">return</span> llm(prompt)</pre>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">06</span> Failure modes</h2>
+      <p class="sub">Named pitfalls, each with a one-line fix. Most RAG demos die on number one.</p>
+      <div class="mechanics">
+        <div class="mech fail"><div class="mnum">✕</div><div>
+          <h3>Chunk rot <span class="fix">Fix: 200–500 token chunks at semantic boundaries, with source metadata; measure recall on real questions.</span></h3>
+          <p>Chunks too big bury the answer in noise; chunks too small lose the context that makes them meaningful. Bad chunking makes everything downstream worse.</p>
+        </div></div>
+        <div class="mech fail"><div class="mnum">✕</div><div>
+          <h3>Retrieval miss <span class="fix">Fix: go hybrid (dense + BM25), add a reranker, and track hit-rate — the fraction of questions whose answer is in the retrieved set.</span></h3>
+          <p>The answer exists in the corpus but never lands in top-k. Embeddings alone miss exact terms; the generator can't answer what it never saw.</p>
+        </div></div>
+        <div class="mech fail"><div class="mnum">✕</div><div>
+          <h3>Lost in the middle <span class="fix">Fix: keep the retrieved set small (3–5 chunks), order the strongest chunk first, and citation-check claims.</span></h3>
+          <p>The right passage IS in context but the model ignores it — attention spreads thin and the answer leans on parametric memory instead.</p>
+        </div></div>
+        <div class="mech fail"><div class="mnum">✕</div><div>
+          <h3>Hallucination despite retrieval <span class="fix">Fix: "answer ONLY from these sources", require citations, and fail closed when the groundedness check fails.</span></h3>
+          <p>Retrieved facts don't stop a model from answering from its training weights. Grounding is a constraint you must enforce, not a property you get for free.</p>
+        </div></div>
+        <div class="mech fail"><div class="mnum">✕</div><div>
+          <h3>RAG when you shouldn't <span class="fix">Fix: route — direct prompt for known facts, SQL/API for structured data, fine-tune for stable behavior, RAG for volatile proprietary facts.</span></h3>
+          <p>Latency, cost, and complexity for a question the model could have answered directly. Retrieval is a tool, not an identity.</p>
+        </div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">07</span> Go deeper</h2>
+      <p class="sub">Curated and real — canonical engineering posts, vendor-neutral guides, and two videos that earn their runtime.</p>
+      <div class="ref-list">
+        <a class="ref" href="https://www.anthropic.com/engineering/contextual-retrieval">
+          <span class="badge doc">Guide</span>
+          <div><h3>Anthropic — Contextual Retrieval in AI Systems</h3><p>The canonical advanced-RAG post: why naive chunk→embed retrieval fails (chunks lose document context), how contextual embeddings + contextual BM25 + reranking cut failures by 67% — and when to skip RAG entirely (knowledge bases under ~200K tokens can just use a long prompt with prompt caching).</p></div>
+        </a>
+        <a class="ref" href="https://www.pinecone.io/learn/retrieval-augmented-generation/">
+          <span class="badge doc">Guide</span>
+          <div><h3>Pinecone Learn — Retrieval-Augmented Generation (RAG)</h3><p>A single-page walkthrough of the full naive→advanced arc: ingestion, chunking, embedding, hybrid retrieval, reranking, augmentation, generation — then how the same components evolve into agentic RAG, plus a "do you even need RAG?" eval-first gate.</p></div>
+        </a>
+        <a class="ref" href="https://www.anthropic.com/engineering/building-effective-agents">
+          <span class="badge doc">Guide</span>
+          <div><h3>Anthropic — Building Effective AI Agents</h3><p>The engineering-grade "when to skip" authority: find the simplest solution first, add complexity only when needed. Positions the augmented LLM (one call + retrieval) as the building block to reach for before workflows or agents.</p></div>
+        </a>
+        <a class="ref" href="https://www.youtube.com/watch?v=-uiGK2oIkWs">
+          <span class="badge vid">Video</span>
+          <div><h3>RAG in AI Agents: Full Tutorial — Retrieval, Embeddings, GraphRAG, Agentic RAG &amp; Evaluation</h3><p>The exact topic spine in 36 short scenes: naive 6-step pipeline → hybrid search, HyDE, reranking, contextual retrieval, Self-RAG/CRAG/adaptive RAG, GraphRAG, 10 failure modes, and a RAG vs fine-tune vs long-context vs CAG comparison.</p></div>
+        </a>
+        <a class="ref" href="https://www.youtube.com/watch?v=UurHstgIbLw">
+          <span class="badge vid">Video</span>
+          <div><h3>neurals_ca — "What is RAG? Embeddings, Chunking, and Vector Databases Explained"</h3><p>The naive architecture done right: the three decisions that make or break it (chunk size/overlap, embedding model, vector database), why naive splitting cuts meaning in half, and when RAG beats fine-tuning or giant context windows.</p></div>
+        </a>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">08</span> Sample prompts</h2>
+      <p class="sub">Copy-paste starters. Each one demonstrates a mechanic from section 04.</p>
+
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>THE RETRIEVAL DECIDER</strong><button class="copy-btn" data-copy="px-decide">Copy</button></div>
+        <p class="prompt-text" id="px-decide">Act as a RAG architect. For the question below, pick ONE retrieval surface
+and defend it in one sentence each:
+A) direct prompt (model knowledge is enough)
+B) in-context dump (corpus is small enough)
+C) RAG (volatile / proprietary / long-tail facts)
+D) SQL or API call (answer is structured data)
+E) fine-tuning (stable behavior change)
+Question: {{your question}}
+Corpus size and shape: {{describe your docs, db, or knowledge source}}</p>
+      </div>
+
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>THE CHUNK AUDIT</strong><button class="copy-btn" data-copy="px-chunk">Copy</button></div>
+        <p class="prompt-text" id="px-chunk">Audit these chunks for retrieval quality.
+For each chunk, verdict: KEEP / SPLIT / MERGE / DROP with a one-line reason.
+Then answer: would a user asking "{{your question}}" plausibly get the answer
+from these chunks alone? If not, what is missing?
+Rules: one chunk should answer one question; keep headers and source metadata
+attached; 200–500 tokens.
+&lt;chunks&gt;
+{{paste your chunks here, one per block}}
+&lt;/chunks&gt;</p>
+      </div>
+
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>THE GROUNDEDNESS CHECK</strong><button class="copy-btn" data-copy="px-ground">Copy</button></div>
+        <p class="prompt-text" id="px-ground">Verify this answer against its retrieved sources.
+For EVERY factual claim in the answer: mark SUPPORTED (quote the supporting
+passage), CONTRADICTED, or UNSUPPORTED. Then give a verdict: PASS or FAIL,
+and list any claim that failed.
+Be strict: paraphrase counts as support only if the meaning matches exactly.
+&lt;sources&gt;
+{{paste retrieved passages, one per block}}
+&lt;/sources&gt;
+&lt;answer&gt;
+{{paste the generated answer}}
+&lt;/answer&gt;</p>
+      </div>
+      <p class="sr-only" aria-live="polite" id="live-status"></p>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">09</span> Quiz</h2>
+      <p class="sub">Five questions on judgment, not trivia. Click an answer to check yourself.</p>
+      <div id="quiz">
+        <div class="quiz-q" data-answer="1">
+          <p class="qq">1. Your RAG answers questions about your own docs but keeps inventing policy details. What failed?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">The embedding model — you need a bigger one.</button>
+            <button class="qopt" data-i="1">Grounding isn't free: the model answered from its weights. Require citations and fail closed on unsupported claims.</button>
+            <button class="qopt" data-i="2">You should have fine-tuned instead of using RAG.</button>
+            <button class="qopt" data-i="3">The chunks are too small — make them bigger.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="1">
+          <p class="qq">2. Users search for exact error codes like "ERR-4417" and retrieval keeps missing them. Highest-leverage fix?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">Add a reranker — it fixes everything.</button>
+            <button class="qopt" data-i="1">Go hybrid: embeddings miss exact tokens. Add BM25 keyword search and fuse the rankings.</button>
+            <button class="qopt" data-i="2">Increase top-k to 200 and stuff more into the prompt.</button>
+            <button class="qopt" data-i="3">Switch to a bigger LLM — retrieval doesn't matter much.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="2">
+          <p class="qq">3. Where does most of your retrieval precision actually live?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">In the embedding model — pick the largest one and you're done.</button>
+            <button class="qopt" data-i="1">In the vector index — HNSW beats everything else.</button>
+            <button class="qopt" data-i="2">In the reranker — a cross-encoder scoring the full question against each candidate is where precision comes from.</button>
+            <button class="qopt" data-i="3">In the prompt — good instructions fix bad retrieval.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="1">
+          <p class="qq">4. The answer needs a number that lives in your SQL database (e.g. today's order count). Best move?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">Embed the database rows into the vector store and RAG over them.</button>
+            <button class="qopt" data-i="1">Skip RAG: use a SQL/API tool call for exact structured data — vectors are the wrong tool for exact lookups.</button>
+            <button class="qopt" data-i="2">Fine-tune the model on the database so it memorizes the numbers.</button>
+            <button class="qopt" data-i="3">Ask the model to estimate — it's probably close enough.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="2">
+          <p class="qq">5. The right passage is retrieved, but the answer ignores it and guesses anyway. What's the fix?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">Retrieve even more chunks so the passage appears twice.</button>
+            <button class="qopt" data-i="1">Lower the temperature to 0 — that stops hallucinations.</button>
+            <button class="qopt" data-i="2">Keep the retrieved set small, order the strongest chunk first, and citation-check each claim — fight "lost in the middle".</button>
+            <button class="qopt" data-i="3">Re-embed the corpus with a different model.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+      </div>
+      <div id="quiz-score" role="status"></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">10</span> Flashcards</h2>
+      <p class="sub">Click a card — or tab to it and press Enter — to flip it.</p>
+      <div class="fgrid">
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: retrieval-augmented generation"><div class="fcard-inner">
+          <div class="fface front">Retrieval-augmented generation (RAG)</div>
+          <div class="fface back">At query time, retrieve relevant passages from your corpus and inject them into the model's context. Retrieval remembers; the model reasons.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: naive RAG"><div class="fcard-inner">
+          <div class="fface front">Naive RAG</div>
+          <div class="fface back">Chunk → embed → vector top-k → stuff into prompt. The baseline every system starts from — and the one that misses answers most often.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: hybrid search"><div class="fcard-inner">
+          <div class="fface front">Hybrid search</div>
+          <div class="fface back">Running dense (embedding) and sparse (BM25 keyword) search together and fusing rankings — embeddings catch meaning, BM25 catches exact terms.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: reciprocal rank fusion"><div class="fcard-inner">
+          <div class="fface front">Reciprocal rank fusion (RRF)</div>
+          <div class="fface back">A fusion formula that combines ranked lists by summing 1/(k + rank) across lists — no score normalization needed. The standard hybrid-search combiner.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: reranker"><div class="fcard-inner">
+          <div class="fface front">Reranker (cross-encoder)</div>
+          <div class="fface back">A second-stage model that scores the full question against each candidate passage, one by one, keeping the top 3–5. Where most retrieval precision lives.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: HyDE"><div class="fcard-inner">
+          <div class="fface front">HyDE</div>
+          <div class="fface back">Hypothetical Document Embeddings: have the model draft a hypothetical answer, then search with THAT embedding. Bridges the gap between question-speak and doc-speak.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: RAG triad"><div class="fcard-inner">
+          <div class="fface front">The RAG triad</div>
+          <div class="fface back">The three evals that matter: context relevance (did retrieval fetch the right passages?), groundedness (is each claim supported?), answer relevance (did it answer the question?).</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: lost in the middle"><div class="fcard-inner">
+          <div class="fface front">Lost in the middle</div>
+          <div class="fface back">Models attend best to the start and end of context; retrieved passages buried in the middle get ignored. Fix: small retrieved sets, strongest chunk first.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: chunking"><div class="fcard-inner">
+          <div class="fface front">Chunking</div>
+          <div class="fface back">Splitting documents into retrievable units at semantic boundaries (200–500 tokens, metadata attached). The unglamorous 80% of RAG quality.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: when to skip RAG"><div class="fcard-inner">
+          <div class="fface front">When to skip RAG</div>
+          <div class="fface back">Model already knows it → direct prompt. Corpus fits in context → dump it. Answer is structured → SQL/API. Stable behavior change → fine-tune.</div>
+        </div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">11</span> Reach for this when…</h2>
+      <div class="triggers">
+        <div class="trigger"><strong>Answers must come from your proprietary or volatile data</strong> — docs, policies, code, product knowledge that changes faster than training cycles.</div>
+        <div class="trigger"><strong>Retrieval keeps missing but the answer exists in the corpus</strong> — go hybrid + rerank + query rewrite before blaming the model.</div>
+        <div class="trigger"><strong>You're about to build a RAG pipeline</strong> — first ask: direct prompt, in-context dump, SQL, or fine-tune? Retrieval is a tool, not a default.</div>
+      </div>
+    </section>
+
+    <a class="back-link" href="../index.html#daily-topics">← Back to the learning portal</a>
+  </div>
+
+  <script>
+    // copy buttons
+    const status = document.getElementById('live-status');
+    document.querySelectorAll('.copy-btn').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const target = document.getElementById(button.dataset.copy);
+        const text = target.innerText;
+        try {
+          await navigator.clipboard.writeText(text);
+          const original = button.textContent;
+          button.textContent = 'Copied';
+          status.textContent = 'Prompt copied to clipboard.';
+          setTimeout(() => button.textContent = original, 1600);
+        } catch {
+          const range = document.createRange();
+          range.selectNodeContents(target);
+          const selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+          status.textContent = 'Prompt selected. Copy it with your device copy command.';
+        }
+      });
+    });
+
+    // quiz
+    const explanations = [
+      ["Bigger embeddings won't stop parametric guessing — retrieval only helps if the generator is constrained to use it.",
+       "Right. Grounding is a constraint you enforce: citations required, and a groundedness check that fails closed when a claim is unsupported.",
+       "Fine-tuning changes behavior, not freshness — your policy docs would still be stale next quarter.",
+       "Chunk size is a retrieval problem; this is a generation problem — the model ignored the facts it had."],
+      ["A reranker helps precision, but it can't recover exact terms the first stage never returned.",
+       "Right. Dense embeddings are bad at exact tokens like model numbers and error codes. Hybrid search + RRF is the cheapest recall upgrade there is.",
+       "More chunks just spread attention thinner — that's the lost-in-the-middle failure.",
+       "A bigger generator still can't answer from passages retrieval never fetched."],
+      ["Embeddings matter, but even the best ones are coarse recall — not fine discrimination.",
+       "HNSW is a speed/recall trade-off for the first stage, not where precision lives.",
+       "Right. The cross-encoder reranker scores each candidate against the full question — that's where precision comes from.",
+       "Instructions can't recover facts retrieval missed. Garbage in, garbage out."],
+      ["Embedding rows is fighting the tool's weakness: vectors do similarity, not exact lookups on fresh numbers.",
+       "Right. Choose the retrieval surface deliberately — structured data wants SQL or an API call, not a vector search.",
+       "Fine-tuning memorizes snapshots; 'today's order count' is stale the moment training ends.",
+       "Estimation is hallucination with confidence — exactly what grounded systems must avoid."],
+      ["Duplication just adds noise and burns attention budget.",
+       "Temperature 0 removes randomness, not the tendency to prefer parametric memory over context.",
+       "Right. The fix for lost-in-the-middle: 3–5 chunks, strongest first, and a citation check so unsupported claims fail visibly.",
+       "Re-embedding changes recall, not the generator's willingness to use what it retrieved."]
+    ];
+    const questions = [...document.querySelectorAll('.quiz-q')];
+    let score = 0, answered = 0;
+    questions.forEach((q, qi) => {
+      const correct = parseInt(q.dataset.answer, 10);
+      const exp = q.querySelector('.qexp');
+      q.querySelectorAll('.qopt').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          if (q.dataset.done) return;
+          q.dataset.done = "1";
+          const chosen = parseInt(btn.dataset.i, 10);
+          const ok = chosen === correct;
+          q.querySelectorAll('.qopt').forEach((b) => {
+            b.disabled = true;
+            if (parseInt(b.dataset.i, 10) === correct) b.classList.add('correct');
+          });
+          if (!ok) btn.classList.add('wrong');
+          else score++;
+          answered++;
+          exp.hidden = false;
+          exp.innerHTML = (ok ? '<strong class="ok">Correct.</strong> ' : '<strong class="no">Not quite.</strong> ') + explanations[qi][chosen];
+          if (answered === questions.length) {
+            const box = document.getElementById('quiz-score');
+            box.style.display = 'block';
+            const verdict = score === 5 ? "Flawless — you architect retrieval like an engineer."
+              : score >= 3 ? "Solid. Re-read the two you missed; they're the highest-leverage fixes."
+              : "Worth a second pass — sections 04 and 06 are the short path back.";
+            box.innerHTML = 'You scored <strong>' + score + ' / 5</strong>. ' + verdict;
+            box.scrollIntoView({behavior: 'smooth', block: 'nearest'});
+          }
+        });
+      });
+    });
+
+    // flashcards
+    document.querySelectorAll('.fcard').forEach((card) => {
+      const flip = () => card.classList.toggle('flipped');
+      card.addEventListener('click', flip);
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); }
+      });
+    });
+  </script>
+
+</body>
+</html>

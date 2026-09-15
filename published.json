@@ -12,5 +12,12 @@
     "date": "2026-09-14",
     "summary": "Prompt engineering asks how to phrase the request \u2014 context engineering asks what the model gets to see. The attention-budget mental model, the write/select/compress/isolate toolkit, and the five failure modes that break agents.",
     "skill": "context-engineering"
+  },
+  {
+    "slug": "2026-09-15-rag-architectures",
+    "title": "RAG architectures: naive, advanced, and when to skip RAG",
+    "date": "2026-09-15",
+    "summary": "Don't teach the model your data \u2014 hand it the right pages at query time. Chunking, hybrid search, reranking, groundedness gates \u2014 and knowing when to skip RAG entirely.",
+    "skill": "rag-architectures"
   }
 ]
