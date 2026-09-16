@@ -19,5 +19,12 @@
     "date": "2026-09-15",
     "summary": "Don't teach the model your data \u2014 hand it the right pages at query time. Chunking, hybrid search, reranking, groundedness gates \u2014 and knowing when to skip RAG entirely.",
     "skill": "rag-architectures"
+  },
+  {
+    "slug": "2026-09-16-chunking-embeddings",
+    "title": "Chunking and embeddings: the unglamorous 80%",
+    "date": "2026-09-16",
+    "summary": "The two unglamorous decisions that determine 80% of retrieval quality: how you cut documents into self-contained chunks, and how you turn them into vectors. Cosine similarity as an angle, the one-model rule, and the token-level eval that keeps chunking honest.",
+    "skill": "chunking-embeddings"
   }
 ]
