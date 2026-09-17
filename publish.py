@@ -9,7 +9,7 @@ Usage:
     python3 publish.py --rebuild   # regenerate index data from published.json
 
 Expects topics/<slug>.html to exist (without the .html suffix in --slug).
-Updates the <!-- TOPIC-DATA --> JSON block (drives the date-picker browser)
+Updates the <!-- TOPIC-DATA --> JSON block (drives the topic date-nav)
 and the <!-- TOPIC-NOSCRIPT --> fallback list, rebuilds the upcoming list
 from queue.json, appends to published.json, and dequeues the title if it
 came from the user's queue.
