@@ -1,0 +1,626 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="color-scheme" content="light" />
+  <link rel="icon" href="data:," />
+  <title>Vector databases: indexes, ANN search, and trade-offs &mdash; AI Engineering Learning Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Source+Sans+3:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #14212b; --muted: #53636f; --paper: #f6f8f7; --white: #ffffff;
+      --line: #cbd5d8; --navy: #163247; --navy-2: #21465e; --teal: #0b8174;
+      --teal-soft: #dff2ee; --orange: #d66332; --orange-soft: #f8e4d8;
+      --gold: #d8a524; --gold-soft: #f7edc8; --blue-soft: #e3eef4;
+      --red: #b3402e; --red-soft: #f9e3de; --green: #1e7a3c; --green-soft: #e2f2e6;
+      --shadow: 0 18px 45px rgba(20, 33, 43, .09); --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; color: var(--ink);
+      background: linear-gradient(rgba(20,33,43,.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(20,33,43,.035) 1px, transparent 1px), var(--paper);
+      background-size: 28px 28px;
+      font-family: "Source Sans 3", sans-serif; font-size: 17px; line-height: 1.58;
+    }
+    .shell { width: min(960px, calc(100% - 40px)); margin: 0 auto; }
+    .portal-nav{position:sticky;top:0;z-index:50;background:rgba(22,50,71,.97);border-bottom:1px solid rgba(255,255,255,.12)}
+    .portal-nav-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;flex-wrap:wrap}
+    .portal-brand{color:#fff;text-decoration:none;font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:15px}
+    .portal-brand span{color:var(--gold);font-weight:400}
+    .portal-links{display:flex;gap:18px;flex-wrap:wrap}
+    .portal-links a{color:#dbe7ee;text-decoration:none;font-size:14.5px}
+    .portal-links a:hover{color:#fff;text-decoration:underline}
+    .hero { padding: 56px 0 36px; }
+    .chapter-mark { display:inline-flex;align-items:center;gap:10px;color:var(--navy);
+      font:600 12px/1.2 "IBM Plex Mono",monospace;letter-spacing:.09em;text-transform:uppercase;margin-bottom:18px; }
+    .chapter-mark::before { content:"";width:42px;height:3px;background:var(--orange); }
+    h1 { font-size: clamp(36px, 5vw, 58px); line-height: 1.02; letter-spacing:-.03em; margin:0 0 14px; }
+    .lede { color: var(--muted); font-size: clamp(18px,2vw,22px); max-width: 64ch; margin:0 0 8px; }
+    .date-line { font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--muted); }
+    section.block { margin: 44px 0; }
+    h2 { font-size: 26px; letter-spacing:-.02em; margin:0 0 6px; display:flex;align-items:center;gap:12px; }
+    h2 .num { font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:600;color:var(--white);
+      background:var(--navy);border-radius:999px;min-width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center; }
+    .sub { color:var(--muted); margin:0 0 18px; max-width: 68ch; }
+    .card { background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+      padding:24px;box-shadow:var(--shadow); }
+    .skill-card { background:var(--navy);color:#eaf2f7;border-radius:var(--radius);padding:22px 24px;
+      font-family:"IBM Plex Mono",monospace;font-size:14.5px;overflow-x:auto;box-shadow:var(--shadow); }
+    .skill-card .k { color:var(--gold); }
+    .idea { font-size:21px;line-height:1.5;border-left:4px solid var(--teal);padding:6px 0 6px 20px;max-width:62ch; }
+    .idea strong { color:var(--navy); }
+    .mechanics { display:grid;gap:14px; }
+    .mech { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:18px 20px;
+      display:grid;grid-template-columns:44px 1fr;gap:14px;align-items:start; }
+    .mech .mnum { font-family:"IBM Plex Mono",monospace;font-weight:600;color:var(--teal);
+      background:var(--teal-soft);border-radius:10px;width:44px;height:44px;display:flex;align-items:center;justify-content:center; }
+    .mech h3 { margin:0 0 6px;font-size:18px; }
+    .mech p { margin:0;color:var(--muted);font-size:15.5px; }
+    .mech code, .inline-code { font-family:"IBM Plex Mono",monospace;font-size:.88em;background:var(--blue-soft);
+      padding:2px 7px;border-radius:6px;color:var(--navy); }
+    pre.code { background:#0f2233;color:#e8f1f5;border-radius:14px;padding:20px 22px;overflow-x:auto;
+      font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.6;margin:0; }
+    pre.code .c { color:#8ba3b0; } pre.code .s { color:#ffd479; } pre.code .k { color:#7fd6c2; }
+    .fail { border-left:4px solid var(--orange); }
+    .fail h3 .fix { display:block;margin-top:8px;font-size:15px;font-weight:500;color:var(--green); }
+    .ref-list { display:grid;gap:12px; }
+    .ref { display:flex;gap:14px;align-items:flex-start;background:var(--white);border:1px solid var(--line);
+      border-radius:14px;padding:16px 18px;text-decoration:none;color:inherit; }
+    .ref:hover { border-color:var(--teal); }
+    .ref .badge { flex:none;font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;letter-spacing:.06em;
+      padding:5px 10px;border-radius:999px;text-transform:uppercase; }
+    .badge.doc { background:var(--blue-soft);color:var(--navy); }
+    .badge.vid { background:var(--orange-soft);color:var(--orange); }
+    .ref h3 { margin:0 0 4px;font-size:17px; }
+    .ref p { margin:0;color:var(--muted);font-size:14.5px; }
+    .prompt-block { background:#0f2233;border-radius:var(--radius);overflow:hidden;margin-bottom:18px;box-shadow:var(--shadow); }
+    .prompt-top { display:flex;justify-content:space-between;align-items:center;gap:12px;
+      padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.12); }
+    .prompt-top strong { color:#fff;font-size:13px;letter-spacing:.06em;font-family:"IBM Plex Mono",monospace; }
+    .copy-btn { border:1px solid #6c8796;background:transparent;color:#fff;border-radius:6px;padding:7px 11px;
+      cursor:pointer;font-weight:700;font-size:14px; }
+    .copy-btn:hover { background:rgba(255,255,255,.1); }
+    .copy-btn:focus-visible { outline:2px solid var(--gold);outline-offset:2px; }
+    .prompt-text { color:#e8f1f5;font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.65;
+      padding:18px;white-space:pre-wrap;margin:0; }
+    .sr-only { position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0); }
+    .quiz-q { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px; }
+    .quiz-q .qq { font-weight:700;margin:0 0 12px;font-size:18px; }
+    .qopts { display:grid;gap:8px; }
+    .qopt { text-align:left;background:var(--paper);border:1px solid var(--line);border-radius:10px;
+      padding:12px 14px;cursor:pointer;font-size:15.5px;color:var(--ink); }
+    .qopt:hover:not(:disabled) { border-color:var(--navy); }
+    .qopt:disabled { cursor:default;opacity:.85; }
+    .qopt.correct { background:var(--green-soft);border-color:var(--green); }
+    .qopt.wrong { background:var(--red-soft);border-color:var(--red); }
+    .qexp { margin:12px 0 0;font-size:15px;color:var(--muted); }
+    .qexp strong.ok { color:var(--green); } .qexp strong.no { color:var(--red); }
+    #quiz-score { display:none;margin-top:8px;background:var(--navy);color:#fff;border-radius:14px;
+      padding:20px 24px;font-size:19px; }
+    #quiz-score strong { color:var(--gold); }
+    .fgrid { display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px; }
+    .fcard { perspective:900px;cursor:pointer;min-height:170px; }
+    .fcard-inner { position:relative;width:100%;height:100%;min-height:170px;transform-style:preserve-3d;transition:transform .45s; }
+    .fcard.flipped .fcard-inner { transform:rotateY(180deg); }
+    .fface { position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+      border-radius:14px;padding:18px;display:flex;align-items:center;justify-content:center;text-align:center;
+      border:1px solid var(--line);background:var(--white);box-shadow:var(--shadow);font-size:15.5px; }
+    .fface.front { font-weight:700;color:var(--navy); }
+    .fface.back { transform:rotateY(180deg);background:var(--teal-soft);color:var(--ink);font-size:14.5px; }
+    .fcard:focus-visible { outline:2px solid var(--teal);outline-offset:3px;border-radius:14px; }
+    .triggers { display:grid;gap:10px; }
+    .trigger { background:var(--gold-soft);border-radius:12px;padding:14px 18px;font-size:16px; }
+    .trigger strong { color:var(--navy); }
+    .back-link { display:inline-block;margin:8px 0 60px;font-weight:600;color:var(--teal);text-decoration:none;font-size:17px; }
+    .back-link:hover { text-decoration:underline; }
+    .fig { background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+      padding:12px;box-shadow:var(--shadow);overflow-x:auto; }
+    .fig svg { display:block;width:100%;height:auto; }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior:auto; } .fcard-inner{transition:none;} }
+  </style>
+
+</head>
+<body>
+<nav class="portal-nav">
+    <div class="shell portal-nav-inner">
+      <a class="portal-brand" href="../index.html">AI Engineering <span>· Learning Portal</span></a>
+      <div class="portal-links">
+        <a href="../index.html#daily-topics">Daily topics</a>
+        <a href="../index.html#loop">Loop</a>
+        <a href="../index.html#graph">Graph</a>
+        <a href="../index.html#harness">Harness</a>
+      </div>
+    </div>
+  </nav>
+  <div class="shell">
+
+    <header class="hero">
+      <div class="chapter-mark">Daily topic · AI engineering</div>
+      <h1>Vector databases: indexes, ANN search, and trade-offs</h1>
+      <p class="lede">Your embeddings are points in a high-dimensional space; finding the nearest ones is the whole retrieval problem. Exact search doesn't scale, so every vector database is an <em>approximate</em> nearest-neighbor machine — and the index you pick is a bet on the recall–latency–memory triangle.</p>
+      <p class="date-line">2026-09-17 · Topic 005</p>
+    </header>
+
+    <section class="block">
+      <h2><span class="num">01</span> The skill card</h2>
+      <p class="sub">Every topic on this portal is designed like a Codex skill: a name, a trigger, and concrete steps.</p>
+      <div class="skill-card"><pre style="margin:0">---
+<span class="k">name:</span> vector-databases
+<span class="k">description:</span> Reach for this when choosing, configuring, or debugging a
+  vector index: how HNSW and IVF make ANN search fast, which knobs
+  trade recall for latency and memory, and where filtered search breaks.
+---</pre></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">02</span> The one-idea version</h2>
+      <p class="idea">A vector database answers one question: <strong>"which of my million vectors point most like this one?"</strong> Checking every vector is exact but O(n) — too slow at scale — so ANN indexes organize vectors so a query only inspects a smart fraction of them. <strong>Every index is a trade on the recall–latency–memory triangle:</strong> HNSW buys speed with graph hops, IVF buys speed by searching clusters instead of the whole corpus, quantization buys memory by shrinking the vectors themselves.</p>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">03</span> The visual</h2>
+      <p class="sub">Three ways to find nearest neighbors: scan everything, partition the space, or descend a layered graph. The query visits less and less of the corpus as you move right.</p>
+      <div class="fig">
+      <svg viewBox="0 0 920 520" role="img" aria-label="Exact scan, IVF partitioning, and HNSW layered graph search for vector nearest neighbors">
+        <defs>
+          <marker id="arrv" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 1 L 9 5 L 0 9 z" fill="#53636f"/>
+          </marker>
+        </defs>
+        <g font-family="IBM Plex Mono, monospace" font-size="12">
+          <!-- Exact scan -->
+          <text x="20" y="30" fill="#163247" font-weight="600">EXACT SCAN</text>
+          <rect x="20" y="42" width="260" height="220" rx="14" fill="#f9e3de" stroke="#b3402e" stroke-width="1.5"/>
+          <text x="36" y="68" fill="#b3402e" font-size="11">query compared against EVERY vector</text>
+          <g fill="#b3402e" opacity="0.55">
+            <circle cx="60" cy="120" r="4"/><circle cx="100" cy="90" r="4"/><circle cx="140" cy="150" r="4"/>
+            <circle cx="180" cy="100" r="4"/><circle cx="220" cy="140" r="4"/><circle cx="90" cy="180" r="4"/>
+            <circle cx="150" cy="200" r="4"/><circle cx="200" cy="180" r="4"/><circle cx="240" cy="210" r="4"/>
+            <circle cx="60" cy="220" r="4"/><circle cx="120" cy="230" r="4"/><circle cx="180" cy="230" r="4"/>
+          </g>
+          <circle cx="230" cy="90" r="7" fill="#163247"/>
+          <text x="244" y="96" fill="#163247" font-weight="600" font-size="11">query</text>
+          <text x="36" y="250" fill="#b3402e" font-size="11">O(n · d) per query — exact, but</text>
+          <text x="36" y="266" fill="#b3402e" font-size="11">unusable past ~100k vectors</text>
+
+          <!-- IVF -->
+          <text x="330" y="30" fill="#163247" font-weight="600">IVF: SEARCH CLUSTERS, NOT VECTORS</text>
+          <rect x="330" y="42" width="260" height="220" rx="14" fill="#ffffff" stroke="#163247" stroke-width="1.5"/>
+          <text x="346" y="68" fill="#53636f" font-size="11">space partitioned into clusters</text>
+          <g fill="none" stroke="#0b8174" stroke-width="1.5" opacity="0.8">
+            <ellipse cx="430" cy="150" rx="80" ry="75"/>
+            <ellipse cx="430" cy="150" rx="80" ry="75" stroke-dasharray="0"/>
+          </g>
+          <ellipse cx="430" cy="150" rx="80" ry="75" fill="#dff2ee" stroke="#0b8174" stroke-width="2"/>
+          <ellipse cx="540" cy="120" rx="45" ry="55" fill="#ffffff" stroke="#cbd5d8" stroke-width="1.5"/>
+          <ellipse cx="400" cy="215" rx="50" ry="40" fill="#ffffff" stroke="#cbd5d8" stroke-width="1.5"/>
+          <g fill="#0b8174" opacity="0.7">
+            <circle cx="410" cy="130" r="4"/><circle cx="450" cy="150" r="4"/><circle cx="430" cy="175" r="4"/><circle cx="395" cy="160" r="4"/>
+          </g>
+          <g fill="#cbd5d8">
+            <circle cx="540" cy="110" r="4"/><circle cx="555" cy="130" r="4"/><circle cx="400" cy="210" r="4"/><circle cx="390" cy="225" r="4"/>
+          </g>
+          <circle cx="470" cy="110" r="7" fill="#163247"/>
+          <text x="482" y="104" fill="#163247" font-weight="600" font-size="11">query</text>
+          <line x1="470" y1="117" x2="448" y2="138" stroke="#d66332" stroke-width="2" marker-end="url(#arrv)"/>
+          <text x="346" y="250" fill="#0b8174" font-size="11">only the nprobe nearest clusters</text>
+          <text x="346" y="266" fill="#0b8174" font-size="11">are searched — the rest ignored</text>
+
+          <!-- HNSW -->
+          <text x="640" y="30" fill="#163247" font-weight="600">HNSW: DESCEND A LAYERED GRAPH</text>
+          <rect x="640" y="42" width="260" height="220" rx="14" fill="#ffffff" stroke="#163247" stroke-width="1.5"/>
+          <text x="656" y="68" fill="#53636f" font-size="11">coarse top layer → fine bottom layer</text>
+          <g stroke="#cbd5d8" stroke-width="1.5">
+            <line x1="700" y1="100" x2="790" y2="100"/>
+            <line x1="700" y1="100" x2="745" y2="150"/>
+            <line x1="790" y1="100" x2="745" y2="150"/>
+            <line x1="745" y1="150" x2="700" y2="205"/>
+            <line x1="745" y1="150" x2="790" y2="205"/>
+            <line x1="700" y1="205" x2="790" y2="205"/>
+            <line x1="790" y1="205" x2="830" y2="175"/>
+            <line x1="700" y1="205" x2="660" y2="175"/>
+          </g>
+          <g fill="#0b8174">
+            <circle cx="700" cy="100" r="6"/><circle cx="790" cy="100" r="6"/><circle cx="745" cy="150" r="6"/>
+            <circle cx="700" cy="205" r="6"/><circle cx="790" cy="205" r="6"/><circle cx="830" cy="175" r="6"/><circle cx="660" cy="175" r="6"/>
+          </g>
+          <text x="692" y="88" fill="#163247" font-size="10">layer 2 (sparse)</text>
+          <text x="690" y="252" fill="#163247" font-size="10">layer 0 (dense)</text>
+          <path d="M 770 60 L 750 140 L 745 190" stroke="#d66332" stroke-width="2.5" fill="none" marker-end="url(#arrv)"/>
+          <text x="780" y="70" fill="#d66332" font-size="11" font-weight="600">query</text>
+          <text x="656" y="250" fill="#0b8174" font-size="11">greedy hops: enter at top,</text>
+          <text x="656" y="266" fill="#0b8174" font-size="11">zoom in — ~log(n) hops</text>
+
+          <!-- Triangle -->
+          <text x="20" y="320" fill="#163247" font-weight="600">THE TRADE-OFF TRIANGLE</text>
+          <polygon points="170,360 80,500 260,500" fill="#e3eef4" stroke="#163247" stroke-width="1.5"/>
+          <text x="170" y="345" fill="#163247" font-weight="600" text-anchor="middle">RECALL</text>
+          <text x="60" y="522" fill="#163247" font-weight="600" text-anchor="middle" font-size="11">LATENCY</text>
+          <text x="280" y="522" fill="#163247" font-weight="600" text-anchor="middle" font-size="11">MEMORY</text>
+          <text x="170" y="430" fill="#53636f" font-size="11" text-anchor="middle">raise ef / nprobe →</text>
+          <text x="170" y="446" fill="#53636f" font-size="11" text-anchor="middle">more recall, more ms</text>
+          <text x="170" y="470" fill="#53636f" font-size="11" text-anchor="middle">PQ → less memory,</text>
+          <text x="170" y="486" fill="#53636f" font-size="11" text-anchor="middle">a little less recall</text>
+
+          <!-- Query path -->
+          <text x="330" y="320" fill="#163247" font-weight="600">A QUERY'S JOURNEY</text>
+          <g font-size="12">
+            <rect x="330" y="342" width="150" height="48" rx="8" fill="#ffffff" stroke="#163247" stroke-width="1.5"/>
+            <text x="344" y="362" fill="#163247">1. embed query</text>
+            <text x="344" y="378" fill="#53636f" font-size="10.5">same model as index</text>
+            <line x1="480" y1="366" x2="510" y2="366" stroke="#53636f" stroke-width="2" marker-end="url(#arrv)"/>
+            <rect x="510" y="342" width="150" height="48" rx="8" fill="#ffffff" stroke="#163247" stroke-width="1.5"/>
+            <text x="524" y="362" fill="#163247">2. ANN search</text>
+            <text x="524" y="378" fill="#53636f" font-size="10.5">HNSW hops / IVF probes</text>
+            <line x1="660" y1="366" x2="690" y2="366" stroke="#53636f" stroke-width="2" marker-end="url(#arrv)"/>
+            <rect x="690" y="342" width="150" height="48" rx="8" fill="#0b8174" stroke="#0b8174" stroke-width="1.5"/>
+            <text x="704" y="362" fill="#ffffff">3. top-k + filter</text>
+            <text x="704" y="378" fill="#e3eef4" font-size="10.5">metadata, payload</text>
+          </g>
+          <text x="330" y="420" fill="#53636f" font-size="12">the index structure is what the query never sees: it just returns neighbors.</text>
+          <text x="330" y="444" fill="#53636f" font-size="12">rule of thumb: HNSW is the default for recall-hungry search; IVF(+PQ) when</text>
+          <text x="330" y="468" fill="#53636f" font-size="12">vectors must fit in RAM — billions of them — and a point of recall can go.</text>
+          <text x="330" y="500" fill="#d66332" font-weight="600" font-size="12">measure recall@k on YOUR queries before trusting any default.</text>
+        </g>
+      </svg>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">04</span> How it works</h2>
+      <p class="sub">Six mechanics: why exact search dies, the two indexes that replaced it, the triangle they trade on, and the two things that silently break everything.</p>
+      <div class="mechanics">
+        <div class="mech"><div class="mnum">1</div><div>
+          <h3>Exact nearest-neighbor search doesn't survive scale</h3>
+          <p>Brute-force kNN compares the query against every vector: O(n × d) multiply-adds per query. A million 1536-dim vectors is ~1.5 billion operations — milliseconds on a GPU if you're lucky, but it never gets cheaper and doesn't parallelize across shards for free. <span class="inline-code">recall = 100%</span> is the only thing exact search has going for it.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">2</div><div>
+          <h3>HNSW: navigate a layered graph instead of scanning</h3>
+          <p>Hierarchical Navigable Small World builds layers of proximity graphs: the top layer is sparse (long jumps), the bottom layer dense (every vector, linked to its neighbors). A query enters at the top and greedily hops toward the nearest node, zooming in layer by layer — about O(log n) hops. Three knobs: <span class="inline-code">M</span> (links per node, index-time memory), <span class="inline-code">efConstruction</span> (build quality/speed), <span class="inline-code">ef</span> (search-time candidate list: bigger = more recall, more ms). This is the default index in most vector databases for a reason: best recall-per-millisecond on most workloads.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">3</div><div>
+          <h3>IVF: partition the space, search only nearby clusters</h3>
+          <p>Inverted File Index runs k-means over the corpus into <span class="inline-code">nlist</span> clusters; each vector lives in one bucket. At query time, find the <span class="inline-code">nprobe</span> nearest cluster centroids and search only those buckets. nprobe=1 is fast and lossy; nprobe→nlist is exact search with extra steps. Pair it with product quantization (PQ): compress each vector into a short code (e.g. 64 bytes) so a billion vectors fit in RAM — at a small, measurable recall cost.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">4</div><div>
+          <h3>Everything trades on the recall–latency–memory triangle</h3>
+          <p>There is no free lunch, only knobs. More <span class="inline-code">ef</span> / <span class="inline-code">nprobe</span> = more recall, more latency. Bigger <span class="inline-code">M</span> = more recall, more RAM. PQ/SQ quantization = much less memory, slightly less recall. Tune against <span class="inline-code">recall@k</span> — the fraction of the true top-k your index actually returns — measured on <em>your</em> queries, because ANN-benchmarks corpora are not your corpus.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">5</div><div>
+          <h3>The distance metric is part of the index, not a runtime choice</h3>
+          <p>HNSW and IVF indexes are built <em>for</em> one metric — cosine, dot product, or Euclidean. The metric must match how your embedding model was trained (most text models: cosine; normalize vectors first). Build the index with the wrong metric and recall degrades silently — the index still returns k neighbors, just the wrong ones.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">6</div><div>
+          <h3>Metadata filtering is where ANN search goes to die</h3>
+          <p>"Top-5 support docs from 2026" is a filter <em>plus</em> a vector search. Naive post-filtering (search, then discard non-matching) collapses recall when the filter is selective — the true matches were never in the candidate set. Prefer pre-filtering or filtered-aware indexes (most managed DBs handle this internally); always test recall <em>with</em> your filters on, since filtered recall can be dramatically worse than unfiltered.</p>
+        </div></div>
+      </div>
+    </section>
+    <section class="block">
+      <h2><span class="num">05</span> Code sketch</h2>
+      <p class="sub">A minimal IVF in 26 lines: partition vectors into clusters, probe the nearest ones, rank candidates by cosine. HNSW is the same idea — a smarter structure — with the same tuning knobs.</p>
+      <pre class="code"><span class="k">import</span> numpy <span class="k">as</span> np
+
+<span class="k">def</span> build_ivf(vecs, nlist=100):
+    <span class="c"># partition the corpus into nlist clusters (k-means; sklearn in real code)</span>
+    centroids = vecs[np.random.choice(len(vecs), nlist, replace=<span class="k">False</span>)]
+    buckets = {i: [] <span class="k">for</span> i <span class="k">in</span> range(nlist)}
+    <span class="k">for</span> i, v <span class="k">in</span> enumerate(vecs):
+        buckets[int(np.argmin([np.dot(v, c) <span class="k">for</span> c <span class="k">in</span> centroids]))].append(i)
+    <span class="k">return</span> centroids, buckets
+
+<span class="k">def</span> search_ivf(q, vecs, centroids, buckets, nprobe=4, k=5):
+    <span class="c"># search only the nprobe nearest clusters, then rank exactly</span>
+    sims = [np.dot(q, c) <span class="k">for</span> c <span class="k">in</span> centroids]
+    probes = np.argsort(sims)[-nprobe:]
+    cand = [i <span class="k">for</span> p <span class="k">in</span> probes <span class="k">for</span> i <span class="k">in</span> buckets[int(p)]]
+    ranked = sorted(cand, key=<span class="k">lambda</span> i: np.dot(q, vecs[i]), reverse=True)
+    <span class="k">return</span> ranked[:k]  <span class="c"># nprobe: recall knob. k: how many you want.</span></pre>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">06</span> Failure modes</h2>
+      <p class="sub">Named pitfalls, each with a one-line fix. Number one is completely silent — the index still returns neighbors, just the wrong ones.</p>
+      <div class="mechanics">
+        <div class="mech fail"><div class="mnum">✕</div><div>
+          <h3>Metric mismatch <span class="fix">Fix: build the index with the metric your embedding model expects (usually cosine, with normalized vectors); never change it at query time.</span></h3>
+          <p>HNSW/IVF graphs are built for one distance function. Query-time "switching" to cosine on an L2 index silently degrades ranking — and no error is ever raised.</p>
+        </div></div>
+        <div class="mech fail"><div class="mnum">✕</div><div>
+          <h3>Default recall settings <span class="fix">Fix: raise ef (HNSW) or nprobe (IVF) and measure recall@k on your own queries until the curve flattens.</span></h3>
+          <p>Defaults are tuned for benchmarks, not your corpus. ef=10 or nprobe=1 can quietly return 80% recall when you assumed 99% — retrieval misses you blame on chunking or the model.</p>
+        </div></div>
+        <div class="mech fail"><div class="mnum">✕</div><div>
+          <h3>Post-filtering selective metadata <span class="fix">Fix: pre-filter, use a filtered-aware index, or over-fetch (larger k) before filtering — and measure filtered recall, not just plain recall.</span></h3>
+          <p>"Docs from last week" matches 0.1% of the corpus. Post-filtered ANN returns empty or junk because the true matches were never in the probed set.</p>
+        </div></div>
+        <div class="mech fail"><div class="mnum">✕</div><div>
+          <h3>IVF clusters that never get rebuilt <span class="fix">Fix: retrain/rebuild IVF indexes on a schedule (or use HNSW, which inserts incrementally); watch recall decay after big ingests.</span></h3>
+          <p>IVF partitions are frozen at build time. New documents with shifted distribution land in wrong clusters — recall decays silently as the corpus drifts.</p>
+        </div></div>
+        <div class="mech fail"><div class="mnum">✕</div><div>
+          <h3>Benchmark-body syndrome <span class="fix">Fix: build a recall eval from your own query log; treat public ANN-benchmark numbers as orientation only.</span></h3>
+          <p>SIFT/GloVe benchmarks don't share your dimensionality, distribution, or filters. An index that wins ann-benchmarks can lose on your data — measure the triangle where you live.</p>
+        </div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">07</span> Go deeper</h2>
+      <p class="sub">Curated and real — the vendor guides, the index docs, and two videos that earn their runtime.</p>
+      <div class="ref-list">
+        <a class="ref" href="https://www.pinecone.io/learn/vector-database/">
+          <span class="badge doc">Docs</span>
+          <div><h3>Pinecone — What is a Vector Database &amp; How Does it Work?</h3><p>The canonical vendor primer: embeddings, vector DB vs. standalone index (FAISS), the indexing → querying → post-processing pipeline, and an algorithms section on PQ, LSH, HNSW, and random projection framed as accuracy-vs-speed trade-offs.</p></div>
+        </a>
+        <a class="ref" href="https://aws.amazon.com/blogs/database/optimize-generative-ai-applications-with-pgvector-indexing-a-deep-dive-into-ivfflat-and-hnsw-techniques/">
+          <span class="badge doc">Guide</span>
+          <div><h3>AWS Database Blog — pgvector Indexing: A Deep Dive into IVFFlat and HNSW</h3><p>The most hands-on IVFFlat-vs-HNSW comparison: K-means regions, lists and probes, the layered-graph search, m / ef_construction / ef_search knobs, and benchmarked recall-vs-latency trade-offs with real SQL examples.</p></div>
+        </a>
+        <a class="ref" href="https://www.youtube.com/watch?v=ciXIGkfsCxc">
+          <span class="badge vid">Video</span>
+          <div><h3>The Hot Path — "How Vector Databases Actually Work — It's Not Similarity Search"</h3><p>Seventeen minutes that match this topic's mental model exactly: why exact search dies at scale, the ANN recall/latency/memory bargain, HNSW "walking not scanning," recall as a dial, quantization — and the filtering pitfall.</p></div>
+        </a>
+        <a class="ref" href="https://www.youtube.com/watch?v=bEgT9JtX3Dk">
+          <span class="badge vid">Video</span>
+          <div><h3>cyber creed — "Your Vector Database Doesn't Actually Find the Nearest Match"</h3><p>A seven-minute mechanism teardown of HNSW in three moves (small-world graph → greedy walk → hierarchical express layers), the m / ef_construction / ef_search tuning dial, and where HNSW actually runs under the hood.</p></div>
+        </a>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">08</span> Sample prompts</h2>
+      <p class="sub">Copy-paste starters. Each one audits or designs one half of today's topic.</p>
+
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>THE INDEX CHOOSER</strong><button class="copy-btn" data-copy="px-indexchoose">Copy</button></div>
+        <p class="prompt-text" id="px-indexchoose">Act as a vector search engineer. Help me choose a vector index.
+Facts: corpus size {{N vectors}}, vector dimension {{e.g. 1536}},
+embedding model and intended metric {{cosine/dot/L2}},
+query load {{QPS}}, latency budget {{p99 ms}}, memory budget {{RAM}},
+filtering needs {{metadata fields, selectivity}}.
+Compare HNSW vs IVF(+PQ) vs managed options for MY facts on the
+recall–latency–memory triangle. Recommend ONE, with starting values
+for its knobs (M / ef / efConstruction, or nlist / nprobe / PQ bytes)
+and the recall@k target I should hold it to.</p>
+      </div>
+
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>THE RECALL DIAGNOSIS</strong><button class="copy-btn" data-copy="px-recalldiag">Copy</button></div>
+        <p class="prompt-text" id="px-recalldiag">Diagnose this ANN recall problem. Facts:
+- index: {{HNSW / IVF / managed service and its parameters}}
+- metric at build vs query: {{are they the same?}}
+- observed recall@k: {{measured how, on what queries}}
+- filters used: {{metadata fields and their selectivity}}
+Output a single root-cause verdict: metric mismatch / recall knobs
+too low / post-filtering selective filters / stale IVF partitions /
+benchmark-body syndrome — then the smallest knob change to test
+first, and exactly how to re-measure recall@k to confirm the fix.</p>
+      </div>
+
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>THE FILTERED-SEARCH PLAN</strong><button class="copy-btn" data-copy="px-filterplan">Copy</button></div>
+        <p class="prompt-text" id="px-filterplan">Design filtered vector search for this workload.
+Metadata fields: {{fields, types, typical selectivity}}
+Queries: {{example natural-language + filter combos}}
+Tell me: which filters should be pre-filtered vs indexed alongside
+vectors, what happens to recall if I post-filter instead, and how
+to test filtered recall@k (not just plain recall@k) with a query set
+I can generate from my logs. Flag any filter so selective that ANN
+search becomes the wrong tool entirely.</p>
+      </div>
+      <p class="sr-only" aria-live="polite" id="live-status"></p>
+    </section>
+    <section class="block">
+      <h2><span class="num">09</span> Quiz</h2>
+      <p class="sub">Five questions on judgment, not trivia. Click an answer to check yourself.</p>
+      <div id="quiz">
+        <div class="quiz-q" data-answer="2">
+          <p class="qq">1. Your HNSW index returns results in 8ms but recall@10 is 0.82 and you need 0.97. What do you change first?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">Increase M — more links per node makes search faster.</button>
+            <button class="qopt" data-i="1">Switch to exact search — 0.82 recall means ANN is unusable.</button>
+            <button class="qopt" data-i="2">Increase ef — the search-time candidate list. More candidates explored = more recall, at the cost of latency.</button>
+            <button class="qopt" data-i="3">Re-embed the corpus with a bigger model.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="1">
+          <p class="qq">2. You're indexing with an L2-built HNSW index but ranking queries with cosine at query time. What happens?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">Nothing — the index adapts to the query-time metric automatically.</button>
+            <button class="qopt" data-i="1">Recall degrades silently — the graph was built for one distance function; the index still returns k neighbors, just the wrong ones.</button>
+            <button class="qopt" data-i="2">The query fails with a metric-mismatch error.</button>
+            <button class="qopt" data-i="3">Latency doubles but recall is unaffected.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="0">
+          <p class="qq">3. An IVF index with nprobe=1 answers in 3ms but misses obvious matches. What does raising nprobe do?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">Searches more of the nearest clusters — recall climbs toward exact search as nprobe approaches nlist, latency climbs with it.</button>
+            <button class="qopt" data-i="1">Compresses vectors further — saves memory but costs recall.</button>
+            <button class="qopt" data-i="2">Adds more clusters — makes each bucket smaller and queries faster.</button>
+            <button class="qopt" data-i="3">Re-trains the k-means centroids on the new documents.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="3">
+          <p class="qq">4. You need "top-5 invoices from March" — a filter matching 0.2% of a 2M-vector corpus — on an ANN index. Best approach?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">Post-filter: run plain ANN top-5, then keep the March ones.</button>
+            <button class="qopt" data-i="1">Drop the filter — ANN search works better without metadata constraints.</button>
+            <button class="qopt" data-i="2">Raise ef to maximum; brute force inside the candidate set fixes selectivity.</button>
+            <button class="qopt" data-i="3">Pre-filter or use a filtered-aware index — with 0.2% selectivity, the true matches were likely never in the ANN candidate set.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="2">
+          <p class="qq">5. When would you pick IVF with product quantization over HNSW?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">Always — IVF is strictly better on every workload.</button>
+            <button class="qopt" data-i="1">When you need the highest possible recall and RAM is unlimited.</button>
+            <button class="qopt" data-i="2">When the corpus is huge (billions of vectors) and must fit in RAM — PQ shrinks each vector to tens of bytes at a small, measurable recall cost.</button>
+            <button class="qopt" data-i="3">When you never need to add new vectors after the initial build.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+      </div>
+      <div id="quiz-score" role="status"></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">10</span> Flashcards</h2>
+      <p class="sub">Click a card — or tab to it and press Enter — to flip it.</p>
+      <div class="fgrid">
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: ANN search"><div class="fcard-inner">
+          <div class="fface front">ANN search</div>
+          <div class="fface back">Approximate nearest-neighbor search: trades a small, measured recall loss for orders-of-magnitude faster queries than exact O(n) scan.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: HNSW"><div class="fcard-inner">
+          <div class="fface front">HNSW</div>
+          <div class="fface back">Hierarchical Navigable Small World: layered proximity graphs; queries greedily hop from sparse top layers to dense bottom ones — ~O(log n). The default index for recall-hungry search.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: ef"><div class="fcard-inner">
+          <div class="fface front">ef (HNSW)</div>
+          <div class="fface back">Search-time candidate list size. Bigger ef = more candidates explored = higher recall, higher latency. The first knob to turn when recall is low.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: IVF"><div class="fcard-inner">
+          <div class="fface front">IVF</div>
+          <div class="fface back">Inverted File Index: k-means partitions the corpus into nlist clusters; queries search only the nprobe nearest clusters instead of the whole corpus.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: nprobe"><div class="fcard-inner">
+          <div class="fface front">nprobe</div>
+          <div class="fface back">How many IVF clusters a query searches. nprobe=1 is fast and lossy; nprobe→nlist approaches exact search. IVF's recall knob.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: product quantization"><div class="fcard-inner">
+          <div class="fface front">Product quantization (PQ)</div>
+          <div class="fface back">Compresses each vector into a short code (tens of bytes) so billions of vectors fit in RAM — at a small, measurable recall cost. A memory knob.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: recall at k"><div class="fcard-inner">
+          <div class="fface front">recall@k</div>
+          <div class="fface back">The fraction of the true top-k nearest neighbors your index actually returns. The recall side of the triangle — measure it on YOUR queries, not benchmarks.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: distance metric"><div class="fcard-inner">
+          <div class="fface front">Distance metric</div>
+          <div class="fface back">Cosine, dot product, or Euclidean — built INTO the index, not a runtime choice. Must match the embedding model's training; mismatches silently degrade ranking.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: filtered search"><div class="fcard-inner">
+          <div class="fface front">Filtered search</div>
+          <div class="fface back">Vector search + metadata filter. Post-filtering selective filters collapses recall — prefer pre-filtering or filtered-aware indexes, and measure filtered recall@k.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: the triangle"><div class="fcard-inner">
+          <div class="fface front">The recall–latency–memory triangle</div>
+          <div class="fface back">Every index knob buys one corner with another's currency: ef/nprobe trade latency for recall, M trades RAM for recall, PQ trades recall for memory. No free lunch.</div>
+        </div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">11</span> Reach for this when…</h2>
+      <div class="triggers">
+        <div class="trigger"><strong>You're choosing a vector store for a RAG system or agent memory</strong> — pick the index (HNSW default, IVF+PQ at billion scale) and set recall@k targets before you commit.</div>
+        <div class="trigger"><strong>Retrieval recall is low and chunking/embeddings already check out</strong> — raise ef / nprobe, verify the metric matches the embedding model, and check filtered queries separately.</div>
+        <div class="trigger"><strong>You're adding metadata filters to vector search</strong> — selective filters plus post-filtering is the classic silent recall killer; plan pre-filtering from day one.</div>
+      </div>
+    </section>
+
+    <a class="back-link" href="../index.html#daily-topics">← Back to the learning portal</a>
+  </div>
+
+  <script>
+    // copy buttons
+    const status = document.getElementById('live-status');
+    document.querySelectorAll('.copy-btn').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const target = document.getElementById(button.dataset.copy);
+        const text = target.innerText;
+        try {
+          await navigator.clipboard.writeText(text);
+          const original = button.textContent;
+          button.textContent = 'Copied';
+          status.textContent = 'Prompt copied to clipboard.';
+          setTimeout(() => button.textContent = original, 1600);
+        } catch {
+          const range = document.createRange();
+          range.selectNodeContents(target);
+          const selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+          status.textContent = 'Prompt selected. Copy it with your device copy command.';
+        }
+      });
+    });
+
+    // quiz
+    const explanations = [
+      ["More links per node (M) buys index-time quality and memory, not search recall — ef is the search-time lever.",
+       "ANN isn't unusable at 0.82 — that's a knob problem, not an architecture problem. Exact search at your scale would blow the latency budget.",
+       "Right. ef sizes the search-time candidate list: raise it until recall@k hits target, watching latency climb with it.",
+       "The corpus is embedded fine — the search structure is under-exploring. Fix the index knobs before touching the embeddings."],
+      ["Wrong — nothing adapts. The graph edges were chosen by L2 distances; cosine ranking over them finds different neighbors.",
+       "Right. The index still returns k neighbors with zero errors — they're just the wrong ones. Always build and query with the same metric.",
+       "No error is ever raised — that's what makes metric mismatch the nastiest silent failure in vector search.",
+       "Latency barely moves; it's recall that degrades, because the search structure optimizes the wrong geometry."],
+      ["Right. Each probed cluster adds candidates; at nprobe=nlist you've done exact search with partitioning overhead. Latency scales with probes.",
+       "That's product quantization — a memory knob, not what nprobe controls.",
+       "More clusters (nlist) is a build-time choice; nprobe is the query-time knob that decides how many get searched.",
+       "Centroid retraining is maintenance (for corpus drift), unrelated to the per-query nprobe setting."],
+      ["Post-filtering top-5 against a 0.2%-selectivity filter almost certainly returns zero or junk — the March invoices were never probed.",
+       "The filter is the user's requirement — dropping it changes the product, not the index.",
+       "Max ef explores more graph, but the graph still optimizes pure vector similarity — selective filters need structural help, not bigger candidates.",
+       "Right. With extreme selectivity, filter first (or use a filtered-aware index) and always measure filtered recall@k, not plain recall@k."],
+      ["Nothing is strictly better — that's the whole triangle. HNSW wins recall-per-ms; IVF+PQ wins memory at scale.",
+       "Unlimited RAM and max recall points to HNSW or exact search, not IVF+PQ — quantization's whole point is saving memory.",
+       "Right. PQ compresses vectors to tens of bytes so billion-scale corpora fit in RAM; HNSW's graph edges would blow the memory budget.",
+       "Both support inserts — HNSW incrementally, IVF better with periodic rebuilds. Insert support isn't the differentiator here."]
+    ];
+    const questions = [...document.querySelectorAll('.quiz-q')];
+    let score = 0, answered = 0;
+    questions.forEach((q, qi) => {
+      const correct = parseInt(q.dataset.answer, 10);
+      const exp = q.querySelector('.qexp');
+      q.querySelectorAll('.qopt').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          if (q.dataset.done) return;
+          q.dataset.done = "1";
+          const chosen = parseInt(btn.dataset.i, 10);
+          const ok = chosen === correct;
+          q.querySelectorAll('.qopt').forEach((b) => {
+            b.disabled = true;
+            if (parseInt(b.dataset.i, 10) === correct) b.classList.add('correct');
+          });
+          if (!ok) btn.classList.add('wrong');
+          else score++;
+          answered++;
+          exp.hidden = false;
+          exp.innerHTML = (ok ? '<strong class="ok">Correct.</strong> ' : '<strong class="no">Not quite.</strong> ') + explanations[qi][chosen];
+          if (answered === questions.length) {
+            const box = document.getElementById('quiz-score');
+            box.style.display = 'block';
+            const verdict = score === 5 ? "Flawless — you tune the triangle like a vector engineer."
+              : score >= 3 ? "Solid. Re-read the two you missed; they're the most expensive failures."
+              : "Worth a second pass — sections 04 and 06 are the short path back.";
+            box.innerHTML = 'You scored <strong>' + score + ' / 5</strong>. ' + verdict;
+            box.scrollIntoView({behavior: 'smooth', block: 'nearest'});
+          }
+        });
+      });
+    });
+
+    // flashcards
+    document.querySelectorAll('.fcard').forEach((card) => {
+      const flip = () => card.classList.toggle('flipped');
+      card.addEventListener('click', flip);
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); }
+      });
+    });
+  </script>
+
+</body>
+</html>

@@ -26,5 +26,12 @@
     "date": "2026-09-16",
     "summary": "The two unglamorous decisions that determine 80% of retrieval quality: how you cut documents into self-contained chunks, and how you turn them into vectors. Cosine similarity as an angle, the one-model rule, and the token-level eval that keeps chunking honest.",
     "skill": "chunking-embeddings"
+  },
+  {
+    "slug": "2026-09-17-vector-databases",
+    "title": "Vector databases: indexes, ANN search, and trade-offs",
+    "date": "2026-09-17",
+    "summary": "Your embeddings are points in space; finding the nearest ones is the retrieval problem. Why exact search dies at scale, how HNSW and IVF make ANN fast, and the recall\u2013latency\u2013memory triangle every index trades on.",
+    "skill": "vector-databases"
   }
 ]
