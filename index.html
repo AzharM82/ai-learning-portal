@@ -404,16 +404,35 @@
     .upcoming-list{margin:0;padding-left:20px;color:var(--muted);display:grid;gap:6px}
     .shell{max-width:1120px;margin:0 auto;padding:0 20px}
     .date-browser{display:grid;grid-template-columns:300px minmax(0,1fr);gap:22px;margin:28px 0 40px;align-items:start}
-    .nav-pane{background:var(--white);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:10px;max-height:560px;overflow:auto}
-    .nav-month{padding:12px 12px 4px;font:600 11px "IBM Plex Mono",monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
-    .nav-item{display:block;width:100%;text-align:left;border:1px solid transparent;background:transparent;border-radius:10px;padding:10px 12px;cursor:pointer}
-    .nav-item:hover{background:var(--blue-soft)}
-    .nav-item[aria-selected="true"]{background:var(--navy);border-color:var(--navy)}
-    .nav-item[aria-selected="true"] .nav-title{color:#fff}
-    .nav-item[aria-selected="true"] .nav-date{color:var(--gold)}
-    .nav-item:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
-    .nav-date{display:block;font:600 11px "IBM Plex Mono",monospace;color:var(--teal);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px}
-    .nav-title{display:block;font-size:15px;font-weight:600;line-height:1.35;color:var(--ink)}
+    .date-pane{background:var(--white);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px}
+    .progress-wrap{margin-bottom:14px}
+    .progress-label{font:600 12px "IBM Plex Mono",monospace;color:var(--navy);margin-bottom:6px}
+    .progress-bar{height:8px;border-radius:99px;background:#e7ecee;overflow:hidden}
+    .progress-bar > div{height:100%;width:0;background:var(--teal);border-radius:99px;transition:width .3s}
+    .cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+    .cal-head button{border:1px solid var(--navy);background:transparent;color:var(--navy);border-radius:8px;width:38px;height:38px;font-size:20px;line-height:1;cursor:pointer;font-weight:700}
+    .cal-head button:hover:not(:disabled){background:var(--blue-soft)}
+    .cal-head button:disabled{opacity:.25;cursor:default}
+    #cal-title{font:600 14px "IBM Plex Mono",monospace;color:var(--navy)}
+    .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+    .cal-dow{font:600 10px "IBM Plex Mono",monospace;color:var(--muted);text-align:center;padding:4px 0;text-transform:uppercase}
+    .cal-day{position:relative;aspect-ratio:1;border:1px solid transparent;background:transparent;border-radius:8px;font:500 13px "IBM Plex Mono",monospace;color:#9aa7ae;min-height:34px;padding:0}
+    .cal-day.has-topics{cursor:pointer;color:var(--navy);font-weight:600;border-color:var(--line);background:#fff}
+    .cal-day.has-topics:hover{background:var(--blue-soft)}
+    .cal-day.has-topics .dot{position:absolute;left:50%;bottom:5px;transform:translateX(-50%);width:5px;height:5px;border-radius:50%;background:var(--orange)}
+    .cal-day.is-done{border-color:var(--teal)}
+    .cal-day.is-done .dot{background:none;width:auto;height:auto;bottom:4px;font-size:12px;font-weight:700;color:var(--teal)}
+    .cal-day[aria-pressed="true"]{background:var(--navy);color:#fff;border-color:var(--navy)}
+    .cal-day[aria-pressed="true"] .dot{background:var(--gold)}
+    .cal-day[aria-pressed="true"].is-done .dot{background:none;color:var(--gold)}
+    .cal-day:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+    .cal-hint{margin:12px 0 0;font-size:13px;color:var(--muted);display:flex;align-items:center;gap:8px}
+    .dot-key{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--orange)}
+    .done-key{color:var(--teal);font-weight:700}
+    .done-btn{margin-top:10px;border:1px solid var(--teal);background:transparent;color:var(--teal);border-radius:8px;padding:8px 12px;font-weight:700;font-size:14px;cursor:pointer}
+    .done-btn:hover{background:var(--teal-soft)}
+    .done-btn[aria-pressed="true"]{background:var(--teal);color:#fff;border-color:var(--teal)}
+    .done-btn:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
     .topic-pane{background:var(--white);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px;min-height:280px}
     .topic-pane h3{margin:0 0 4px;font-size:22px}
     .topic-count{font:500 12px "IBM Plex Mono",monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px}
@@ -783,109 +802,150 @@ Then:
       });
     }
 
-    // Date-based topic navigation (left sidebar, newest first)
+    // Calendar topic browser with per-day completion tracking (localStorage)
     document.addEventListener('DOMContentLoaded', function () {
       const dataEl = document.getElementById('topic-data');
-      const nav = document.getElementById('topic-nav');
-      if (!dataEl || !nav) return;
+      const grid = document.getElementById('cal-grid');
+      if (!dataEl || !grid) return;
       let topics = [];
       try { topics = JSON.parse(dataEl.textContent); } catch { return; }
       const byDate = {};
       topics.forEach(t => { (byDate[t.date] = byDate[t.date] || []).push(t); });
-      const dates = Object.keys(byDate).sort().reverse();
+      const dates = Object.keys(byDate).sort();
       if (!dates.length) return;
 
+      const LS_KEY = 'ai-portal-completed-v1';
+      const loadDone = () => {
+        try { return new Set(JSON.parse(localStorage.getItem(LS_KEY) || '[]')); }
+        catch { return new Set(); }
+      };
+      const done = loadDone();
+      const saveDone = () => {
+        try { localStorage.setItem(LS_KEY, JSON.stringify([...done])); } catch {}
+      };
+      const dayDone = iso => (byDate[iso] || []).every(t => done.has(t.slug));
+
+      const title = document.getElementById('cal-title');
+      const prev = document.getElementById('cal-prev');
+      const next = document.getElementById('cal-next');
       const listWrap = document.getElementById('topic-list');
       const dateHead = document.getElementById('topics-for-date');
       const countEl = document.getElementById('topic-count');
+      const progressText = document.getElementById('progress-text');
+      const progressFill = document.getElementById('progress-fill');
+      const progressBar = document.getElementById('progress-bar');
+      const live = document.getElementById('live-status');
       const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+      const DOW = ['Su','Mo','Tu','We','Th','Fr','Sa'];
 
-      let selected = dates[0];
+      let parts = dates[dates.length - 1].split('-').map(Number);
+      let y = parts[0], m = parts[1];
+      let selected = dates[dates.length - 1];
 
       const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-      const partsOf = iso => iso.split('-').map(Number);
-      const fmtShort = iso => {
-        const p = partsOf(iso);
-        return new Date(p[0], p[1] - 1, p[2]).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
-      };
-      const fmtLong = iso => {
-        const p = partsOf(iso);
+      const fmtDate = iso => {
+        const p = iso.split('-').map(Number);
         return new Date(p[0], p[1] - 1, p[2]).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
       };
-      const monthOf = iso => { const p = partsOf(iso); return MONTHS[p[1] - 1] + ' ' + p[0]; };
+      const isoOf = d => y + '-' + String(m).padStart(2, '0') + '-' + String(d).padStart(2, '0');
 
-      function buildNav() {
-        nav.innerHTML = '';
-        let lastMonth = '';
-        dates.forEach(iso => {
-          const mo = monthOf(iso);
-          if (mo !== lastMonth) {
-            lastMonth = mo;
-            const h = document.createElement('div');
-            h.className = 'nav-month';
-            h.textContent = mo;
-            nav.appendChild(h);
-          }
-          const items = byDate[iso];
+      function renderProgress() {
+        const total = dates.length;
+        const ndone = dates.filter(dayDone).length;
+        progressText.textContent = ndone + ' of ' + total + ' day' + (total === 1 ? '' : 's') + ' completed';
+        const pct = total ? Math.round(ndone / total * 100) : 0;
+        progressFill.style.width = pct + '%';
+        progressBar.setAttribute('aria-valuenow', String(pct));
+      }
+
+      function renderCal() {
+        title.textContent = MONTHS[m - 1] + ' ' + y;
+        grid.innerHTML = '';
+        DOW.forEach(d => {
+          const s = document.createElement('div');
+          s.className = 'cal-dow';
+          s.textContent = d;
+          grid.appendChild(s);
+        });
+        const first = new Date(y, m - 1, 1).getDay();
+        const days = new Date(y, m, 0).getDate();
+        for (let i = 0; i < first; i++) grid.appendChild(document.createElement('div'));
+        for (let d = 1; d <= days; d++) {
+          const iso = isoOf(d);
+          const n = (byDate[iso] || []).length;
           const b = document.createElement('button');
           b.type = 'button';
-          b.className = 'nav-item';
-          b.setAttribute('role', 'option');
-          b.dataset.date = iso;
-          b.setAttribute('aria-selected', iso === selected ? 'true' : 'false');
-          b.setAttribute('aria-label', fmtLong(iso) + ' — ' + items.map(t => t.title).join('; '));
-          const label = items.length > 1 ? items.length + ' topics' : items[0].title;
-          b.innerHTML = '<span class="nav-date">' + esc(fmtShort(iso)) + '</span>' +
-                        '<span class="nav-title">' + esc(label) + '</span>';
-          b.addEventListener('click', () => select(iso, false));
-          nav.appendChild(b);
-        });
+          b.className = 'cal-day';
+          if (n) {
+            const finished = dayDone(iso);
+            b.classList.add('has-topics');
+            if (finished) b.classList.add('is-done');
+            b.setAttribute('aria-pressed', iso === selected ? 'true' : 'false');
+            b.setAttribute('aria-label', fmtDate(iso) + ' — ' + n + ' topic' + (n > 1 ? 's' : '') + (finished ? ', completed' : ''));
+            b.innerHTML = d + '<span class="dot" aria-hidden="true">' + (finished ? '✓' : '') + '</span>';
+            b.addEventListener('click', () => { selected = iso; renderCal(); renderTopics(); });
+          } else {
+            b.disabled = true;
+            b.textContent = d;
+            b.setAttribute('aria-label', fmtDate(iso) + ' — no topics');
+          }
+          grid.appendChild(b);
+        }
+        const cur = y + '-' + String(m).padStart(2, '0');
+        prev.disabled = cur <= dates[0].slice(0, 7);
+        next.disabled = cur >= dates[dates.length - 1].slice(0, 7);
       }
-
-      function select(iso, focus) {
-        selected = iso;
-        nav.querySelectorAll('.nav-item').forEach(el => {
-          const on = el.dataset.date === iso;
-          el.setAttribute('aria-selected', on ? 'true' : 'false');
-          if (on && focus) el.focus();
-        });
-        renderTopics();
-      }
-
-      nav.addEventListener('keydown', event => {
-        const i = dates.indexOf(selected);
-        let j = null;
-        if (event.key === 'ArrowDown') j = Math.min(i + 1, dates.length - 1);
-        else if (event.key === 'ArrowUp') j = Math.max(i - 1, 0);
-        else if (event.key === 'Home') j = 0;
-        else if (event.key === 'End') j = dates.length - 1;
-        if (j === null || j === i) return;
-        event.preventDefault();
-        select(dates[j], true);
-      });
 
       function renderTopics() {
         const items = byDate[selected] || [];
-        dateHead.textContent = fmtLong(selected);
+        dateHead.textContent = fmtDate(selected);
         countEl.textContent = items.length + ' topic' + (items.length === 1 ? '' : 's');
-        listWrap.innerHTML = items.map(t =>
-          '<li><h4><a href="topics/' + esc(t.slug) + '.html">' + esc(t.title) + '</a></h4>' +
-          '<p>' + esc(t.summary) + '</p><div class="tskill">' + esc(t.skill) + '</div></li>'
-        ).join('');
+        listWrap.innerHTML = items.map(t => {
+          const isDone = done.has(t.slug);
+          return '<li><h4><a href="topics/' + esc(t.slug) + '.html">' + esc(t.title) + '</a></h4>' +
+            '<p>' + esc(t.summary) + '</p><div class="tskill">' + esc(t.skill) + '</div>' +
+            '<button type="button" class="done-btn" data-slug="' + esc(t.slug) + '" aria-pressed="' + isDone + '">' +
+            (isDone ? '✓ Completed' : 'Mark as completed') + '</button></li>';
+        }).join('');
+        listWrap.querySelectorAll('.done-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const slug = btn.getAttribute('data-slug');
+            const nowDone = !done.has(slug);
+            if (nowDone) done.add(slug); else done.delete(slug);
+            saveDone();
+            renderCal();
+            renderTopics();
+            renderProgress();
+            if (live) live.textContent = nowDone ? 'Marked as completed.' : 'Marked as not completed.';
+          });
+        });
       }
 
-      buildNav();
+      prev.addEventListener('click', () => { m--; if (m < 1) { m = 12; y--; } renderCal(); });
+      next.addEventListener('click', () => { m++; if (m > 12) { m = 1; y++; } renderCal(); });
+      renderCal();
       renderTopics();
+      renderProgress();
     });
   </script>
 <section class="daily-section" id="daily-topics">
   <div class="shell">
     <div class="chapter-mark">One new topic every day</div>
     <h2>Daily topics</h2>
-    <p class="section-lede">Browse every topic by date — newest first. Select a date on the left to see what was published, then open the full lesson with its quiz and flashcards.</p>
+    <p class="section-lede">Pick a date on the calendar to see that day's topic — every lesson ships with references, sample prompts, a quiz, and flashcards. Mark a lesson completed to track your progress.</p>
     <div class="date-browser">
-      <div class="nav-pane">
-        <div id="topic-nav" role="listbox" aria-label="Topics by date, newest first"></div>
+      <div class="date-pane">
+        <div class="progress-wrap">
+          <div class="progress-label" id="progress-text">0 of 0 days completed</div>
+          <div class="progress-bar" id="progress-bar" role="progressbar" aria-labelledby="progress-text" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="progress-fill"></div></div>
+        </div>
+        <div class="cal-head">
+          <button type="button" id="cal-prev" aria-label="Previous month">‹</button>
+          <div id="cal-title" aria-live="polite"></div>
+          <button type="button" id="cal-next" aria-label="Next month">›</button>
+        </div>
+        <div class="cal-grid" id="cal-grid" role="group" aria-label="Publication dates"></div>
+        <p class="cal-hint"><span class="dot-key" aria-hidden="true"></span>Has topics <span class="done-key" aria-hidden="true">✓</span>Completed</p>
       </div>
       <div class="topic-pane" aria-live="polite">
         <h3 id="topics-for-date"></h3>
