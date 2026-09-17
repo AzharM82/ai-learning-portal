@@ -851,7 +851,11 @@ Then:
       const grid = document.getElementById('cal-grid');
       if (!dataEl || !grid) return;
       let topics = [];
-      try { topics = JSON.parse(dataEl.textContent); } catch { return; }
+      // NOTE: the TOPIC-DATA anchor comment lives inside this script tag as raw
+      // text, so strip HTML comments before parsing (a real browser's
+      // textContent includes them, which would make JSON.parse throw).
+      const raw = dataEl.textContent.replace(/<!--[\s\S]*?-->/g, '');
+      try { topics = JSON.parse(raw); } catch { return; }
       const byDate = {};
       topics.forEach(t => { (byDate[t.date] = byDate[t.date] || []).push(t); });
       const dates = Object.keys(byDate).sort();
