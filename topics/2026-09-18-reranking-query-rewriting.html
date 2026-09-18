@@ -1,0 +1,632 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="color-scheme" content="light" />
+  <link rel="icon" href="data:," />
+  <title>Re-ranking and query rewriting for retrieval quality &mdash; AI Engineering Learning Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Source+Sans+3:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #14212b; --muted: #53636f; --paper: #f6f8f7; --white: #ffffff;
+      --line: #cbd5d8; --navy: #163247; --navy-2: #21465e; --teal: #0b8174;
+      --teal-soft: #dff2ee; --orange: #d66332; --orange-soft: #f8e4d8;
+      --gold: #d8a524; --gold-soft: #f7edc8; --blue-soft: #e3eef4;
+      --red: #b3402e; --red-soft: #f9e3de; --green: #1e7a3c; --green-soft: #e2f2e6;
+      --shadow: 0 18px 45px rgba(20, 33, 43, .09); --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; color: var(--ink);
+      background: linear-gradient(rgba(20,33,43,.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(20,33,43,.035) 1px, transparent 1px), var(--paper);
+      background-size: 28px 28px;
+      font-family: "Source Sans 3", sans-serif; font-size: 17px; line-height: 1.58;
+    }
+    .shell { width: min(960px, calc(100% - 40px)); margin: 0 auto; }
+    .portal-nav{position:sticky;top:0;z-index:50;background:rgba(22,50,71,.97);border-bottom:1px solid rgba(255,255,255,.12)}
+    .portal-nav-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;flex-wrap:wrap}
+    .portal-brand{color:#fff;text-decoration:none;font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:15px}
+    .portal-brand span{color:var(--gold);font-weight:400}
+    .portal-links{display:flex;gap:18px;flex-wrap:wrap}
+    .portal-links a{color:#dbe7ee;text-decoration:none;font-size:14.5px}
+    .portal-links a:hover{color:#fff;text-decoration:underline}
+    .hero { padding: 56px 0 36px; }
+    .chapter-mark { display:inline-flex;align-items:center;gap:10px;color:var(--navy);
+      font:600 12px/1.2 "IBM Plex Mono",monospace;letter-spacing:.09em;text-transform:uppercase;margin-bottom:18px; }
+    .chapter-mark::before { content:"";width:42px;height:3px;background:var(--orange); }
+    h1 { font-size: clamp(36px, 5vw, 58px); line-height: 1.02; letter-spacing:-.03em; margin:0 0 14px; }
+    .lede { color: var(--muted); font-size: clamp(18px,2vw,22px); max-width: 64ch; margin:0 0 8px; }
+    .date-line { font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--muted); }
+    section.block { margin: 44px 0; }
+    h2 { font-size: 26px; letter-spacing:-.02em; margin:0 0 6px; display:flex;align-items:center;gap:12px; }
+    h2 .num { font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:600;color:var(--white);
+      background:var(--navy);border-radius:999px;min-width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center; }
+    .sub { color:var(--muted); margin:0 0 18px; max-width: 68ch; }
+    .card { background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+      padding:24px;box-shadow:var(--shadow); }
+    .skill-card { background:var(--navy);color:#eaf2f7;border-radius:var(--radius);padding:22px 24px;
+      font-family:"IBM Plex Mono",monospace;font-size:14.5px;overflow-x:auto;box-shadow:var(--shadow); }
+    .skill-card .k { color:var(--gold); }
+    .idea { font-size:21px;line-height:1.5;border-left:4px solid var(--teal);padding:6px 0 6px 20px;max-width:62ch; }
+    .idea strong { color:var(--navy); }
+    .mechanics { display:grid;gap:14px; }
+    .mech { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:18px 20px;
+      display:grid;grid-template-columns:44px 1fr;gap:14px;align-items:start; }
+    .mech .mnum { font-family:"IBM Plex Mono",monospace;font-weight:600;color:var(--teal);
+      background:var(--teal-soft);border-radius:10px;width:44px;height:44px;display:flex;align-items:center;justify-content:center; }
+    .mech h3 { margin:0 0 6px;font-size:18px; }
+    .mech p { margin:0;color:var(--muted);font-size:15.5px; }
+    .mech code, .inline-code { font-family:"IBM Plex Mono",monospace;font-size:.88em;background:var(--blue-soft);
+      padding:2px 7px;border-radius:6px;color:var(--navy); }
+    pre.code { background:#0f2233;color:#e8f1f5;border-radius:14px;padding:20px 22px;overflow-x:auto;
+      font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.6;margin:0; }
+    pre.code .c { color:#8ba3b0; } pre.code .s { color:#ffd479; } pre.code .k { color:#7fd6c2; }
+    .fail { border-left:4px solid var(--orange); }
+    .fail h3 .fix { display:block;margin-top:8px;font-size:15px;font-weight:500;color:var(--green); }
+    .ref-list { display:grid;gap:12px; }
+    .ref { display:flex;gap:14px;align-items:flex-start;background:var(--white);border:1px solid var(--line);
+      border-radius:14px;padding:16px 18px;text-decoration:none;color:inherit; }
+    .ref:hover { border-color:var(--teal); }
+    .ref .badge { flex:none;font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;letter-spacing:.06em;
+      padding:5px 10px;border-radius:999px;text-transform:uppercase; }
+    .badge.doc { background:var(--blue-soft);color:var(--navy); }
+    .badge.vid { background:var(--orange-soft);color:var(--orange); }
+    .ref h3 { margin:0 0 4px;font-size:17px; }
+    .ref p { margin:0;color:var(--muted);font-size:14.5px; }
+    .prompt-block { background:#0f2233;border-radius:var(--radius);overflow:hidden;margin-bottom:18px;box-shadow:var(--shadow); }
+    .prompt-top { display:flex;justify-content:space-between;align-items:center;gap:12px;
+      padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.12); }
+    .prompt-top strong { color:#fff;font-size:13px;letter-spacing:.06em;font-family:"IBM Plex Mono",monospace; }
+    .copy-btn { border:1px solid #6c8796;background:transparent;color:#fff;border-radius:6px;padding:7px 11px;
+      cursor:pointer;font-weight:700;font-size:14px; }
+    .copy-btn:hover { background:rgba(255,255,255,.1); }
+    .copy-btn:focus-visible { outline:2px solid var(--gold);outline-offset:2px; }
+    .prompt-text { color:#e8f1f5;font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.65;
+      padding:18px;white-space:pre-wrap;margin:0; }
+    .sr-only { position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0); }
+    .quiz-q { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px; }
+    .quiz-q .qq { font-weight:700;margin:0 0 12px;font-size:18px; }
+    .qopts { display:grid;gap:8px; }
+    .qopt { text-align:left;background:var(--paper);border:1px solid var(--line);border-radius:10px;
+      padding:12px 14px;cursor:pointer;font-size:15.5px;color:var(--ink); }
+    .qopt:hover:not(:disabled) { border-color:var(--navy); }
+    .qopt:disabled { cursor:default;opacity:.85; }
+    .qopt.correct { background:var(--green-soft);border-color:var(--green); }
+    .qopt.wrong { background:var(--red-soft);border-color:var(--red); }
+    .qexp { margin:12px 0 0;font-size:15px;color:var(--muted); }
+    .qexp strong.ok { color:var(--green); } .qexp strong.no { color:var(--red); }
+    #quiz-score { display:none;margin-top:8px;background:var(--navy);color:#fff;border-radius:14px;
+      padding:20px 24px;font-size:19px; }
+    #quiz-score strong { color:var(--gold); }
+    .fgrid { display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px; }
+    .fcard { perspective:900px;cursor:pointer;min-height:170px; }
+    .fcard-inner { position:relative;width:100%;height:100%;min-height:170px;transform-style:preserve-3d;transition:transform .45s; }
+    .fcard.flipped .fcard-inner { transform:rotateY(180deg); }
+    .fface { position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+      border-radius:14px;padding:18px;display:flex;align-items:center;justify-content:center;text-align:center;
+      border:1px solid var(--line);background:var(--white);box-shadow:var(--shadow);font-size:15.5px; }
+    .fface.front { font-weight:700;color:var(--navy); }
+    .fface.back { transform:rotateY(180deg);background:var(--teal-soft);color:var(--ink);font-size:14.5px; }
+    .fcard:focus-visible { outline:2px solid var(--teal);outline-offset:3px;border-radius:14px; }
+    .triggers { display:grid;gap:10px; }
+    .trigger { background:var(--gold-soft);border-radius:12px;padding:14px 18px;font-size:16px; }
+    .trigger strong { color:var(--navy); }
+    .back-link { display:inline-block;margin:8px 0 60px;font-weight:600;color:var(--teal);text-decoration:none;font-size:17px; }
+    .back-link:hover { text-decoration:underline; }
+    .fig { background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+      padding:12px;box-shadow:var(--shadow);overflow-x:auto; }
+    .fig svg { display:block;width:100%;height:auto; }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior:auto; } .fcard-inner{transition:none;} }
+  </style>
+
+</head>
+<body>
+<nav class="portal-nav">
+    <div class="shell portal-nav-inner">
+      <a class="portal-brand" href="../index.html">AI Engineering <span>· Learning Portal</span></a>
+      <div class="portal-links">
+        <a href="../index.html#daily-topics">Daily topics</a>
+        <a href="../index.html#loop">Loop</a>
+        <a href="../index.html#graph">Graph</a>
+        <a href="../index.html#harness">Harness</a>
+      </div>
+    </div>
+  </nav>
+  <div class="shell">
+
+    <header class="hero">
+      <div class="chapter-mark">Daily topic · AI engineering</div>
+      <h1>Re-ranking and query rewriting for retrieval quality</h1>
+      <p class="lede">Retrieval usually fails at one of two ends: the query is a bad probe for the intent, or the first-stage retriever is a fast, coarse match that can't see fine relevance. The fix is a two-stage pipeline — sharpen the query before it hits the index, then replace cheap similarity with an expensive pairwise judgment over a small candidate set. <strong>Cheap and wide at stage one, precise and narrow at stage two.</strong></p>
+      <p class="date-line">2026-09-18 · Topic 006</p>
+    </header>
+
+    <section class="block">
+      <h2><span class="num">01</span> The skill card</h2>
+      <p class="sub">Every topic on this portal is designed like a Codex skill: a name, a trigger, and concrete steps.</p>
+      <div class="skill-card"><pre style="margin:0">---
+<span class="k">name:</span> reranking-query-rewriting
+<span class="k">description:</span> Reach for this when retrieval returns near-misses: sharpen the
+  query before it hits the index (rewrite, expand, HyDE, multi-query)
+  and re-score a small candidate set with a precise cross-encoder
+  reranker. Stage one is recall; stage two is judgment.
+---</pre></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">02</span> The one-idea version</h2>
+      <p class="idea">A vector retriever is a <strong>fast bouncer</strong>: it embeds your query and the documents separately and admits the nearest 50 on cosine similarity alone — it never reads the query and a document together. A re-ranker is the <strong>careful judge</strong>: it reads each (query, document) pair jointly and scores true relevance. <strong>Rewriting the query first makes the bouncer admit a better shortlist; the judge then picks the winners.</strong> Wide and cheap at stage one, narrow and precise at stage two — never the reverse.</p>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">03</span> The visual</h2>
+      <p class="sub">One user question fans out into better probes, each retrieves its own candidates, the lists are fused, and a cross-encoder judges every pair. The funnel narrows left to right.</p>
+      <div class="fig">
+      <svg viewBox="0 0 920 600" role="img" aria-label="Two-stage retrieval: query rewriting fans out into variants, each retrieves candidates from a vector index, the lists are fused, and a cross-encoder reranker scores each query-document pair down to the top five">
+        <defs>
+          <marker id="arrv" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 1 L 9 5 L 0 9 z" fill="#53636f"/>
+          </marker>
+        </defs>
+        <g font-family="IBM Plex Mono, monospace" font-size="12">
+          <!-- Stage 1: rewrite -->
+          <text x="20" y="30" fill="#163247" font-weight="600">1 · SHARPEN THE PROBE</text>
+          <rect x="20" y="42" width="260" height="120" rx="14" fill="#ffffff" stroke="#163247" stroke-width="1.5"/>
+          <text x="36" y="68" fill="#53636f" font-size="11">user query (vague, short)</text>
+          <text x="36" y="92" fill="#163247" font-size="12.5" font-weight="600">"how do I cancel?"</text>
+          <text x="36" y="114" fill="#53636f" font-size="11">documents are statements,</text>
+          <text x="36" y="130" fill="#53636f" font-size="11">queries are questions →</text>
+          <text x="36" y="146" fill="#53636f" font-size="11">vocabulary gap</text>
+          <line x1="150" y1="162" x2="150" y2="188" stroke="#53636f" stroke-width="2" marker-end="url(#arrv)"/>
+          <rect x="20" y="192" width="260" height="150" rx="14" fill="#f7edc8" stroke="#d8a524" stroke-width="1.5"/>
+          <text x="36" y="216" fill="#163247" font-size="11" font-weight="600">query variants</text>
+          <rect x="36" y="226" width="228" height="26" rx="6" fill="#ffffff" stroke="#cbd5d8"/>
+          <text x="46" y="243" fill="#163247" font-size="11">rewrite → "cancel my booking for a refund"</text>
+          <rect x="36" y="258" width="228" height="26" rx="6" fill="#ffffff" stroke="#cbd5d8"/>
+          <text x="46" y="275" fill="#163247" font-size="11">HyDE → "to cancel, visit account &gt; trips…"</text>
+          <rect x="36" y="290" width="228" height="26" rx="6" fill="#ffffff" stroke="#cbd5d8"/>
+          <text x="46" y="307" fill="#163247" font-size="11">multi-query → 3 phrasings, fused (RRF)</text>
+          <text x="36" y="330" fill="#53636f" font-size="11">answers look like documents —</text>
+          <text x="36" y="346" fill="#53636f" font-size="11">embed THEM, not just the question</text>
+
+          <!-- arrows to stage 2 -->
+          <line x1="280" y1="267" x2="312" y2="267" stroke="#53636f" stroke-width="2" marker-end="url(#arrv)"/>
+
+          <!-- Stage 2: retrieve wide -->
+          <text x="330" y="30" fill="#163247" font-weight="600">2 · RETRIEVE WIDE (COARSE)</text>
+          <rect x="330" y="42" width="260" height="300" rx="14" fill="#ffffff" stroke="#163247" stroke-width="1.5"/>
+          <text x="346" y="68" fill="#53636f" font-size="11">bi-encoder: query &amp; doc embedded</text>
+          <text x="346" y="84" fill="#53636f" font-size="11">SEPARATELY — one cosine score</text>
+          <g fill="#0b8174" opacity="0.8">
+            <circle cx="370" cy="120" r="7"/><circle cx="420" cy="105" r="7"/><circle cx="470" cy="120" r="7"/>
+          </g>
+          <text x="352" y="145" fill="#163247" font-size="11">3 variant queries →</text>
+          <rect x="346" y="156" width="228" height="120" rx="8" fill="#e3eef4" stroke="#163247" stroke-width="1"/>
+          <g fill="#cbd5d8">
+            <rect x="356" y="166" width="208" height="10" rx="5"/><rect x="356" y="180" width="180" height="10" rx="5"/>
+            <rect x="356" y="194" width="195" height="10" rx="5"/><rect x="356" y="208" width="170" height="10" rx="5"/>
+            <rect x="356" y="222" width="188" height="10" rx="5"/><rect x="356" y="236" width="160" height="10" rx="5"/>
+            <rect x="356" y="250" width="175" height="10" rx="5"/>
+          </g>
+          <text x="346" y="296" fill="#163247" font-size="11" font-weight="600">top-K = 50 per variant, fused</text>
+          <text x="346" y="316" fill="#53636f" font-size="11">job here is RECALL only:</text>
+          <text x="346" y="332" fill="#53636f" font-size="11">get the right doc INTO the set</text>
+
+          <line x1="590" y1="192" x2="622" y2="192" stroke="#53636f" stroke-width="2" marker-end="url(#arrv)"/>
+
+          <!-- Stage 3: rerank narrow -->
+          <text x="640" y="30" fill="#163247" font-weight="600">3 · RERANK NARROW (PRECISE)</text>
+          <rect x="640" y="42" width="260" height="300" rx="14" fill="#0b8174" stroke="#0b8174" stroke-width="1.5"/>
+          <text x="656" y="68" fill="#ffffff" font-size="11">cross-encoder: (query, doc)</text>
+          <text x="656" y="84" fill="#e3eef4" font-size="11">read JOINTLY — full attention</text>
+          <g font-size="11">
+            <rect x="656" y="100" width="228" height="30" rx="6" fill="#ffffff"/>
+            <text x="666" y="119" fill="#163247">doc A — cancellation policy</text>
+            <text x="830" y="119" fill="#1e7a3c" font-weight="600">0.94</text>
+            <rect x="656" y="136" width="228" height="30" rx="6" fill="#ffffff"/>
+            <text x="666" y="155" fill="#163247">doc B — booking changes</text>
+            <text x="830" y="155" fill="#1e7a3c" font-weight="600">0.88</text>
+            <rect x="656" y="172" width="228" height="30" rx="6" fill="#ffffff"/>
+            <text x="666" y="191" fill="#163247">doc C — fare classes</text>
+            <text x="830" y="191" fill="#d66332" font-weight="600">0.41</text>
+            <rect x="656" y="208" width="228" height="30" rx="6" fill="#ffffff"/>
+            <text x="666" y="227" fill="#163247">doc D — baggage fees</text>
+            <text x="830" y="227" fill="#b3402e" font-weight="600">0.12</text>
+          </g>
+          <text x="656" y="264" fill="#ffffff" font-size="11" font-weight="600">top-5 → the LLM's context</text>
+          <text x="656" y="284" fill="#e3eef4" font-size="11">scores only rank WITHIN one</text>
+          <text x="656" y="300" fill="#e3eef4" font-size="11">query — never compare across</text>
+          <text x="656" y="330" fill="#ffd479" font-size="11" font-weight="600">10–100× slower per pair →</text>
+          <text x="656" y="346" fill="#ffd479" font-size="11">only ever run on candidates</text>
+
+          <!-- Funnel bar -->
+          <text x="20" y="400" fill="#163247" font-weight="600">THE FUNNEL (ONE QUERY'S JOURNEY)</text>
+          <g font-size="12">
+            <rect x="20" y="420" width="880" height="120" rx="14" fill="#ffffff" stroke="#163247" stroke-width="1.5"/>
+            <rect x="40" y="446" width="180" height="68" rx="8" fill="#f7edc8" stroke="#d8a524" stroke-width="1.5"/>
+            <text x="58" y="472" fill="#163247" font-weight="600">1 vague query</text>
+            <text x="58" y="494" fill="#53636f" font-size="11">→ 3–4 sharp probes</text>
+            <line x1="220" y1="480" x2="252" y2="480" stroke="#53636f" stroke-width="2" marker-end="url(#arrv)"/>
+            <rect x="252" y="446" width="200" height="68" rx="8" fill="#e3eef4" stroke="#163247" stroke-width="1.5"/>
+            <text x="268" y="472" fill="#163247" font-weight="600">~50 candidates</text>
+            <text x="268" y="494" fill="#53636f" font-size="11">cheap bi-encoder recall</text>
+            <line x1="452" y1="480" x2="484" y2="480" stroke="#53636f" stroke-width="2" marker-end="url(#arrv)"/>
+            <rect x="484" y="446" width="180" height="68" rx="8" fill="#dff2ee" stroke="#0b8174" stroke-width="1.5"/>
+            <text x="500" y="472" fill="#163247" font-weight="600">top-5 precise</text>
+            <text x="500" y="494" fill="#53636f" font-size="11">cross-encoder judgment</text>
+            <rect x="684" y="446" width="196" height="68" rx="8" fill="#0b8174" stroke="#0b8174" stroke-width="1.5"/>
+            <text x="700" y="472" fill="#ffffff" font-weight="600">→ LLM answers</text>
+            <text x="700" y="494" fill="#e3eef4" font-size="11">fewer, better chunks</text>
+          </g>
+          <text x="20" y="566" fill="#53636f" font-size="12">rule of thumb: when the best answer hides at rank 30, widen K and rerank — don't stuff more chunks into the prompt.</text>
+          <text x="20" y="590" fill="#d66332" font-weight="600" font-size="12">a reranker scores what it is shown: if the right doc never makes the candidate set, no judgment can rescue it.</text>
+        </g>
+      </svg>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">04</span> How it works</h2>
+      <p class="sub">Six mechanics: why stage one is coarse, how stage two judges, and the two ways to fix the probe before it ever reaches the index.</p>
+      <div class="mechanics">
+        <div class="mech"><div class="mnum">1</div><div>
+          <h3>First-stage retrieval is coarse by design</h3>
+          <p>Bi-encoders embed the query and each document <em>independently</em>, then rank by one cosine number. That's fast — precompute the doc vectors, encode the query once — but the model never sees the query and a document together, so it can't notice that "cancel my booking" and "voluntary termination of carriage" mean the same thing. Stage one's only job is <span class="inline-code">recall</span>: get the right document into the top-K.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">2</div><div>
+          <h3>Re-rankers are cross-encoders: they read the pair jointly</h3>
+          <p>A cross-encoder takes <span class="inline-code">(query, document)</span> as one input and lets attention flow between every query token and every document token, outputting a single relevance score. That joint reading is why rerankers catch relevance that cosine misses — and why they're 10–100× slower per pair. They run on 50 candidates, never on 5 million documents.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">3</div><div>
+          <h3>The two-stage funnel: retrieve K cheaply, keep 5–10</h3>
+          <p>Retrieve <span class="inline-code">K = 50–200</span> candidates with the fast bi-encoder (or hybrid BM25 + dense), then rerank the set down to the 5–10 chunks the LLM actually reads. K is the budget knob: bigger K = more recall, more rerank latency and cost. The funnel fails at stage one, not stage two — a reranker only judges what it's shown.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">4</div><div>
+          <h3>Fix the probe: rewrite the query before retrieval</h3>
+          <p>Documents are <em>statements</em>; user queries are short <em>questions</em> — that vocabulary gap is half of all retrieval misses. Three proven rewrites: <strong>LLM rewrite</strong> ("how do I cancel?" → "cancel my booking and get a refund"); <strong>HyDE</strong> (have the LLM draft a hypothetical answer and embed <em>that</em> — answers look like documents, and the encoder's dense bottleneck filters out invented details); <strong>step-back prompting</strong> (retrieve on the general principle behind the specific question).</p>
+        </div></div>
+        <div class="mech"><div class="mnum">5</div><div>
+          <h3>Multi-query + reciprocal rank fusion: hedge your phrasing</h3>
+          <p>One phrasing can miss; five rarely do. Generate several query variants (RAG-Fusion style), retrieve with each, and fuse the ranked lists with <span class="inline-code">reciprocal rank fusion</span>: score each doc by <span class="inline-code">1/(k + rank)</span> summed across lists. No training, no tuning — docs that appear near the top of multiple lists win, and one bad variant can't sink the result.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">6</div><div>
+          <h3>Know which stage to blame, then measure the funnel</h3>
+          <p>Rewrite when queries are short, ambiguous, or phrased nothing like your documents (the vocabulary gap). Rerank when the queries are fine but ranking is noisy — the right doc is in the top-50 but not the top-5. Judge both stages on a judged query set with <span class="inline-code">NDCG</span> / <span class="inline-code">MRR</span>: a reranker trained on web QA can underperform on your domain, and an LLM rewrite that adds 400ms must earn its latency with measured gains.</p>
+        </div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">05</span> Code sketch</h2>
+      <p class="sub">The whole funnel in 24 lines: coarse bi-encoder retrieval, then precise cross-encoder judgment. The retrieve step returns candidates; the rerank step only ever sees those.</p>
+      <pre class="code"><span class="k">from</span> sentence_transformers <span class="k">import</span> SentenceTransformer, CrossEncoder
+<span class="k">import</span> numpy <span class="k">as</span> np
+
+bi = SentenceTransformer(<span class="s">"all-MiniLM-L6-v2"</span>)          <span class="c"># stage 1: coarse, fast</span>
+ce = CrossEncoder(<span class="s">"cross-encoder/ms-marco-MiniLM-L-6-v2"</span>)  <span class="c"># stage 2: precise, slow</span>
+
+<span class="k">def</span> retrieve(query, doc_vecs, k=50):
+    <span class="c"># bi-encoder: query and docs encoded SEPARATELY — one cosine score</span>
+    q = bi.encode(query)
+    sims = doc_vecs @ q / (np.linalg.norm(doc_vecs, axis=1) * np.linalg.norm(q))
+    <span class="k">return</span> list(np.argsort(sims)[-k:][::-1])  <span class="c"># candidates; k is the recall knob</span>
+
+<span class="k">def</span> rerank(query, docs, cand, top=5):
+    <span class="c"># cross-encoder: query+doc read JOINTLY — full token attention</span>
+    pairs = [(query, docs[i]) <span class="k">for</span> i <span class="k">in</span> cand]
+    scores = ce.predict(pairs)
+    <span class="k">return</span> [cand[i] <span class="k">for</span> i <span class="k">in</span> np.argsort(scores)[-top:][::-1]]
+
+cand = retrieve(<span class="s">"refund policy for cancelled flights"</span>, doc_vecs, k=50)
+top5 = rerank(<span class="s">"refund policy for cancelled flights"</span>, docs, cand, top=5)
+<span class="c"># rerank can't rescue docs never retrieved — widen k before blaming the judge.</span></pre>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">06</span> Failure modes</h2>
+      <p class="sub">Named pitfalls, each with a one-line fix. Number one is a stage-one failure wearing a stage-two disguise.</p>
+      <div class="mechanics">
+        <div class="mech fail"><div class="mnum">✕</div><div>
+          <h3>Reranking too few candidates <span class="fix">Fix: retrieve K=50–100 before reranking; the reranker only judges what it's shown.</span></h3>
+          <p>The right doc sits at rank 40, your reranker sees the top 10, the answer is wrong — and you blame the judge. A reranker can't rescue documents that never made the candidate set.</p>
+        </div></div>
+        <div class="mech fail"><div class="mnum">✕</div><div>
+          <h3>HyDE hallucination drift <span class="fix">Fix: fuse original-query and HyDE results with reciprocal rank fusion instead of replacing the original query.</span></h3>
+          <p>The hypothetical answer invents facts ("…refund within 48 hours"), and retrieval chases the invention instead of the question. HyDE is a probe, not a source of truth — always keep the original query in the fusion.</p>
+        </div></div>
+        <div class="mech fail"><div class="mnum">✕</div><div>
+          <h3>Domain-mismatched reranker <span class="fix">Fix: evaluate NDCG on your own judged queries before adopting any reranker; prefer domain-tuned models for specialized corpora.</span></h3>
+          <p>A reranker trained on web QA (MS MARCO) scores your legal, medical, or code corpus with confident-looking numbers and wrong rankings. Relevance is domain-shaped — the benchmark it aced is not your corpus.</p>
+        </div></div>
+        <div class="mech fail"><div class="mnum">✕</div><div>
+          <h3>Rewriting every query by default <span class="fix">Fix: gate the LLM rewrite — short or ambiguous queries only — or try cheap rewrites (synonym expansion, step-back) first.</span></h3>
+          <p>An LLM rewrite adds latency and cost to every query, and can degrade already-good queries. The rewrite must earn its milliseconds: measure NDCG with and without it, per rewrite strategy.</p>
+        </div></div>
+        <div class="mech fail"><div class="mnum">✕</div><div>
+          <h3>Treating reranker scores as calibrated <span class="fix">Fix: use scores only to order one query's candidates; set any relevance cutoff from 30–50 representative queries, not from a magic threshold.</span></h3>
+          <p>Score 0.92 on query A and 0.71 on query B does <em>not</em> mean doc A is more relevant. Reranker scores aren't comparable across queries — they're an ordering within one candidate set, nothing more.</p>
+        </div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">07</span> Go deeper</h2>
+      <p class="sub">Curated and real — the techniques guide, the reranker docs, the HyDE paper, and two videos that earn their runtime.</p>
+      <div class="ref-list">
+        <a class="ref" href="https://www.pinecone.io/learn/advanced-rag-techniques/">
+          <span class="badge doc">Guide</span>
+          <div><h3>Pinecone Learn — Advanced RAG Techniques</h3><p>The one page that ties this topic together: LLM query expansion, RAG-Fusion with multi-query generation, reciprocal rank fusion, reranking, plus Self-RAG and CRAG — with an end-to-end Python build.</p></div>
+        </a>
+        <a class="ref" href="https://docs.cohere.com/v2/docs/rerank-overview">
+          <span class="badge doc">Docs</span>
+          <div><h3>Cohere Docs — Rerank Overview</h3><p>The canonical first-party reference for cross-encoder-style reranking: query + candidate documents in, relevance scores out, with a two-stage "retrieve wide, rerank narrow" example and structured-data tips.</p></div>
+        </a>
+        <a class="ref" href="https://arxiv.org/abs/2212.10496v1">
+          <span class="badge doc">Paper</span>
+          <div><h3>Gao, Ma, Lin, Callan — "Precise Zero-Shot Dense Retrieval without Relevance Labels" (HyDE)</h3><p>The original HyDE paper: generate a hypothetical document with an LLM, embed <em>it</em> instead of the raw query, and let the encoder's dense bottleneck filter out the wrong details. The cleanest authority for the query-rewriting half of this lesson.</p></div>
+        </a>
+        <a class="ref" href="https://www.youtube.com/watch?v=XVZOQ6Fwz2c">
+          <span class="badge vid">Video</span>
+          <div><h3>"Reranking in RAG From Scratch (2026) — BM25 + CrossEncoder + Cohere + Qwen3 + Jina AI"</h3><p>Code-first tour of the full reranker landscape: bi- vs cross-encoders, score normalization, consensus reranking, and newer open models (Qwen3-Reranker, Jina v3, BGE, Mixedbread) with notebooks and diagrams.</p></div>
+        </a>
+        <a class="ref" href="https://www.youtube.com/watch?v=uRkFvG9VtL8">
+          <span class="badge vid">Video</span>
+          <div><h3>Ryan &amp; Matt Data Science — "n8n RAG Reranker (Cohere) — Full Tutorial For Beginners"</h3><p>A practical demo of the exact pattern from this lesson: retrieve ~20 chunks, rerank to the top 4, then answer — concretely showing why rerankers save LLM tokens and lift accuracy.</p></div>
+        </a>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">08</span> Sample prompts</h2>
+      <p class="sub">Copy-paste starters. Each one tunes or diagnoses one stage of the funnel.</p>
+
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>THE RERANK TUNER</strong><button class="copy-btn" data-copy="px-reranktune">Copy</button></div>
+        <p class="prompt-text" id="px-reranktune">Act as a retrieval engineer. Design the rerank stage for my RAG system.
+Facts: corpus {{size, domain — e.g. 200k support articles}},
+stage-1 retriever {{dense / hybrid / BM25}}, current K={{candidates per query}},
+latency budget {{p99 ms}}, candidate rerankers {{e.g. Cohere rerank, bge-reranker, Qwen3}}.
+Recommend: stage-1 K, reranker choice, final top-N for the LLM,
+and a score-cutoff protocol using 30–50 of my own queries.
+Also tell me how to measure NDCG@N before/after so the reranker
+proves it earns its latency.</p>
+      </div>
+
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>THE QUERY REWRITER</strong><button class="copy-btn" data-copy="px-qrewrite">Copy</button></div>
+        <p class="prompt-text" id="px-qrewrite">Design a query-rewriting strategy for my retrieval system.
+Sample user queries: {{3–5 real examples}}
+Document style: {{e.g. formal policy statements, API docs}}
+Failure symptom: {{e.g. right docs rank 20–40, or misses on short queries}}
+Recommend ONE primary strategy — LLM rewrite, HyDE, step-back,
+or multi-query + RRF — with the gating rule for when it applies
+(and when to skip rewriting entirely), plus how to fuse results
+so a bad rewrite can't sink a good original query.</p>
+      </div>
+
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>THE FUNNEL DIAGNOSIS</strong><button class="copy-btn" data-copy="px-funneldiag">Copy</button></div>
+        <p class="prompt-text" id="px-funneldiag">Diagnose this retrieval quality problem. Facts:
+- pipeline: {{stage-1 type, K, reranker model, final top-N}}
+- symptom: {{e.g. correct doc found at rank 35 but never in final answer}}
+- judged sample: {{do you have one? size}}
+Output a single stage verdict: stage-1 recall (K too small / no hybrid) /
+rewrite needed (vocabulary gap) / rerank problem (domain mismatch /
+score misuse) — then the smallest experiment to confirm it and
+the metric (NDCG/MRR) that proves the fix.</p>
+      </div>
+      <p class="sr-only" aria-live="polite" id="live-status"></p>
+    </section>
+    <section class="block">
+      <h2><span class="num">09</span> Quiz</h2>
+      <p class="sub">Five questions on judgment, not trivia. Click an answer to check yourself.</p>
+      <div id="quiz">
+        <div class="quiz-q" data-answer="2">
+          <p class="qq">1. The correct document is at stage-1 rank 40, but your reranker only ever sees the top-10 candidates. The final answer is wrong. What do you fix?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">Swap in a stronger reranker — the judge is failing.</button>
+            <button class="qopt" data-i="1">Rewrite the query with a bigger LLM — the probe is the problem.</button>
+            <button class="qopt" data-i="2">Widen stage-1 K (e.g. 10 → 50) before reranking — the judge only sees what it's shown, and the right doc was never in the candidate set.</button>
+            <button class="qopt" data-i="3">Raise the relevance-score cutoff — you're letting weak candidates through.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="1">
+          <p class="qq">2. Why is a cross-encoder reranker more precise than the bi-encoder that did first-stage retrieval?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">It was trained on more data, so its embeddings are strictly better.</button>
+            <button class="qopt" data-i="1">It encodes the query and the document jointly, with attention flowing between their tokens — the bi-encoder embeds them separately and compares with a single cosine number.</button>
+            <button class="qopt" data-i="2">It uses a larger vector dimension, which always improves ranking.</button>
+            <button class="qopt" data-i="3">It runs on GPUs while bi-encoders run on CPUs.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="3">
+          <p class="qq">3. HyDE has the LLM draft a hypothetical answer and embeds that instead of the raw question. Why does this help retrieval?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">The LLM's answer is always factually correct, so retrieval finds the right document.</button>
+            <button class="qopt" data-i="1">Hypothetical answers are shorter, so embedding is faster and cheaper.</button>
+            <button class="qopt" data-i="2">It replaces the vector index entirely — no index needed for hypothetical documents.</button>
+            <button class="qopt" data-i="3">Documents are statements while queries are questions — the hypothetical answer looks like a document, closing the vocabulary gap, and the encoder's dense bottleneck filters out invented details.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="0">
+          <p class="qq">4. Your reranker scores doc A at 0.92 for query 1, and doc B at 0.71 for query 2. What can you conclude?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">Nothing about which is more relevant — scores are only an ordering within one query's candidate set, not calibrated across queries.</button>
+            <button class="qopt" data-i="1">Doc A is more relevant than doc B, since 0.92 &gt; 0.71.</button>
+            <button class="qopt" data-i="2">Doc A is relevant and doc B is not — 0.71 is below the universal relevance threshold.</button>
+            <button class="qopt" data-i="3">Query 1 was better written than query 2, since it produced a higher score.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="2">
+          <p class="qq">5. Adding an LLM rewrite to every query doubled your p99 latency with barely any quality gain. Best move?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">Rewrite with an even bigger model — the rewrites just aren't good enough.</button>
+            <button class="qopt" data-i="1">Remove rewriting and double stage-1 K instead — rewriting never pays off.</button>
+            <button class="qopt" data-i="2">Gate the rewrite: apply it only to short or ambiguous queries (or try cheap rewrites first), and measure NDCG per strategy so each one earns its milliseconds.</button>
+            <button class="qopt" data-i="3">Cache the rewrites — latency only matters on the first query.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+      </div>
+      <div id="quiz-score" role="status"></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">10</span> Flashcards</h2>
+      <p class="sub">Click a card — or tab to it and press Enter — to flip it.</p>
+      <div class="fgrid">
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: cross-encoder"><div class="fcard-inner">
+          <div class="fface front">Cross-encoder (reranker)</div>
+          <div class="fface back">Encodes the (query, document) pair jointly with full token-level attention, outputting one relevance score. Precise but 10–100× slower per pair — run only on candidates.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: bi-encoder"><div class="fcard-inner">
+          <div class="fface front">Bi-encoder (first stage)</div>
+          <div class="fface back">Embeds query and documents independently, ranks by cosine. Fast and precomputable, but never reads query and doc together — coarse by design. Its job is recall.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: two-stage funnel"><div class="fcard-inner">
+          <div class="fface front">Two-stage funnel</div>
+          <div class="fface back">Retrieve K=50–200 candidates cheaply, rerank down to the 5–10 the LLM reads. K is the budget knob; the funnel fails at stage one — the judge only sees what it's shown.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: HyDE"><div class="fcard-inner">
+          <div class="fface front">HyDE</div>
+          <div class="fface back">Hypothetical Document Embeddings: the LLM drafts an answer, you embed it instead of the question. Answers look like documents (closing the vocabulary gap); the dense bottleneck filters invented details.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: multi-query plus RRF"><div class="fcard-inner">
+          <div class="fface front">Multi-query + RRF</div>
+          <div class="fface back">Generate several query variants, retrieve with each, fuse the ranked lists with reciprocal rank fusion (1/(k+rank) summed). No training — docs ranking high in multiple lists win.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: reciprocal rank fusion"><div class="fcard-inner">
+          <div class="fface front">Reciprocal rank fusion</div>
+          <div class="fface back">Fuses ranked lists by scoring each doc 1/(k + rank) per list and summing. Simple, parameter-free, and robust — one bad query variant can't sink the result.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: vocabulary gap"><div class="fcard-inner">
+          <div class="fface front">The vocabulary gap</div>
+          <div class="fface back">Queries are short questions; documents are statements. The phrasing mismatch causes half of all retrieval misses — this is the failure query rewriting exists to fix.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: NDCG"><div class="fcard-inner">
+          <div class="fface front">NDCG</div>
+          <div class="fface back">Normalized Discounted Cumulative Gain: measures ranking quality on a judged query set — top positions matter most. The metric that proves a rewrite or reranker earns its latency.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: score calibration"><div class="fcard-inner">
+          <div class="fface front">Reranker score calibration</div>
+          <div class="fface back">Reranker scores order one query's candidates — they are NOT comparable across queries. Never compare a 0.9 on query A with a 0.7 on query B; set cutoffs from your own queries.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: step-back prompting"><div class="fcard-inner">
+          <div class="fface front">Step-back prompting</div>
+          <div class="fface back">Retrieve on the general principle behind the specific question (e.g. the policy, not the instance). The broad retrieval grounds the specific answer — a cheap rewrite when HyDE is overkill.</div>
+        </div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">11</span> Reach for this when…</h2>
+      <div class="triggers">
+        <div class="trigger"><strong>Retrieval returns near-misses — the right doc hides at rank 20–40</strong> — widen stage-1 K and add a cross-encoder rerank instead of stuffing more chunks into the prompt.</div>
+        <div class="trigger"><strong>User queries are short or ambiguous while your documents are formal statements</strong> — rewrite, HyDE, or multi-query closes the vocabulary gap before the index ever runs.</div>
+        <div class="trigger"><strong>You're adding context to the LLM and answer quality has stalled</strong> — the fix isn't more chunks, it's better-ranked chunks: a reranker on a wider candidate set beats a longer prompt.</div>
+      </div>
+    </section>
+
+    <a class="back-link" href="../index.html#daily-topics">← Back to the learning portal</a>
+  </div>
+
+  <script>
+    // copy buttons
+    const status = document.getElementById('live-status');
+    document.querySelectorAll('.copy-btn').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const target = document.getElementById(button.dataset.copy);
+        const text = target.innerText;
+        try {
+          await navigator.clipboard.writeText(text);
+          const original = button.textContent;
+          button.textContent = 'Copied';
+          status.textContent = 'Prompt copied to clipboard.';
+          setTimeout(() => button.textContent = original, 1600);
+        } catch {
+          const range = document.createRange();
+          range.selectNodeContents(target);
+          const selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+          status.textContent = 'Prompt selected. Copy it with your device copy command.';
+        }
+      });
+    });
+
+    // quiz
+    const explanations = [
+      ["The judge is innocent — it never saw the right doc. Reranking the top 10 of a noisy first stage is a stage-one failure.",
+       "Rewriting changes which docs get admitted, but the doc you need is already at rank 40 — the funnel's intake, not the probe, is the fix.",
+       "Right. The funnel fails at stage one: widen K so the right doc enters the candidate set, then let the judge order it to the top.",
+       "A higher cutoff on a broken candidate set just hides the problem — the right doc still never reaches the answer."],
+      ["More data helps, but it's not the mechanism. The precision comes from how the model reads the pair, not from training scale.",
+       "Right. Joint encoding lets attention connect query tokens to document tokens — that interaction is exactly what the bi-encoder's single cosine number can't see.",
+       "Bigger vectors don't create interaction — a bi-encoder with huge vectors still never reads query and doc together.",
+       "Hardware is incidental. Cross-encoders are slower precisely because of the joint computation, not because of where it runs."],
+      ["No — the hypothetical answer can hallucinate facts. That's why HyDE is fused with the original query, never trusted alone.",
+       "Length isn't the mechanism — and HyDE adds an LLM call, so it's slower, not faster. The gain is vocabulary matching.",
+       "HyDE still needs an index — the hypothetical document is embedded and searched like any query. Nothing about the index goes away.",
+       "Right. Questions and statements live in different parts of embedding space; a hypothetical answer bridges them, and the encoder's dense bottleneck discards the invented details."],
+      ["Right. Reranker scores are an ordering within one query's candidate set — comparing 0.92 to 0.71 across queries is meaningless.",
+       "Scores aren't calibrated across queries — there's no cross-query scale, only per-query ordering.",
+       "There is no universal relevance threshold — cutoffs must be set from 30–50 of your own representative queries.",
+       "Score magnitude says nothing about query quality — a crisp query about a sparse topic can score lower than a vague query about a rich one."],
+      ["A bigger rewriter costs even more latency. The problem is indiscriminate rewriting, not rewrite quality.",
+       "Rewriting genuinely helps short and ambiguous queries — the fix is selectivity, not removal.",
+       "Right. Gate the rewrite to queries that need it, prefer cheap rewrites first, and make every strategy prove itself on NDCG before it spends production milliseconds.",
+       "Rewrites depend on the query — you can't cache what you haven't seen. Caching answers the wrong question."]
+    ];
+    const questions = [...document.querySelectorAll('.quiz-q')];
+    let score = 0, answered = 0;
+    questions.forEach((q, qi) => {
+      const correct = parseInt(q.dataset.answer, 10);
+      const exp = q.querySelector('.qexp');
+      q.querySelectorAll('.qopt').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          if (q.dataset.done) return;
+          q.dataset.done = "1";
+          const chosen = parseInt(btn.dataset.i, 10);
+          const ok = chosen === correct;
+          q.querySelectorAll('.qopt').forEach((b) => {
+            b.disabled = true;
+            if (parseInt(b.dataset.i, 10) === correct) b.classList.add('correct');
+          });
+          if (!ok) btn.classList.add('wrong');
+          else score++;
+          answered++;
+          exp.hidden = false;
+          exp.innerHTML = (ok ? '<strong class="ok">Correct.</strong> ' : '<strong class="no">Not quite.</strong> ') + explanations[qi][chosen];
+          if (answered === questions.length) {
+            const box = document.getElementById('quiz-score');
+            box.style.display = 'block';
+            const verdict = score === 5 ? "Flawless — you run the funnel like a retrieval engineer."
+              : score >= 3 ? "Solid. Re-read the two you missed; they're the most expensive failures."
+              : "Worth a second pass — sections 04 and 06 are the short path back.";
+            box.innerHTML = 'You scored <strong>' + score + ' / 5</strong>. ' + verdict;
+            box.scrollIntoView({behavior: 'smooth', block: 'nearest'});
+          }
+        });
+      });
+    });
+
+    // flashcards
+    document.querySelectorAll('.fcard').forEach((card) => {
+      const flip = () => card.classList.toggle('flipped');
+      card.addEventListener('click', flip);
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); }
+      });
+    });
+  </script>
+
+</body>
+</html>

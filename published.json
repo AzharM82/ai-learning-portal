@@ -33,5 +33,12 @@
     "date": "2026-09-17",
     "summary": "Your embeddings are points in space; finding the nearest ones is the retrieval problem. Why exact search dies at scale, how HNSW and IVF make ANN fast, and the recall\u2013latency\u2013memory triangle every index trades on.",
     "skill": "vector-databases"
+  },
+  {
+    "slug": "2026-09-18-reranking-query-rewriting",
+    "title": "Re-ranking and query rewriting for retrieval quality",
+    "date": "2026-09-18",
+    "summary": "Retrieval fails at two ends: a bad probe and a coarse ranker. Sharpen the query (rewrite, HyDE, multi-query) then re-score a small candidate set with a cross-encoder: cheap and wide first, precise and narrow second.",
+    "skill": "reranking-query-rewriting"
   }
 ]
