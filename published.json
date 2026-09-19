@@ -40,5 +40,12 @@
     "date": "2026-09-18",
     "summary": "Retrieval fails at two ends: a bad probe and a coarse ranker. Sharpen the query (rewrite, HyDE, multi-query) then re-score a small candidate set with a cross-encoder: cheap and wide first, precise and narrow second.",
     "skill": "reranking-query-rewriting"
+  },
+  {
+    "slug": "2026-09-19-knowledge-graphs-graphrag",
+    "title": "Knowledge graphs for RAG (GraphRAG patterns)",
+    "date": "2026-09-19",
+    "summary": "Vector RAG finds strings that look similar; GraphRAG answers questions about things that are connected. Extract entities and relationships, cluster them into summarized communities, then answer by local fan-out or global map-reduce \u2014 with every claim citing its source.",
+    "skill": "knowledge-graphs-graphrag"
   }
 ]
