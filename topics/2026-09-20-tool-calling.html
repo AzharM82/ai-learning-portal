@@ -1,0 +1,616 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="color-scheme" content="light" />
+  <link rel="icon" href="data:," />
+  <title>Tool calling / function calling done right &mdash; AI Engineering Learning Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Source+Sans+3:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #14212b; --muted: #53636f; --paper: #f6f8f7; --white: #ffffff;
+      --line: #cbd5d8; --navy: #163247; --navy-2: #21465e; --teal: #0b8174;
+      --teal-soft: #dff2ee; --orange: #d66332; --orange-soft: #f8e4d8;
+      --gold: #d8a524; --gold-soft: #f7edc8; --blue-soft: #e3eef4;
+      --red: #b3402e; --red-soft: #f9e3de; --green: #1e7a3c; --green-soft: #e2f2e6;
+      --shadow: 0 18px 45px rgba(20, 33, 43, .09); --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; color: var(--ink);
+      background: linear-gradient(rgba(20,33,43,.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(20,33,43,.035) 1px, transparent 1px), var(--paper);
+      background-size: 28px 28px;
+      font-family: "Source Sans 3", sans-serif; font-size: 17px; line-height: 1.58;
+    }
+    .shell { width: min(960px, calc(100% - 40px)); margin: 0 auto; }
+    .portal-nav{position:sticky;top:0;z-index:50;background:rgba(22,50,71,.97);border-bottom:1px solid rgba(255,255,255,.12)}
+    .portal-nav-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;flex-wrap:wrap}
+    .portal-brand{color:#fff;text-decoration:none;font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:15px}
+    .portal-brand span{color:var(--gold);font-weight:400}
+    .portal-links{display:flex;gap:18px;flex-wrap:wrap}
+    .portal-links a{color:#dbe7ee;text-decoration:none;font-size:14.5px}
+    .portal-links a:hover{color:#fff;text-decoration:underline}
+    .hero { padding: 56px 0 36px; }
+    .chapter-mark { display:inline-flex;align-items:center;gap:10px;color:var(--navy);
+      font:600 12px/1.2 "IBM Plex Mono",monospace;letter-spacing:.09em;text-transform:uppercase;margin-bottom:18px; }
+    .chapter-mark::before { content:"";width:42px;height:3px;background:var(--orange); }
+    h1 { font-size: clamp(36px, 5vw, 58px); line-height: 1.02; letter-spacing:-.03em; margin:0 0 14px; }
+    .lede { color: var(--muted); font-size: clamp(18px,2vw,22px); max-width: 64ch; margin:0 0 8px; }
+    .date-line { font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--muted); }
+    section.block { margin: 44px 0; }
+    h2 { font-size: 26px; letter-spacing:-.02em; margin:0 0 6px; display:flex;align-items:center;gap:12px; }
+    h2 .num { font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:600;color:var(--white);
+      background:var(--navy);border-radius:999px;min-width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center; }
+    .sub { color:var(--muted); margin:0 0 18px; max-width: 68ch; }
+    .card { background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+      padding:24px;box-shadow:var(--shadow); }
+    .skill-card { background:var(--navy);color:#eaf2f7;border-radius:var(--radius);padding:22px 24px;
+      font-family:"IBM Plex Mono",monospace;font-size:14.5px;overflow-x:auto;box-shadow:var(--shadow); }
+    .skill-card .k { color:var(--gold); }
+    .idea { font-size:21px;line-height:1.5;border-left:4px solid var(--teal);padding:6px 0 6px 20px;max-width:62ch; }
+    .idea strong { color:var(--navy); }
+    .mechanics { display:grid;gap:14px; }
+    .mech { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:18px 20px;
+      display:grid;grid-template-columns:44px 1fr;gap:14px;align-items:start; }
+    .mech .mnum { font-family:"IBM Plex Mono",monospace;font-weight:600;color:var(--teal);
+      background:var(--teal-soft);border-radius:10px;width:44px;height:44px;display:flex;align-items:center;justify-content:center; }
+    .mech h3 { margin:0 0 6px;font-size:18px; }
+    .mech p { margin:0;color:var(--muted);font-size:15.5px; }
+    .mech code, .inline-code { font-family:"IBM Plex Mono",monospace;font-size:.88em;background:var(--blue-soft);
+      padding:2px 7px;border-radius:6px;color:var(--navy); }
+    pre.code { background:#0f2233;color:#e8f1f5;border-radius:14px;padding:20px 22px;overflow-x:auto;
+      font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.6;margin:0; }
+    pre.code .c { color:#8ba3b0; } pre.code .s { color:#ffd479; } pre.code .k { color:#7fd6c2; }
+    .fail { border-left:4px solid var(--orange); }
+    .fail h3 .fix { display:block;margin-top:8px;font-size:15px;font-weight:500;color:var(--green); }
+    .ref-list { display:grid;gap:12px; }
+    .ref { display:flex;gap:14px;align-items:flex-start;background:var(--white);border:1px solid var(--line);
+      border-radius:14px;padding:16px 18px;text-decoration:none;color:inherit; }
+    .ref:hover { border-color:var(--teal); }
+    .ref .badge { flex:none;font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;letter-spacing:.06em;
+      padding:5px 10px;border-radius:999px;text-transform:uppercase; }
+    .badge.doc { background:var(--blue-soft);color:var(--navy); }
+    .badge.vid { background:var(--orange-soft);color:var(--orange); }
+    .ref h3 { margin:0 0 4px;font-size:17px; }
+    .ref p { margin:0;color:var(--muted);font-size:14.5px; }
+    .prompt-block { background:#0f2233;border-radius:var(--radius);overflow:hidden;margin-bottom:18px;box-shadow:var(--shadow); }
+    .prompt-top { display:flex;justify-content:space-between;align-items:center;gap:12px;
+      padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.12); }
+    .prompt-top strong { color:#fff;font-size:13px;letter-spacing:.06em;font-family:"IBM Plex Mono",monospace; }
+    .copy-btn { border:1px solid #6c8796;background:transparent;color:#fff;border-radius:6px;padding:7px 11px;
+      cursor:pointer;font-weight:700;font-size:14px; }
+    .copy-btn:hover { background:rgba(255,255,255,.1); }
+    .copy-btn:focus-visible { outline:2px solid var(--gold);outline-offset:2px; }
+    .prompt-text { color:#e8f1f5;font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.65;
+      padding:18px;white-space:pre-wrap;margin:0; }
+    .sr-only { position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0); }
+    .quiz-q { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px; }
+    .quiz-q .qq { font-weight:700;margin:0 0 12px;font-size:18px; }
+    .qopts { display:grid;gap:8px; }
+    .qopt { text-align:left;background:var(--paper);border:1px solid var(--line);border-radius:10px;
+      padding:12px 14px;cursor:pointer;font-size:15.5px;color:var(--ink); }
+    .qopt:hover:not(:disabled) { border-color:var(--navy); }
+    .qopt:disabled { cursor:default;opacity:.85; }
+    .qopt.correct { background:var(--green-soft);border-color:var(--green); }
+    .qopt.wrong { background:var(--red-soft);border-color:var(--red); }
+    .qexp { margin:12px 0 0;font-size:15px;color:var(--muted); }
+    .qexp strong.ok { color:var(--green); } .qexp strong.no { color:var(--red); }
+    #quiz-score { display:none;margin-top:8px;background:var(--navy);color:#fff;border-radius:14px;
+      padding:20px 24px;font-size:19px; }
+    #quiz-score strong { color:var(--gold); }
+    .fgrid { display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px; }
+    .fcard { perspective:900px;cursor:pointer;min-height:170px; }
+    .fcard-inner { position:relative;width:100%;height:100%;min-height:170px;transform-style:preserve-3d;transition:transform .45s; }
+    .fcard.flipped .fcard-inner { transform:rotateY(180deg); }
+    .fface { position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+      border-radius:14px;padding:18px;display:flex;align-items:center;justify-content:center;text-align:center;
+      border:1px solid var(--line);background:var(--white);box-shadow:var(--shadow);font-size:15.5px; }
+    .fface.front { font-weight:700;color:var(--navy); }
+    .fface.back { transform:rotateY(180deg);background:var(--teal-soft);color:var(--ink);font-size:14.5px; }
+    .fcard:focus-visible { outline:2px solid var(--teal);outline-offset:3px;border-radius:14px; }
+    .triggers { display:grid;gap:10px; }
+    .trigger { background:var(--gold-soft);border-radius:12px;padding:14px 18px;font-size:16px; }
+    .trigger strong { color:var(--navy); }
+    .back-link { display:inline-block;margin:8px 0 60px;font-weight:600;color:var(--teal);text-decoration:none;font-size:17px; }
+    .back-link:hover { text-decoration:underline; }
+    .fig { background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+      padding:12px;box-shadow:var(--shadow);overflow-x:auto; }
+    .fig svg { display:block;width:100%;height:auto; }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior:auto; } .fcard-inner{transition:none;} }
+  </style>
+
+</head>
+<body>
+<nav class="portal-nav">
+    <div class="shell portal-nav-inner">
+      <a class="portal-brand" href="../index.html">AI Engineering <span>· Learning Portal</span></a>
+      <div class="portal-links">
+        <a href="../index.html#daily-topics">Daily topics</a>
+        <a href="../index.html#loop">Loop</a>
+        <a href="../index.html#graph">Graph</a>
+        <a href="../index.html#harness">Harness</a>
+      </div>
+    </div>
+  </nav>
+  <div class="shell">
+
+    <header class="hero">
+      <div class="chapter-mark">Daily topic · AI engineering</div>
+      <h1>Tool calling / function calling done right</h1>
+      <p class="lede">The whole point of AI agents fits in one sentence: <strong>the model never runs your code — it just asks.</strong> You hand it a menu of tools described as JSON schemas; it emits a structured call — "run get_weather with location=Paris"; your application validates and executes it, then feeds the result back in. Give the model verbs, and keep every side effect behind your own code.</p>
+      <p class="date-line">2026-09-20 · Topic 008</p>
+    </header>
+
+    <section class="block">
+      <h2><span class="num">01</span> The skill card</h2>
+      <p class="sub">Every topic on this portal is designed like a Codex skill: a name, a trigger, and concrete steps.</p>
+      <div class="skill-card"><pre style="margin:0">---
+<span class="k">name:</span> tool-calling
+<span class="k">description:</span> Reach for this when the model needs live data, side effects,
+  or structured actions: describe each tool as a JSON-schema menu with a
+  clear name and description, let the model emit a structured tool call,
+  and have YOUR code validate, dispatch, and execute it — then loop on
+  tool_result until the model answers. Never let the model execute or
+  authorize anything directly.
+---</pre></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">02</span> The one-idea version</h2>
+      <p class="idea">Tool calling is a <strong>structured request, not remote execution</strong>. The model looks at your JSON-schema menu and emits a call — a name plus JSON arguments — and then stops. Your code decides whether that call is allowed, runs it, and returns the result as a <strong>tool_result</strong> tied to the call by ID. The loop repeats until the model answers. The LLM is the decision-maker; <strong>your code is the only thing that touches the world</strong>.</p>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">03</span> The visual</h2>
+      <p class="sub">One loop, two owners: the model picks and describes; your application validates, executes, and returns. The red line is the trust boundary — nothing crosses it except structured text.</p>
+      <div class="fig">
+      <svg viewBox="0 0 920 560" role="img" aria-label="Tool-calling loop: user message and tool menu go to the model, which emits a structured tool call; application code validates and executes the function, returns the tool result to the model, which finally answers. The trust boundary separates the model side from your code side.">
+        <defs>
+          <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 1 L 9 5 L 0 9 z" fill="#53636f"/>
+          </marker>
+        </defs>
+        <g font-family="IBM Plex Mono, monospace" font-size="12">
+          <text x="20" y="30" fill="#163247" font-weight="600" font-size="13">THE MODEL OWNS DECISIONS · YOUR CODE OWNS ACTIONS</text>
+
+          <!-- user -->
+          <rect x="20" y="52" width="190" height="76" rx="14" fill="#f7edc8" stroke="#d8a524" stroke-width="1.5"/>
+          <text x="36" y="76" fill="#53636f" font-size="11">user</text>
+          <text x="36" y="98" fill="#163247" font-size="12.5" font-weight="600">"Weather in Paris?"</text>
+          <text x="36" y="118" fill="#53636f" font-size="11">+ tool menu (schemas)</text>
+
+          <line x1="210" y1="90" x2="242" y2="90" stroke="#53636f" stroke-width="2" marker-end="url(#arr)"/>
+
+          <!-- model -->
+          <rect x="242" y="52" width="230" height="130" rx="14" fill="#e3eef4" stroke="#163247" stroke-width="1.5"/>
+          <text x="258" y="76" fill="#53636f" font-size="11">the model</text>
+          <text x="258" y="98" fill="#163247" font-size="12.5" font-weight="600">reads the menu,</text>
+          <text x="258" y="120" fill="#163247" font-size="12.5" font-weight="600">emits a call:</text>
+          <rect x="258" y="130" width="198" height="40" rx="8" fill="#ffffff" stroke="#163247"/>
+          <text x="270" y="147" fill="#163247" font-size="11">get_weather</text>
+          <text x="270" y="163" fill="#53636f" font-size="11">{ "location": "Paris" }</text>
+
+          <!-- trust boundary -->
+          <line x1="500" y1="40" x2="500" y2="470" stroke="#b3402e" stroke-width="2.5" stroke-dasharray="8 6"/>
+          <text x="500" y="490" fill="#b3402e" font-size="11" font-weight="600" text-anchor="middle">TRUST BOUNDARY — structured text only</text>
+
+          <!-- your code -->
+          <rect x="528" y="52" width="372" height="130" rx="14" fill="#dff2ee" stroke="#0b8174" stroke-width="1.5"/>
+          <text x="544" y="76" fill="#0b8174" font-size="11" font-weight="600">YOUR application code</text>
+          <text x="544" y="98" fill="#163247" font-size="12.5">1. name in allow-list?</text>
+          <text x="544" y="120" fill="#163247" font-size="12.5">2. args match schema? (enums!)</text>
+          <text x="544" y="142" fill="#163247" font-size="12.5">3. permission check, then run</text>
+          <text x="544" y="164" fill="#163247" font-size="12.5">4. build tool_result</text>
+
+          <line x1="472" y1="130" x2="528" y2="130" stroke="#53636f" stroke-width="2" marker-end="url(#arr)"/>
+          <line x1="714" y1="182" x2="714" y2="240" stroke="#53636f" stroke-width="2" marker-end="url(#arr)"/>
+
+          <!-- tool_result -->
+          <rect x="528" y="240" width="372" height="100" rx="14" fill="#ffffff" stroke="#163247" stroke-width="1.5"/>
+          <text x="544" y="264" fill="#53636f" font-size="11">tool_result</text>
+          <rect x="544" y="274" width="340" height="50" rx="8" fill="#f6f8f7" stroke="#cbd5d8"/>
+          <text x="556" y="294" fill="#163247" font-size="11">call_id: "call_9f2a"</text>
+          <text x="556" y="312" fill="#163247" font-size="11">{ "temperature": "25", "unit": "C" }</text>
+
+          <line x1="714" y1="340" x2="714" y2="398" stroke="#53636f" stroke-width="2" marker-end="url(#arr)"/>
+
+          <!-- final -->
+          <rect x="528" y="398" width="372" height="62" rx="14" fill="#f7edc8" stroke="#d8a524" stroke-width="1.5"/>
+          <text x="544" y="422" fill="#163247" font-size="12.5">model reads the result →</text>
+          <text x="544" y="444" fill="#163247" font-size="12.5" font-weight="600">"The weather in Paris is 25°C."</text>
+
+          <!-- loop arrow -->
+          <path d="M 472 340 C 440 340 420 300 420 220 C 420 160 436 130 462 118" fill="none" stroke="#53636f" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#arr)"/>
+          <text x="352" y="250" fill="#53636f" font-size="11">loop: model may emit</text>
+          <text x="352" y="266" fill="#53636f" font-size="11">another call — or answer</text>
+
+          <!-- key line -->
+          <text x="20" y="530" fill="#53636f" font-size="12">the loop in one line: model asks → you run → you report → model continues.</text>
+          <text x="20" y="552" fill="#d66332" font-weight="600" font-size="12">if the model could act directly, every hallucination would be a side effect. the boundary is the feature.</text>
+        </g>
+      </svg>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">04</span> How it works</h2>
+      <p class="sub">Six mechanics — one per step of the loop — plus the controls that keep it from running away.</p>
+      <div class="mechanics">
+        <div class="mech"><div class="mnum">1</div><div>
+          <h3>Describe each tool as a JSON-schema menu — the description is the model's only manual</h3>
+          <p>Name, what it does, when to use it, and a JSON schema for the arguments. The model never sees your implementation — only this description. OpenAI's official best practices: write clear, detailed names and parameter descriptions, and use the system prompt to say exactly when (and when not) each function should be used. Vague tools get vague callers.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">2</div><div>
+          <h3>The model emits a structured call, never code — then stops</h3>
+          <p>On OpenAI that's a <code>tool_calls</code> entry with a function name and JSON arguments; on Anthropic it's a <code>tool_use</code> block with <code>stop_reason: "tool_use"</code>. This is strictly better than the old ReAct trick of parsing free-text "Action:" lines: structured output can't drift formatting mid-sentence. Parsing text is fragile; a schema-shaped call is a contract.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">3</div><div>
+          <h3>Your code dispatches: allow-list the name, validate the args, then execute</h3>
+          <p>Look the tool name up in a registry you control — never <code>eval</code> or dynamically import by model-supplied string. Validate arguments against the schema, and use enums to make invalid states unrepresentable: OpenAI's own example is that <code>toggle_light(on: bool, off: bool)</code> allows nonsense, while an enum doesn't. The model proposes; your code authorizes.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">4</div><div>
+          <h3>Return a tool_result tied to the call by ID, and append the full turn history</h3>
+          <p>Each result must carry the original <code>call_id</code> (OpenAI) / <code>tool_use_id</code> (Anthropic) so the model knows which call the result answers — especially when several calls fly in one turn. Then send back the whole transcript: the original prompt, the model's call, and your result. The model continues the loop: another call, or the final answer.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">5</div><div>
+          <h3>Run the loop with a hard budget: max iterations, timeout, token cap</h3>
+          <p>An agent loop is a <code>while</code> with a model in the condition — it can spin. OpenAI's <code>tool_choice</code> gives you five gears: <code>auto</code> (model decides), <code>required</code> (must call something), force one specific function, restrict to an allowed subset, or <code>none</code> (chat only). On top of that, your loop needs a step limit and a cost ceiling. An unbounded loop is a credit card with a keyboard.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">6</div><div>
+          <h3>Keep the menu small: aim for fewer than 20 active tools per turn</h3>
+          <p>Every tool definition is injected into the model's context and billed as input tokens — and accuracy degrades as the menu grows. OpenAI's guidance: fewer than 20 functions at the start of a turn (a soft target), offload burden into code (don't make the model fill arguments you already know), and merge functions that are always called in sequence. If you have hundreds of tools, defer-load them: let the model search for and load tools on demand instead of listing the whole catalog.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">7</div><div>
+          <h3>Handle parallel calls: the model can emit several in one turn</h3>
+          <p>"Compare flights to Tokyo and Osaka" is two independent lookups — both providers let the model emit them together. Execute them concurrently, build one <code>tool_result</code> per call ID, and return all of them. Parallelism is free latency; the only hard part is pairing each result with the right ID so the model doesn't mix up the cities.</p>
+        </div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">05</span> Code sketch</h2>
+      <p class="sub">The whole pattern in 27 lines: the model asks, your code runs, the loop is bounded. Validation and permission checks go where the comment says.</p>
+      <pre class="code"><span class="k">import</span> json
+
+TOOLS = {
+    <span class="s">"get_weather"</span>: {
+        <span class="s">"schema"</span>: {<span class="s">"type"</span>: <span class="s">"function"</span>, <span class="s">"name"</span>: <span class="s">"get_weather"</span>,
+            <span class="s">"description"</span>: <span class="s">"Current temperature for a city."</span>,
+            <span class="s">"parameters"</span>: {<span class="s">"type"</span>: <span class="s">"object"</span>,
+                <span class="s">"properties"</span>: {<span class="s">"location"</span>: {<span class="s">"type"</span>: <span class="s">"string"</span>}},
+                <span class="s">"required"</span>: [<span class="s">"location"</span>]}},
+        <span class="s">"fn"</span>: get_weather,  <span class="c"># your real implementation, in your process</span>
+    }
+}
+
+<span class="k">def</span> agent_loop(messages, max_steps=8):
+    <span class="k">for</span> _ <span class="k">in</span> range(max_steps):          <span class="c"># the loop has a budget</span>
+        msg = client.chat.completions.create(
+            model=<span class="s">"gpt-4o-mini"</span>, messages=messages,
+            tools=[t[<span class="s">"schema"</span>] <span class="k">for</span> t <span class="k">in</span> TOOLS.values()]).choices[0].message
+        messages.append(msg)
+        <span class="k">if</span> <span class="k">not</span> msg.tool_calls:          <span class="c"># no call requested → final answer</span>
+            <span class="k">return</span> msg.content
+        <span class="k">for</span> call <span class="k">in</span> msg.tool_calls:       <span class="c"># the model ASKS; your code RUNS</span>
+            <span class="c"># TODO: validate call.function.arguments against the schema,</span>
+            <span class="c"># check permissions, then dispatch ONLY from this registry</span>
+            result = TOOLS[call.function.name][<span class="s">"fn"</span>](
+                **json.loads(call.function.arguments))
+            messages.append({<span class="s">"role"</span>: <span class="s">"tool"</span>,
+                <span class="s">"tool_call_id"</span>: call.id, <span class="c"># pair result to the call</span>
+                <span class="s">"content"</span>: json.dumps(result)})
+    <span class="k">raise</span> RuntimeError(<span class="s">"tool loop exceeded its budget"</span>)
+
+<span class="c"># every production agent is this loop with validation, permissions,</span>
+<span class="c"># retries, and logging bolted on. the shape never changes.</span></pre>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">06</span> Failure modes</h2>
+      <p class="sub">Named pitfalls, each with a one-line fix. Every one of them is a hole in the trust boundary.</p>
+      <div class="mechanics">
+        <div class="mech fail"><div class="mnum">✕</div><div>
+          <h3>Parsing free text instead of using native tool calls <span class="fix">Fix: use the provider's structured tool-call output (tool_calls / tool_use blocks) — it's a contract, not a hope.</span></h3>
+          <p>The ReAct-era trick of regexing "Action: search(...)" out of model prose breaks the moment the model rephrases, reorders, or adds a stray quote. Native tool calling exists precisely because text parsing is fragile.</p>
+        </div></div>
+        <div class="mech fail"><div class="mnum">✕</div><div>
+          <h3>Hallucinated arguments reach your real functions <span class="fix">Fix: validate every argument against the schema, use enums for closed sets, and return validation errors as tool_results so the model retries — don't crash, converse.</span></h3>
+          <p>The model will invent enum values, drop required fields, and pass "ASAP" where you expected an ISO date. Treat every argument as user input: it is. A returned error message is just another turn of the loop.</p>
+        </div></div>
+        <div class="mech fail"><div class="mnum">✕</div><div>
+          <h3>A 60-tool menu and the model picks wrong (or never picks) <span class="fix">Fix: aim for fewer than 20 active tools per turn; offload arguments you already know into code; defer-load rare tools with tool search.</span></h3>
+          <p>Tool selection accuracy falls as the menu grows — and every schema costs input tokens on every turn. A sprawling menu is the tool-calling equivalent of a 200-item restaurant menu: nobody orders well.</p>
+        </div></div>
+        <div class="mech fail"><div class="mnum">✕</div><div>
+          <h3>The loop never ends: spin, retry-storm, budget gone <span class="fix">Fix: max iterations + wall-clock timeout + cost ceiling; back off and surface a partial answer instead of spinning forever.</span></h3>
+          <p>A model that keeps calling tools "just to check" is an agent with no exit condition. The <code>while</code> loop in the sketch has a budget for a reason — put one in before the first production call.</p>
+        </div></div>
+        <div class="mech fail"><div class="mnum">✕</div><div>
+          <h3>Side-effectful tools with no human in the loop <span class="fix">Fix: least-privilege tool permissions, explicit confirmation for destructive or irreversible actions, and idempotent tool implementations.</span></h3>
+          <p><code>delete_account</code> should not sit on the same menu, with the same permissions, as <code>get_weather</code>. The model decides what to propose — you decide what it's allowed to propose, and what needs a human's yes first.</p>
+        </div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">07</span> Go deeper</h2>
+      <p class="sub">The two official guides plus two hands-on videos — every link opened and verified before publishing.</p>
+      <div class="ref-list">
+        <a class="ref" href="https://developers.openai.com/api/docs/guides/function-calling">
+          <span class="badge doc">Docs</span>
+          <div><h3>OpenAI — Function calling guide</h3><p>The canonical reference: the five-step tool-calling flow, schema best practices (clear descriptions, enums, the "intern test"), keeping the menu under ~20 functions, and the tool_choice gears from auto to none.</p></div>
+        </a>
+        <a class="ref" href="https://docs.anthropic.com/en/docs/build-with-claude/tool-use">
+          <span class="badge doc">Docs</span>
+          <div><h3>Anthropic — Tool use with Claude</h3><p>The second provider's vocabulary for the same loop: client vs server tools, the tool_use → tool_result round trip, steering when the model does or doesn't call, and how tool definitions are priced as tokens.</p></div>
+        </a>
+        <a class="ref" href="https://www.youtube.com/watch?v=xoP1zU1Tm6M">
+          <span class="badge vid">Video</span>
+          <div><h3>Tool Calling (Function Calling) — Generative AI for Developers</h3><p>A short, visual, developer-first walkthrough of the whole loop — the model emits the call, your code executes — ending with a checklist for reviewing a tool-calling PR.</p></div>
+        </a>
+        <a class="ref" href="https://www.youtube.com/watch?v=ZTkYx-GcluE">
+          <span class="badge vid">Video</span>
+          <div><h3>Build AI Agents with Function Calling in Python</h3><p>Hands-on Python: how the AI decides when to call, extracting arguments with json.loads, why tool_call_id pairing matters, and the while loop that handles multiple tool calls.</p></div>
+        </a>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">08</span> Sample prompts</h2>
+      <p class="sub">Copy-paste starters. One designs tool schemas, one reviews your dispatch code, one debugs a misbehaving tool menu.</p>
+
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>THE TOOL DESIGNER</strong><button class="copy-btn" data-copy="px-designer">Copy</button></div>
+        <p class="prompt-text" id="px-designer">Design the tool menu for my agent. My application's capabilities:
+{{list what your code can actually do, e.g. look up orders, issue refunds, send emails}}
+For each capability, write a tool definition: a clear snake_case name,
+a description that says exactly when to use it (and when NOT to),
+and a JSON schema for its arguments. Apply the rules: enums for
+closed sets (no invalid states), required vs optional fields marked
+deliberately, no arguments the model can't know or that my code
+already has, and merge any two functions that are always called in
+sequence. End with the one tool you'd cut if I had to ship tomorrow.</p>
+      </div>
+
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>THE DISPATCH REVIEWER</strong><button class="copy-btn" data-copy="px-reviewer">Copy</button></div>
+        <p class="prompt-text" id="px-reviewer">Review my tool-calling dispatch loop for safety and correctness.
+The code is pasted below. Check for: (1) tool names dispatched
+only from an allow-list registry — no dynamic eval/import by
+model-supplied string; (2) arguments validated against the schema
+before execution; (3) tool_result paired with the correct call_id;
+(4) a hard bound on iterations, plus timeout and cost ceiling;
+(5) side-effectful tools gated behind permission checks or human
+confirmation; (6) the full transcript (prompt, call, result) sent
+back each turn. List every gap as: the exact line, what the model
+could do through it, and the smallest fix.</p>
+      </div>
+
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>THE MENU DEBUGGER</strong><button class="copy-btn" data-copy="px-debugger">Copy</button></div>
+        <p class="prompt-text" id="px-debugger">My agent's tool calling misbehaves. Symptoms:
+{{e.g. it never calls the right tool / it calls the wrong one /
+it calls tools in an endless loop / arguments come back malformed}}
+My tool menu (name + description + schema per tool):
+{{paste it}}
+Diagnose across: vague descriptions vs a decisive one, menus
+over ~20 tools, arguments the model can't know, missing enums,
+and tool_choice / system-prompt steering. For each issue: the
+one-line evidence in my menu, and the smallest change — cheapest
+fix first.</p>
+      </div>
+      <p class="sr-only" aria-live="polite" id="live-status"></p>
+    </section>
+    <section class="block">
+      <h2><span class="num">09</span> Quiz</h2>
+      <p class="sub">Five questions on judgment, not trivia. Click an answer to check yourself.</p>
+      <div id="quiz">
+        <div class="quiz-q" data-answer="1">
+          <p class="qq">1. Your agent needs today's weather in Paris. What actually executes the weather lookup?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">The model — tool calling gives the model direct access to run your functions.</button>
+            <button class="qopt" data-i="1">Your application code: the model emits a structured call (get_weather, location=Paris), your dispatcher validates and runs it, and you feed the result back as a tool_result.</button>
+            <button class="qopt" data-i="2">The model generates a Python script and the API sandbox runs it automatically.</button>
+            <button class="qopt" data-i="3">Nobody — the model answers from training data and the tool call is just logging.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="1">
+          <p class="qq">2. Why is native tool calling more reliable than the ReAct trick of parsing "Action: ..." lines out of model text?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">It's faster — structured calls skip the model's reasoning.</button>
+            <button class="qopt" data-i="1">Structured tool-call output is a contract: the model emits a name and JSON arguments in a fixed shape, instead of free prose your regex must survive. Text drifts; schemas don't.</button>
+            <button class="qopt" data-i="2">ReAct can't call more than one tool; native calls can.</button>
+            <button class="qopt" data-i="3">Native tool calling lets the model execute code directly.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="1">
+          <p class="qq">3. The model keeps calling get_weather with units="kelvin", which your schema doesn't allow. Best response?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">Remove the tool — the model can't be trusted with it.</button>
+            <button class="qopt" data-i="1">Validate args in your dispatcher, return the validation error as a tool_result so the model can retry, and tighten the schema (enum of celsius/fahrenheit, clear description). Don't crash — converse.</button>
+            <button class="qopt" data-i="2">Add kelvin to your backend and convert silently.</button>
+            <button class="qopt" data-i="3">Let it fail in production; the model's next retry will learn.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="1">
+          <p class="qq">4. Your product has 60 candidate tools. What should the agent's active menu look like?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">All 60 — more options means the model picks the best one.</button>
+            <button class="qopt" data-i="1">Fewer than ~20 per turn: keep the likely ones active, merge always-sequential pairs, and defer-load the rest with tool search. Big menus degrade selection and burn input tokens.</button>
+            <button class="qopt" data-i="2">Pick 5 at random per turn to keep latency low.</button>
+            <button class="qopt" data-i="3">It doesn't matter — tool definitions aren't billed as tokens.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="1">
+          <p class="qq">5. Your agent keeps calling check_order_status in a loop and never answers. What's missing?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">A bigger model — small models loop.</button>
+            <button class="qopt" data-i="1">A bounded loop: max iterations, a timeout, and a cost ceiling — plus a system prompt that says when to stop and answer with what it has. An agent loop is a while with a model in the condition; it needs an exit.</button>
+            <button class="qopt" data-i="2">More tools — the model is looping because its options are too few.</button>
+            <button class="qopt" data-i="3">Strict mode — that alone stops all loops.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+      </div>
+      <div id="quiz-score" role="status"></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">10</span> Flashcards</h2>
+      <p class="sub">Click a card — or tab to it and press Enter — to flip it.</p>
+      <div class="fgrid">
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: tool call"><div class="fcard-inner">
+          <div class="fface front">tool_call</div>
+          <div class="fface back">The model's structured request: a tool name plus JSON arguments. It proposes — it never executes.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: tool_result and call_id"><div class="fcard-inner">
+          <div class="fface front">tool_result + call_id</div>
+          <div class="fface back">Your application's reply: the tool's output, tied to the original call by ID — so the model knows which result answers which call, especially when several fly in one turn.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: JSON schema menu"><div class="fcard-inner">
+          <div class="fface front">The tool menu</div>
+          <div class="fface back">Every tool described as name + description + JSON schema for its arguments. The description is the model's only manual — it's all it ever sees of your implementation.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: the agent loop"><div class="fcard-inner">
+          <div class="fface front">The agent loop</div>
+          <div class="fface back">Model emits a call → your code validates, dispatches, executes → you return tool_result → model continues or answers. Every production agent is this loop with validation, permissions, and logging bolted on.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: tool_choice"><div class="fcard-inner">
+          <div class="fface front">tool_choice</div>
+          <div class="fface back">How much freedom the model gets: auto (model decides), required (must call something), force one specific function, restrict to a subset — or none for plain chat.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: the intern test"><div class="fcard-inner">
+          <div class="fface front">The intern test</div>
+          <div class="fface back">OpenAI's bar for a tool description: could a human intern use this function correctly given nothing but what you gave the model? If not, the questions they'd ask you belong in the description.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: enums over booleans"><div class="fcard-inner">
+          <div class="fface front">Enums over booleans</div>
+          <div class="fface back">Use enums and object structure to make invalid states unrepresentable: toggle_light(on: bool, off: bool) allows nonsense; a mode enum doesn't. Design the schema so the model can't be wrong.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: allow-list dispatch"><div class="fcard-inner">
+          <div class="fface front">Allow-list dispatch</div>
+          <div class="fface back">Look the model-supplied tool name up in a registry you control — never eval or dynamic-import by model string. The model proposes the verb; your code decides whether it exists and may run.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: parallel tool calls"><div class="fcard-inner">
+          <div class="fface front">Parallel tool calls</div>
+          <div class="fface back">The model can emit several independent calls in one turn. Execute them concurrently, return one tool_result per call_id — the pairing is the only hard part.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: client vs server tools"><div class="fcard-inner">
+          <div class="fface front">Client vs server tools</div>
+          <div class="fface back">Anthropic's split: client tools (your functions) run in your application and return a tool_result; server tools (web search, code execution) run on the provider's infrastructure — no handler code from you.</div>
+        </div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">11</span> Reach for this when…</h2>
+      <div class="triggers">
+        <div class="trigger"><strong>The model needs facts newer than its training data or inside your systems</strong> — weather, prices, order status, your database. If the answer isn't in the weights, don't make it guess: give it a tool.</div>
+        <div class="trigger"><strong>You want natural language to trigger real actions</strong> — refunds, emails, ticket creation, deployments. The loop turns "cancel my order" into a validated, permission-checked function call instead of a hallucinated confirmation.</div>
+        <div class="trigger"><strong>You need structured data out of messy text</strong> — entity extraction, classification, form filling. Force a specific tool via tool_choice and the model becomes a reliable JSON emitter for your pipeline.</div>
+      </div>
+    </section>
+
+    <a class="back-link" href="../index.html#daily-topics">← Back to the learning portal</a>
+  </div>
+
+  <script>
+    // copy buttons
+    const status = document.getElementById('live-status');
+    document.querySelectorAll('.copy-btn').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const target = document.getElementById(button.dataset.copy);
+        const text = target.innerText;
+        try {
+          await navigator.clipboard.writeText(text);
+          const original = button.textContent;
+          button.textContent = 'Copied';
+          status.textContent = 'Prompt copied to clipboard.';
+          setTimeout(() => button.textContent = original, 1600);
+        } catch {
+          const range = document.createRange();
+          range.selectNodeContents(target);
+          const selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+          status.textContent = 'Prompt selected. Copy it with your device copy command.';
+        }
+      });
+    });
+
+    // quiz
+    const explanations = [
+      ["The model never executes anything — that's the trust boundary. Tool calling is a structured request; your code owns execution.",
+       "Right. The model emits the call and stops; your dispatcher validates, executes, and feeds back a tool_result. The model touches no code, no data, no APIs directly.",
+       "Provider sandboxes exist for specific server tools, but ordinary function calling runs in your process — the model just asks.",
+       "The tool call is the opposite of logging: it's the request that makes the loop work. But the lookup itself runs in your code."],
+      ["Native calls don't skip reasoning — they just change the output channel from fragile prose to a fixed schema shape.",
+       "Right. A schema-shaped call is a contract your code can dispatch on; a parsed text line is a hope that survives only until the model rephrases. The ReAct flow's whole weakness was the regex.",
+       "ReAct can chain tools too — reliability, not count, is the difference.",
+       "No: the model never executes code, native or not. Execution stays in your process."],
+      ["Removing the tool punishes the capability instead of fixing the contract — and the model will find another way to guess.",
+       "Right. Treat arguments as untrusted input: validate, and return the error as a tool_result so the model retries inside the loop. Tighten the schema with an enum and a description that lists the allowed values.",
+       "Silently converting hides the misunderstanding — the next malformed argument lands somewhere you can't predict.",
+       "Production failures are the most expensive teacher. Validate first, everywhere."],
+      ["More options don't help a model that must pick — selection accuracy falls as the menu grows, and each schema costs input tokens per turn.",
+       "Right. Under ~20 active tools, merge always-sequential pairs, and defer-load the rest with tool search instead of listing the whole catalog on every turn.",
+       "Random tools are worse than many tools — at least the full menu was deterministic.",
+       "Tool definitions are injected into the context and billed as input tokens — both official guides say so."],
+      ["Model size doesn't cause loops — an exit-less loop does. Small models loop when nothing tells them to stop.",
+       "Right. Max iterations, timeout, cost ceiling, and a system prompt that says when to answer with what it has. The while loop always needs its own terms.",
+       "More tools give the loop more places to wander — the fix is a bound, not a bigger menu.",
+       "Strict mode constrains argument shape, not loop behavior. Bounds come from your loop, not the schema."]
+    ];
+    const questions = [...document.querySelectorAll('.quiz-q')];
+    let score = 0, answered = 0;
+    questions.forEach((q, qi) => {
+      const correct = parseInt(q.dataset.answer, 10);
+      const exp = q.querySelector('.qexp');
+      q.querySelectorAll('.qopt').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          if (q.dataset.done) return;
+          q.dataset.done = "1";
+          const chosen = parseInt(btn.dataset.i, 10);
+          const ok = chosen === correct;
+          q.querySelectorAll('.qopt').forEach((b) => {
+            b.disabled = true;
+            if (parseInt(b.dataset.i, 10) === correct) b.classList.add('correct');
+          });
+          if (!ok) btn.classList.add('wrong');
+          else score++;
+          answered++;
+          exp.hidden = false;
+          exp.innerHTML = (ok ? '<strong class="ok">Correct.</strong> ' : '<strong class="no">Not quite.</strong> ') + explanations[qi][chosen];
+          if (answered === questions.length) {
+            const box = document.getElementById('quiz-score');
+            box.style.display = 'block';
+            const verdict = score === 5 ? "Flawless — the model asks, you run, the boundary holds."
+              : score >= 3 ? "Solid. Re-read the two you missed — they're the trust-boundary decisions."
+              : "Worth a second pass — sections 04 and 06 are the short path back.";
+            box.innerHTML = 'You scored <strong>' + score + ' / 5</strong>. ' + verdict;
+            box.scrollIntoView({behavior: 'smooth', block: 'nearest'});
+          }
+        });
+      });
+    });
+
+    // flashcards
+    document.querySelectorAll('.fcard').forEach((card) => {
+      const flip = () => card.classList.toggle('flipped');
+      card.addEventListener('click', flip);
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); }
+      });
+    });
+  </script>
+
+</body>
+</html>
