@@ -54,5 +54,12 @@
     "date": "2026-09-20",
     "summary": "The model never runs your code \u2014 it just asks. Give the LLM a JSON-schema tool menu, let it emit structured calls, and let your code validate, execute, and loop on tool_result.",
     "skill": "tool-calling"
+  },
+  {
+    "slug": "2026-09-21-structured-outputs",
+    "title": "Structured outputs: JSON mode, grammars, and validation",
+    "date": "2026-09-21",
+    "summary": "The schema-shaped hole cut into the decoder: constrained decoding masks invalid tokens before sampling, so output is schema-valid by construction \u2014 plus strict mode's three rules, the Pydantic pattern, and why shape is never truth.",
+    "skill": "structured-outputs"
   }
 ]
