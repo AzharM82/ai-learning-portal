@@ -61,5 +61,12 @@
     "date": "2026-09-21",
     "summary": "The schema-shaped hole cut into the decoder: constrained decoding masks invalid tokens before sampling, so output is schema-valid by construction \u2014 plus strict mode's three rules, the Pydantic pattern, and why shape is never truth.",
     "skill": "structured-outputs"
+  },
+  {
+    "slug": "2026-09-22-agent-memory-systems",
+    "title": "Agent memory systems: short-term, long-term, episodic",
+    "date": "2026-09-22",
+    "summary": "A model has no memory between turns \u2014 so memory is a system you build around it: the context window as the desk (short-term), a namespace-scoped store as the filing cabinet (semantic facts, episodic experiences, procedural rules), and the two policies that are the whole craft \u2014 what to write and how to read it back.",
+    "skill": "agent-memory-systems"
   }
 ]

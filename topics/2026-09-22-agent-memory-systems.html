@@ -1,0 +1,637 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="color-scheme" content="light" />
+  <link rel="icon" href="data:," />
+  <title>Agent memory systems: short-term, long-term, episodic &mdash; AI Engineering Learning Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Source+Sans+3:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #14212b; --muted: #53636f; --paper: #f6f8f7; --white: #ffffff;
+      --line: #cbd5d8; --navy: #163247; --navy-2: #21465e; --teal: #0b8174;
+      --teal-soft: #dff2ee; --orange: #d66332; --orange-soft: #f8e4d8;
+      --gold: #d8a524; --gold-soft: #f7edc8; --blue-soft: #e3eef4;
+      --red: #b3402e; --red-soft: #f9e3de; --green: #1e7a3c; --green-soft: #e2f2e6;
+      --shadow: 0 18px 45px rgba(20, 33, 43, .09); --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; color: var(--ink);
+      background: linear-gradient(rgba(20,33,43,.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(20,33,43,.035) 1px, transparent 1px), var(--paper);
+      background-size: 28px 28px;
+      font-family: "Source Sans 3", sans-serif; font-size: 17px; line-height: 1.58;
+    }
+    .shell { width: min(960px, calc(100% - 40px)); margin: 0 auto; }
+    .portal-nav{position:sticky;top:0;z-index:50;background:rgba(22,50,71,.97);border-bottom:1px solid rgba(255,255,255,.12)}
+    .portal-nav-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;flex-wrap:wrap}
+    .portal-brand{color:#fff;text-decoration:none;font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:15px}
+    .portal-brand span{color:var(--gold);font-weight:400}
+    .portal-links{display:flex;gap:18px;flex-wrap:wrap}
+    .portal-links a{color:#dbe7ee;text-decoration:none;font-size:14.5px}
+    .portal-links a:hover{color:#fff;text-decoration:underline}
+    .hero { padding: 56px 0 36px; }
+    .chapter-mark { display:inline-flex;align-items:center;gap:10px;color:var(--navy);
+      font:600 12px/1.2 "IBM Plex Mono",monospace;letter-spacing:.09em;text-transform:uppercase;margin-bottom:18px; }
+    .chapter-mark::before { content:"";width:42px;height:3px;background:var(--orange); }
+    h1 { font-size: clamp(36px, 5vw, 58px); line-height: 1.02; letter-spacing:-.03em; margin:0 0 14px; }
+    .lede { color: var(--muted); font-size: clamp(18px,2vw,22px); max-width: 64ch; margin:0 0 8px; }
+    .date-line { font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--muted); }
+    section.block { margin: 44px 0; }
+    h2 { font-size: 26px; letter-spacing:-.02em; margin:0 0 6px; display:flex;align-items:center;gap:12px; }
+    h2 .num { font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:600;color:var(--white);
+      background:var(--navy);border-radius:999px;min-width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center; }
+    .sub { color:var(--muted); margin:0 0 18px; max-width: 68ch; }
+    .card { background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+      padding:24px;box-shadow:var(--shadow); }
+    .skill-card { background:var(--navy);color:#eaf2f7;border-radius:var(--radius);padding:22px 24px;
+      font-family:"IBM Plex Mono",monospace;font-size:14.5px;overflow-x:auto;box-shadow:var(--shadow); }
+    .skill-card .k { color:var(--gold); }
+    .idea { font-size:21px;line-height:1.5;border-left:4px solid var(--teal);padding:6px 0 6px 20px;max-width:62ch; }
+    .idea strong { color:var(--navy); }
+    .mechanics { display:grid;gap:14px; }
+    .mech { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:18px 20px;
+      display:grid;grid-template-columns:44px 1fr;gap:14px;align-items:start; }
+    .mech .mnum { font-family:"IBM Plex Mono",monospace;font-weight:600;color:var(--teal);
+      background:var(--teal-soft);border-radius:10px;width:44px;height:44px;display:flex;align-items:center;justify-content:center; }
+    .mech h3 { margin:0 0 6px;font-size:18px; }
+    .mech p { margin:0;color:var(--muted);font-size:15.5px; }
+    .mech code, .inline-code { font-family:"IBM Plex Mono",monospace;font-size:.88em;background:var(--blue-soft);
+      padding:2px 7px;border-radius:6px;color:var(--navy); }
+    pre.code { background:#0f2233;color:#e8f1f5;border-radius:14px;padding:20px 22px;overflow-x:auto;
+      font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.6;margin:0; }
+    pre.code .c { color:#8ba3b0; } pre.code .s { color:#ffd479; } pre.code .k { color:#7fd6c2; }
+    .fail { border-left:4px solid var(--orange); }
+    .fail h3 .fix { display:block;margin-top:8px;font-size:15px;font-weight:500;color:var(--green); }
+    .ref-list { display:grid;gap:12px; }
+    .ref { display:flex;gap:14px;align-items:flex-start;background:var(--white);border:1px solid var(--line);
+      border-radius:14px;padding:16px 18px;text-decoration:none;color:inherit; }
+    .ref:hover { border-color:var(--teal); }
+    .ref .badge { flex:none;font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;letter-spacing:.06em;
+      padding:5px 10px;border-radius:999px;text-transform:uppercase; }
+    .badge.doc { background:var(--blue-soft);color:var(--navy); }
+    .badge.vid { background:var(--orange-soft);color:var(--orange); }
+    .ref h3 { margin:0 0 4px;font-size:17px; }
+    .ref p { margin:0;color:var(--muted);font-size:14.5px; }
+    .prompt-block { background:#0f2233;border-radius:var(--radius);overflow:hidden;margin-bottom:18px;box-shadow:var(--shadow); }
+    .prompt-top { display:flex;justify-content:space-between;align-items:center;gap:12px;
+      padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.12); }
+    .prompt-top strong { color:#fff;font-size:13px;letter-spacing:.06em;font-family:"IBM Plex Mono",monospace; }
+    .copy-btn { border:1px solid #6c8796;background:transparent;color:#fff;border-radius:6px;padding:7px 11px;
+      cursor:pointer;font-weight:700;font-size:14px; }
+    .copy-btn:hover { background:rgba(255,255,255,.1); }
+    .copy-btn:focus-visible { outline:2px solid var(--gold);outline-offset:2px; }
+    .prompt-text { color:#e8f1f5;font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.65;
+      padding:18px;white-space:pre-wrap;margin:0; }
+    .sr-only { position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0); }
+    .quiz-q { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px; }
+    .quiz-q .qq { font-weight:700;margin:0 0 12px;font-size:18px; }
+    .qopts { display:grid;gap:8px; }
+    .qopt { text-align:left;background:var(--paper);border:1px solid var(--line);border-radius:10px;
+      padding:12px 14px;cursor:pointer;font-size:15.5px;color:var(--ink); }
+    .qopt:hover:not(:disabled) { border-color:var(--navy); }
+    .qopt:disabled { cursor:default;opacity:.85; }
+    .qopt.correct { background:var(--green-soft);border-color:var(--green); }
+    .qopt.wrong { background:var(--red-soft);border-color:var(--red); }
+    .qexp { margin:12px 0 0;font-size:15px;color:var(--muted); }
+    .qexp strong.ok { color:var(--green); } .qexp strong.no { color:var(--red); }
+    #quiz-score { display:none;margin-top:8px;background:var(--navy);color:#fff;border-radius:14px;
+      padding:20px 24px;font-size:19px; }
+    #quiz-score strong { color:var(--gold); }
+    .fgrid { display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px; }
+    .fcard { perspective:900px;cursor:pointer;min-height:170px; }
+    .fcard-inner { position:relative;width:100%;height:100%;min-height:170px;transform-style:preserve-3d;transition:transform .45s; }
+    .fcard.flipped .fcard-inner { transform:rotateY(180deg); }
+    .fface { position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+      border-radius:14px;padding:18px;display:flex;align-items:center;justify-content:center;text-align:center;
+      border:1px solid var(--line);background:var(--white);box-shadow:var(--shadow);font-size:15.5px; }
+    .fface.front { font-weight:700;color:var(--navy); }
+    .fface.back { transform:rotateY(180deg);background:var(--teal-soft);color:var(--ink);font-size:14.5px; }
+    .fcard:focus-visible { outline:2px solid var(--teal);outline-offset:3px;border-radius:14px; }
+    .triggers { display:grid;gap:10px; }
+    .trigger { background:var(--gold-soft);border-radius:12px;padding:14px 18px;font-size:16px; }
+    .trigger strong { color:var(--navy); }
+    .back-link { display:inline-block;margin:8px 0 60px;font-weight:600;color:var(--teal);text-decoration:none;font-size:17px; }
+    .back-link:hover { text-decoration:underline; }
+    .fig { background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+      padding:12px;box-shadow:var(--shadow);overflow-x:auto; }
+    .fig svg { display:block;width:100%;height:auto; }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior:auto; } .fcard-inner{transition:none;} }
+  </style>
+
+</head>
+<body>
+<nav class="portal-nav">
+    <div class="shell portal-nav-inner">
+      <a class="portal-brand" href="../index.html">AI Engineering <span>· Learning Portal</span></a>
+      <div class="portal-links">
+        <a href="../index.html#daily-topics">Daily topics</a>
+        <a href="../index.html#loop">Loop</a>
+        <a href="../index.html#graph">Graph</a>
+        <a href="../index.html#harness">Harness</a>
+      </div>
+    </div>
+  </nav>
+  <div class="shell">
+
+    <header class="hero">
+      <div class="chapter-mark">Daily topic · AI engineering</div>
+      <h1>Agent memory systems: short-term, long-term, episodic</h1>
+      <p class="lede">A model on its own has no memory between turns — so without a memory system, your agent forgets everything the moment the task runs long or the session ends. Memory isn't something the model has; it's a system you <strong>build around the model</strong>: a working window for this run, a scoped store that survives sessions, and two policies — <strong>WRITE</strong> and <strong>READ</strong> — that are the entire craft.</p>
+      <p class="date-line">2026-09-22 · Topic 010</p>
+    </header>
+
+    <section class="block">
+      <h2><span class="num">01</span> The skill card</h2>
+      <p class="sub">Every topic on this portal is designed like a Codex skill: a name, a trigger, and concrete steps.</p>
+      <div class="skill-card"><pre style="margin:0">---
+<span class="k">name:</span> agent-memory-systems
+<span class="k">description:</span> Reach for this when your agent needs to persist anything
+  across turns or sessions. Keep short-term memory thread-scoped and
+  lean (trim, summarize); keep long-term memory in a namespace-scoped
+  store outside the window as semantic (facts), episodic (experiences),
+  and procedural (rules) kinds; own the WRITE policy (hot-path vs
+  background consolidation, ADD/UPDATE/DELETE/NOOP) and the READ
+  policy (just-in-time top-k, relevance × recency); scope memories per
+  user by default; give stale facts TTLs. Memory is not truth — verify
+  live facts at task time.
+---</pre></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">02</span> The one-idea version</h2>
+      <p class="idea">The context window is the agent's <strong>desk</strong>: session-scoped, finite, wiped clean when the run ends. Long-term memory is the <strong>filing cabinet beside it</strong> — a dated journal (episodic: <em>what happened</em>), index cards (semantic: <em>facts and preferences</em>), and a taped-up how-to (procedural: <em>rules</em>). The craft is two librarians — one <strong>filing</strong> (WRITE: what to store, when, and how to update it) and one <strong>fetching</strong> (READ: recall just-in-time, ranked by relevance × recency) — plus an honest third one who <strong>throws out the stale cards</strong>.</p>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">03</span> The visual</h2>
+      <p class="sub">The desk, the filing cabinet, and the two policies (plus the honest third one).</p>
+      <div class="fig">
+      <svg viewBox="0 0 920 640" role="img" aria-label="Diagram: the context window as the agent's desk (short-term, thread-scoped, finite), the long-term store as a filing cabinet with three drawers — episodic journal, semantic index cards, procedural how-to — and the WRITE and READ policies between them, plus forgetting as a third librarian throwing out stale cards.">
+        <defs>
+          <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 1 L 9 5 L 0 9 z" fill="#53636f"/>
+          </marker>
+        </defs>
+        <g font-family="IBM Plex Mono, monospace" font-size="12">
+          <text x="20" y="30" fill="#163247" font-weight="600" font-size="13">THE DESK AND THE FILING CABINET — and the two policies that run between them</text>
+
+          <!-- desk -->
+          <rect x="20" y="52" width="240" height="330" rx="14" fill="#e3eef4" stroke="#163247" stroke-width="1.5"/>
+          <text x="36" y="78" fill="#163247" font-size="12" font-weight="600">THE DESK</text>
+          <text x="36" y="96" fill="#53636f" font-size="11">short-term · thread-scoped</text>
+          <text x="36" y="120" fill="#163247" font-size="12.5">the context window</text>
+          <text x="36" y="144" fill="#53636f" font-size="11">running message history</text>
+          <text x="36" y="160" fill="#53636f" font-size="11">this run's state, files, artifacts</text>
+          <text x="36" y="188" fill="#b3402e" font-size="11" font-weight="600">✕ session-scoped — resets</text>
+          <text x="36" y="206" fill="#b3402e" font-size="11" font-weight="600">✕ finite — long loops overflow it</text>
+          <text x="36" y="224" fill="#b3402e" font-size="11" font-weight="600">✕ distractor-prone — stale content</text>
+          <rect x="36" y="246" width="208" height="118" rx="10" fill="#ffffff" stroke="#cbd5d8"/>
+          <text x="50" y="268" fill="#0b8174" font-size="11" font-weight="600">keep it lean:</text>
+          <text x="50" y="290" fill="#53636f" font-size="11">trim old tool outputs</text>
+          <text x="50" y="308" fill="#53636f" font-size="11">summarize long stretches</text>
+          <text x="50" y="326" fill="#53636f" font-size="11">filter stale messages</text>
+          <text x="50" y="344" fill="#53636f" font-size="11">(see 2026-09-14: context eng.)</text>
+
+          <!-- write policy -->
+          <line x1="260" y1="130" x2="292" y2="130" stroke="#53636f" stroke-width="2" marker-end="url(#arr)"/>
+          <rect x="292" y="52" width="336" height="160" rx="14" fill="#dff2ee" stroke="#0b8174" stroke-width="1.5"/>
+          <text x="308" y="76" fill="#0b8174" font-size="11" font-weight="600">LIBRARIAN 1 · WRITE (filing)</text>
+          <text x="308" y="100" fill="#163247" font-size="12">what to store — never the raw transcript</text>
+          <text x="308" y="122" fill="#53636f" font-size="11">hot-path: during the conversation —</text>
+          <text x="308" y="138" fill="#53636f" font-size="11">immediate, but adds latency</text>
+          <text x="308" y="160" fill="#53636f" font-size="11">background: consolidation agent on a cron —</text>
+          <text x="308" y="176" fill="#53636f" font-size="11">no latency, available next session</text>
+          <text x="308" y="200" fill="#163247" font-size="11">per new info: ADD / UPDATE / DELETE / NOOP</text>
+
+          <!-- read policy -->
+          <line x1="628" y1="130" x2="652" y2="130" stroke="#53636f" stroke-width="2" marker-end="url(#arr)"/>
+          <rect x="292" y="222" width="336" height="160" rx="14" fill="#dff2ee" stroke="#0b8174" stroke-width="1.5"/>
+          <text x="308" y="246" fill="#0b8174" font-size="11" font-weight="600">LIBRARIAN 2 · READ (fetching)</text>
+          <text x="308" y="270" fill="#163247" font-size="12">recall just-in-time — not everything</text>
+          <text x="308" y="292" fill="#53636f" font-size="11">top-k, ranked relevance × recency</text>
+          <text x="308" y="314" fill="#53636f" font-size="11">semantic search + filters over namespaces</text>
+          <text x="308" y="336" fill="#53636f" font-size="11">load into prompt for facts;</text>
+          <text x="308" y="352" fill="#53636f" font-size="11">on-demand read for skills/procedures</text>
+          <text x="308" y="372" fill="#53636f" font-size="11">never dump the whole cabinet on the desk</text>
+
+          <!-- cabinet -->
+          <line x1="628" y1="470" x2="652" y2="470" stroke="#53636f" stroke-width="2" marker-end="url(#arr)"/>
+          <rect x="652" y="52" width="248" height="330" rx="14" fill="#f7edc8" stroke="#d8a524" stroke-width="1.5"/>
+          <text x="668" y="78" fill="#163247" font-size="12" font-weight="600">THE FILING CABINET</text>
+          <text x="668" y="96" fill="#53636f" font-size="11">long-term · namespace-scoped</text>
+          <text x="668" y="112" fill="#53636f" font-size="11">store: (namespace, key) → JSON</text>
+
+          <rect x="668" y="132" width="216" height="66" rx="10" fill="#ffffff" stroke="#cbd5d8"/>
+          <text x="682" y="154" fill="#163247" font-size="11" font-weight="600">journal — EPISODIC</text>
+          <text x="682" y="172" fill="#53636f" font-size="11">what happened, what was tried,</text>
+          <text x="682" y="188" fill="#53636f" font-size="11">what worked (searchable threads)</text>
+
+          <rect x="668" y="210" width="216" height="66" rx="10" fill="#ffffff" stroke="#cbd5d8"/>
+          <text x="682" y="232" fill="#163247" font-size="11" font-weight="600">index cards — SEMANTIC</text>
+          <text x="682" y="250" fill="#53636f" font-size="11">facts &amp; preferences:</text>
+          <text x="682" y="266" fill="#53636f" font-size="11">"user prefers sans-serif dashboards"</text>
+
+          <rect x="668" y="288" width="216" height="66" rx="10" fill="#ffffff" stroke="#cbd5d8"/>
+          <text x="682" y="310" fill="#163247" font-size="11" font-weight="600">taped-up how-to — PROCEDURAL</text>
+          <text x="682" y="328" fill="#53636f" font-size="11">rules, skills, instructions the</text>
+          <text x="682" y="344" fill="#53636f" font-size="11">agent may rewrite about itself</text>
+
+          <!-- honest third librarian -->
+          <line x1="460" y1="382" x2="460" y2="414" stroke="#53636f" stroke-width="2" marker-end="url(#arr)"/>
+          <rect x="20" y="424" width="880" height="130" rx="14" fill="#f8e4d8" stroke="#d66332" stroke-width="1.5"/>
+          <text x="36" y="450" fill="#d66332" font-size="11" font-weight="600">LIBRARIAN 3 · THE HONEST ONE — FORGETTING IS A FEATURE</text>
+          <text x="36" y="474" fill="#163247" font-size="12">stale cards get thrown out: TTLs, decay curves, eviction — facts get SUPERSEDED, not deleted (bi-temporal).</text>
+          <text x="36" y="496" fill="#53636f" font-size="11.5">the failure nobody warns you about: a tool returns stale data, the agent writes it as fact,</text>
+          <text x="36" y="514" fill="#53636f" font-size="11.5">and every later step builds on the poisoned premise. defenses: provenance, TTLs, verify-before-trust.</text>
+
+          <text x="20" y="596" fill="#163247" font-size="12" font-weight="600">memory is not truth.</text>
+          <text x="220" y="596" fill="#53636f" font-size="12">a stored note says what someone said last week — live facts (balances, status, policy) get re-read at task time.</text>
+          <text x="20" y="620" fill="#d66332" font-weight="600" font-size="12">namespace by default: (user_id,) — one user's cards never leak into another user's run.</text>
+        </g>
+      </svg>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">04</span> How it works</h2>
+      <p class="sub">Seven mechanics: the two memory scopes, the three long-term kinds, and the two policies plus the honest one.</p>
+      <div class="mechanics">
+        <div class="mech"><div class="mnum">1</div><div>
+          <h3>Short-term memory is the running window — keep it lean, don't trust it between sessions</h3>
+          <p>Short-term is <strong>thread-scoped</strong>: the message history and agent state for one run, persisted via a checkpointer (LangGraph) so the thread can resume. It dies with the thread. A checkpointer does <em>not</em> give you cross-session recall — that's the most common misconception to kill early. Manage the window actively: trim old tool outputs, summarize long stretches, filter stale messages (see 2026-09-14 on context engineering). A finite window is a distraction budget.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">2</div><div>
+          <h3>Long-term memory lives OUTSIDE the window in a namespace-scoped store</h3>
+          <p>Long-term memory is saved under custom <code>namespaces</code> — similar to folders — with a distinct <code>key</code> per memory, like a file name. LangGraph stores them as JSON documents; namespaces typically include <code>user_id</code> or <code>org_id</code> plus labels so memories organize hierarchically, with cross-namespace search and content filters. The question for every fact you write: <em>who may read this later, and where?</em> Answer that before the store call, not after.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">3</div><div>
+          <h3>Split long-term into three kinds: semantic (facts), episodic (experiences), procedural (rules)</h3>
+          <p>Borrowed from human memory (the CoALA taxonomy). <strong>Semantic</strong> = facts and preferences ("user prefers sans-serif dashboards"), stored as a continuously-updated profile (JSON document) or a collection of narrowly-scoped documents. <strong>Episodic</strong> = past experiences: what was tried, in what order, what worked — in practice recalled as few-shot examples or searchable past threads. <strong>Procedural</strong> = rules for how to act: the system prompt, skills, instructions the agent may refine about itself (via reflection on feedback). Three drawers, three access patterns — don't mash them into one blob.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">4</div><div>
+          <h3>Own the WRITE policy: decide what to store, and choose hot-path vs background</h3>
+          <p>Never store the raw transcript — distill. The two write strategies: <strong>hot-path</strong> (the agent writes during the conversation, e.g. ChatGPT's save_memories tool) — memories are available immediately, but it adds latency and makes the agent multitask; <strong>background</strong> ("sleep time compute": a separate consolidation agent runs on a cron, extracts facts, merges them into the store) — zero user-facing latency, but memories appear next session. The canonical consolidation decision per new info is <strong>ADD / UPDATE / DELETE / NOOP</strong>. Match consolidation cadence to how often users actually talk to the agent — consolidating hourly for weekly users just burns tokens on no-ops.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">5</div><div>
+          <h3>Own the READ policy: recall just-in-time, ranked by relevance × recency</h3>
+          <p>Don't load the whole cabinet every turn. The READ policy: retrieve <strong>just-in-time</strong> — a top-k slice via semantic search plus content filters over the namespace, ranked by relevance × recency. Two load patterns from the Deep Agents playbook: <strong>load into the system prompt</strong> at startup for facts and preferences, or <strong>on-demand retrieval</strong> for skills (read only the skill descriptions at startup; read the full skill file when a task matches it). Context stays lean until a capability is needed.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">6</div><div>
+          <h3>Forgetting is a feature: TTLs, decay, supersede-don't-delete</h3>
+          <p>Memory that never decays becomes a liability. Give facts <strong>TTLs</strong>, let unused memories decay, evict what the consolidation agent flags as stale. Temporal knowledge-graph systems (Zep/Graphiti) are <strong>bi-temporal</strong>: when a fact changes, the old version is superseded, not deleted — so the agent can answer "what did we believe in March?" correctly. And the poison rule: if a tool returned stale data, the agent may have written it as fact — <strong>verify-before-trust</strong> for consequential values, with provenance on every stored fact so you can ask where it came from.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">7</div><div>
+          <h3>Scope by user by default — shared memory is an injection surface</h3>
+          <p>Default to the <code>(user_id,)</code> namespace: one user's preferences never leak into another user's run. Agent-scoped (shared across all users) and organization-scoped memory have real uses — the agent's own persona, company policies — but shared state one user can write and another user reads is a <strong>prompt-injection channel</strong>. Rule: shared/org memory is <strong>read-only</strong> (populated by application code, writes denied declaratively), and writes to sensitive paths go through human-in-the-loop approval. Treat shared memory like shared filesystem permissions: least privilege wins.</p>
+        </div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">05</span> Code sketch</h2>
+      <p class="sub">The whole architecture in 24 lines: a checkpointer for this thread's window, a namespace-scoped store for everything that survives it.</p>
+      <pre class="code"><span class="k">from</span> langgraph.store.memory <span class="k">import</span> InMemoryStore
+<span class="k">from</span> langgraph.checkpoint.memory <span class="k">import</span> MemorySaver
+
+store = InMemoryStore()          <span class="c"># LONG-term: survives across threads</span>
+checkpointer = MemorySaver()     <span class="c"># SHORT-term: this thread's state only</span>
+
+user_ns = (<span class="s">"memories"</span>, <span class="s">"user_42"</span>)   <span class="c"># namespace scopes WHO this belongs to</span>
+
+<span class="c"># WRITE — semantic fact, distilled (never the raw transcript)</span>
+store.put(user_ns, <span class="s">"pref-dashboards"</span>,
+          {<span class="s">"fact"</span>: <span class="s">"user prefers sans-serif dashboards"</span>,
+           <span class="s">"kind"</span>: <span class="s">"semantic"</span>, <span class="s">"source"</span>: <span class="s">"turn-118"</span>})  <span class="c"># provenance!</span>
+
+<span class="c"># WRITE — episodic: how a past bug was fixed, searchable later</span>
+store.put(user_ns, <span class="s">"ep-2026-08-flaky-ci"</span>,
+          {<span class="s">"episode"</span>: <span class="s">"flaky e2e traced to 30s docker timeout; fix: bump to 120s"</span>,
+           <span class="s">"kind"</span>: <span class="s">"episodic"</span>})
+
+<span class="c"># READ — just-in-time: top-k, relevance × recency, never the whole cabinet</span>
+hits = store.search(user_ns, query=<span class="s">"dashboard style preference"</span>)
+mem_block = <span class="s">"\n"</span>.join(h[<span class="s">"value"</span>][<span class="s">"fact"</span>] <span class="k">for</span> h <span class="k">in</span> hits[:5])
+
+messages = checkpointer.load(thread_id=<span class="s">"t-7"</span>)[<span class="s">"messages"</span>][-20:]  <span class="c"># desk: last 20 only</span>
+prompt = system_prompt + mem_block + messages                 <span class="c"># desk + fetched index cards</span></pre>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">06</span> Failure modes</h2>
+      <p class="sub">Named pitfalls, each with a one-line fix. Most memory bugs are a scope problem, a freshness problem, or the whole transcript saved verbatim.</p>
+      <div class="mechanics">
+        <div class="mech fail"><div class="mnum">✕</div><div>
+          <h3>Saving the raw transcript as "memory" <span class="fix">Fix: distill — write facts, episodes, and rules as narrowly-scoped documents (ADD/UPDATE/DELETE/NOOP per new info), and let a consolidation agent merge duplicates on a cron.</span></h3>
+          <p>A transcript dump is all noise and no retrieval: the read side can't rank it, the context bill explodes, and duplicates compound. Memory is a distilled index, not a log file — logs belong in audit storage, not the recall path.</p>
+        </div></div>
+        <div class="mech fail"><div class="mnum">✕</div><div>
+          <h3>One shared bucket, no scoping <span class="fix">Fix: namespace per user_id by default; organization/agent memory is read-only and populated by application code, never by the agent's writes.</span></h3>
+          <p>Without scoping, user A's "draft the layoff memo" style preference leaks into user B's run — and worse, a malicious user can inject instructions into state another user will read. Shared writable memory is a prompt-injection channel with a friendly name.</p>
+        </div></div>
+        <div class="mech fail"><div class="mnum">✕</div><div>
+          <h3>Loading the whole cabinet onto the desk every turn <span class="fix">Fix: retrieve just-in-time — top-k by relevance × recency; keep skills on-demand (descriptions at startup, full files only when a task matches).</span></h3>
+          <p>Every turn pays the full-memory token tax and the model gets distracted by irrelevant cards. Memory retrieval should look like a search call, not like opening every drawer and dumping the contents on the desk.</p>
+        </div></div>
+        <div class="mech fail"><div class="mnum">✕</div><div>
+          <h3>Stale cards treated as truth <span class="fix">Fix: TTLs, supersede-don't-delete (bi-temporal), and provenance on every fact — verify-before-trust for consequential values; re-read live facts at task time.</span></h3>
+          <p>The poisoned-premise failure: a tool returned stale data once, the agent filed it as fact, and every later step built on it. A stored note says what someone said last week; it does not prove the account balance, permission, or policy is still the same today.</p>
+        </div></div>
+        <div class="mech fail"><div class="mnum">✕</div><div>
+          <h3>Memory writes on the hot path of a latency-sensitive loop <span class="fix">Fix: write hot-path only what the next turn needs; move consolidation to a background agent on a cron cadence that matches how often users actually interact.</span></h3>
+          <p>The agent multitasking between answering and filing produces slower answers AND worse memories. Sleep-time compute exists for exactly this: a separate agent that reviews recent conversations and merges key facts while the user isn't waiting.</p>
+        </div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">07</span> Go deeper</h2>
+      <p class="sub">The official conceptual map, the production-flavored version, the taxonomy's source paper — plus two videos. Every link opened and verified before publishing.</p>
+      <div class="ref-list">
+        <a class="ref" href="https://docs.langchain.com/oss/python/concepts/memory">
+          <span class="badge doc">Docs</span>
+          <div><h3>LangChain — Memory: short-term &amp; long-term</h3><p>The official conceptual map: thread-scoped short-term memory vs namespace-scoped long-term stores, the semantic / episodic / procedural trio with agent examples, and the hot-path vs background write decision.</p></div>
+        </a>
+        <a class="ref" href="https://docs.langchain.com/oss/python/deepagents/memory">
+          <span class="badge doc">Docs</span>
+          <div><h3>LangChain Deep Agents — Memory</h3><p>The production-flavored version: filesystem-backed memory the agent edits, user/agent/org scoping with read-only shared memory against injection, episodic memory via checkpointed threads, and background consolidation on a cron.</p></div>
+        </a>
+        <a class="ref" href="https://arxiv.org/abs/2309.02427">
+          <span class="badge doc">Paper</span>
+          <div><h3>CoALA — Cognitive Architectures for Language Agents (Sumers et al., 2023)</h3><p>The taxonomy every memory system cites: working, episodic, semantic, and procedural memory mapped onto language agents, plus the generalized decision cycle that uses them.</p></div>
+        </a>
+        <a class="ref" href="https://www.youtube.com/watch?v=Mxso0FUP_Ns">
+          <span class="badge vid">Video</span>
+          <div><h3>AI Agent Memory Explained: Short Term, Long Term, Episodic (Ep. 11, AI Agents &amp; Harness Engineering)</h3><p>A hand-drawn deep dive: the desk-and-filing-cabinet mental model, the real Mem0 extraction/update pipeline, temporal knowledge graphs with bi-temporal facts, and the when-memory-hurts failure mode.</p></div>
+        </a>
+        <a class="ref" href="https://www.youtube.com/watch?v=x0zifxrq9Is">
+          <span class="badge vid">Video</span>
+          <div><h3>Agentic Memory Part 2: Long Term Memory &amp; Frameworks</h3><p>The three long-term memory types with real intuition and memory routing — then the 2026 production landscape: LangMem, Mem0, Zep/Graphiti, and Letta, with what each one is for.</p></div>
+        </a>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">08</span> Sample prompts</h2>
+      <p class="sub">Copy-paste starters. One designs the memory system, one audits the write policy, one recovers a lost episode.</p>
+
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>THE MEMORY ARCHITECT</strong><button class="copy-btn" data-copy="px-architect">Copy</button></div>
+        <p class="prompt-text" id="px-architect">Design the memory system for my agent. Context:
+{{describe the agent, its users, how often it runs, and what it must
+remember between sessions}}
+Decide: (1) short-term strategy — what stays in the window, thread
+scoping, trim/summarize rules; (2) long-term store — namespace scheme
+(user/agent/org), the three kinds (semantic facts, episodic
+experiences, procedural rules) with 3 example entries each for MY
+agent; (3) WRITE policy — hot-path vs background consolidation and
+the cadence; (4) READ policy — just-in-time top-k, what loads at
+startup vs on-demand; (5) forgetting — TTLs and the supersede rule;
+(6) permissions — what is read-only and why. Flag the injection
+surface in my shared state.</p>
+      </div>
+
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>THE WRITE-POLICY AUDITOR</strong><button class="copy-btn" data-copy="px-auditor">Copy</button></div>
+        <p class="prompt-text" id="px-auditor">Audit my agent's memory write policy. Below is a dump of what's
+currently in the store (or the code that writes to it).
+For each entry check: (1) is it a distilled fact/episode/rule, or a
+raw transcript fragment that should never have been stored? (2) which
+ADD/UPDATE/DELETE/NOOP decision does it imply — and is there a
+duplicate or contradiction that consolidation missed? (3) does it
+carry provenance (where did this come from, when)? (4) does it have
+a TTL, or will it go stale silently? (5) is the namespace scoped
+correctly — could one user's memory leak into another user's run?
+Return the keep / rewrite / delete verdict for each entry with the
+one-line reason.</p>
+      </div>
+
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>THE EPISODIC RESCUE</strong><button class="copy-btn" data-copy="px-rescue">Copy</button></div>
+        <p class="prompt-text" id="px-rescue">My agent keeps re-solving a problem it has solved before — the
+episodic memory is failing. Here's how memory retrieval currently
+works: {{paste the retrieval code or describe it}}.
+Diagnose: (1) are past episodes even searchable (threads, task logs,
+episode documents)? (2) is the retrieval query capturing the problem
+signature or just the surface words? (3) would the winning pattern be
+better distilled into a procedural rule (skill/system-prompt line)
+instead of left as an episode? Propose the smallest change that makes
+"we fixed this class of bug before" retrievable — episode retrieval
+or procedural promotion — and show the before/after.</p>
+      </div>
+      <p class="sr-only" aria-live="polite" id="live-status"></p>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">09</span> Quiz</h2>
+      <p class="sub">Five questions on judgment, not trivia. Click an answer to check yourself.</p>
+      <div id="quiz">
+        <div class="quiz-q" data-answer="1">
+          <p class="qq">1. Your agent remembers everything within a session but forgets user preferences between sessions. You upgrade to a more durable checkpointer. Why won't that fix it?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">It will — a durable checkpointer is the standard fix for cross-session memory.</button>
+            <button class="qopt" data-i="1">Because checkpointers are thread-scoped short-term memory: they preserve this run's state, not knowledge across sessions. Cross-session recall needs a long-term store outside the window, keyed by namespace (e.g. user_id).</button>
+            <button class="qopt" data-i="2">Because checkpointers don't work with preferences — only with message history.</button>
+            <button class="qopt" data-i="3">Because you also need to increase the context window for the checkpointer to persist.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="2">
+          <p class="qq">2. "We solved this exact flaky-CI class last month — the docker timeout needed bumping from 30s to 120s." Which memory kind is this, and how is it used in practice?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">Semantic — it's a fact, so it goes on an index card in the profile.</button>
+            <button class="qopt" data-i="1">Procedural — it's a rule, so it gets baked into the system prompt.</button>
+            <button class="qopt" data-i="2">Episodic — a past experience (what was tried, in what order, what worked). In practice it's recalled as few-shot examples or by searching past threads, or promoted into a procedural rule once the pattern is trusted.</button>
+            <button class="qopt" data-i="3">None — this belongs in the context window's short-term history, not long-term memory.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="1">
+          <p class="qq">3. After you had the agent write memories on every turn, its answers got noticeably slower and the memories got worse. What's the correct move?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">Write even more memories per turn so nothing is missed — coverage beats latency.</button>
+            <button class="qopt" data-i="1">Hot-path writes cost latency and make the agent multitask between answering and filing. Write hot-path only what the next turn needs; move consolidation to a background agent on a cron cadence that matches how often users actually interact.</button>
+            <button class="qopt" data-i="2">Disable memory writes entirely — memory is never worth latency.</button>
+            <button class="qopt" data-i="3">Move the writes to the read path instead — file memories while fetching them.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="2">
+          <p class="qq">4. Your agent has organization-wide shared memory that the agent itself can write to. What's the real risk?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">Just disk usage — shared memory is otherwise safe because the agent is helpful.</button>
+            <button class="qopt" data-i="1">That memories from one department overwrite another's — a quota problem.</button>
+            <button class="qopt" data-i="2">Prompt injection via shared state: a malicious user can write instructions into memory that another user's run later reads and follows. Default to the (user_id,) namespace; shared/org memory should be read-only, populated by application code.</button>
+            <button class="qopt" data-i="3">That the memory store can't be searched across namespaces.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="0">
+          <p class="qq">5. Your agent acted on a stored fact from six months ago that is now wrong. What's the first thing to fix in the memory system?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">Freshness: TTLs, supersede-don't-delete (bi-temporal), and provenance on every fact — plus verify-before-trust for consequential values. Memory is not truth; live facts get re-read at task time.</button>
+            <button class="qopt" data-i="1">The retrieval ranking — the fact just needs a better relevance score.</button>
+            <button class="qopt" data-i="2">The embedding model — stale facts are an embedding quality problem.</button>
+            <button class="qopt" data-i="3">The namespace — the fact was stored under the wrong user.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+      </div>
+      <div id="quiz-score" role="status"></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">10</span> Flashcards</h2>
+      <p class="sub">Click a card — or tab to it and press Enter — to flip it.</p>
+      <div class="fgrid">
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: short-term memory"><div class="fcard-inner">
+          <div class="fface front">Short-term memory</div>
+          <div class="fface back">Thread-scoped: this run's message history and state, persisted via a checkpointer. Dies with the thread. The desk, not the filing cabinet.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: long-term memory"><div class="fcard-inner">
+          <div class="fface front">Long-term memory</div>
+          <div class="fface back">A store OUTSIDE the window that survives across sessions: JSON documents under (namespace, key). Namespaces typically include user_id or org_id.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: semantic memory"><div class="fcard-inner">
+          <div class="fface front">Semantic memory</div>
+          <div class="fface back">Facts and preferences: "user prefers sans-serif dashboards". Stored as a continuously-updated profile (JSON) or a collection of narrowly-scoped documents — the index cards.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: episodic memory"><div class="fcard-inner">
+          <div class="fface front">Episodic memory</div>
+          <div class="fface back">Past experiences: what was tried, in what order, what worked. Recalled in practice as few-shot examples or searchable past threads — the dated journal.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: procedural memory"><div class="fcard-inner">
+          <div class="fface front">Procedural memory</div>
+          <div class="fface back">Rules and how-to: the system prompt, skills, instructions the agent may refine about itself via reflection on feedback — the taped-up how-to.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: write policy"><div class="fcard-inner">
+          <div class="fface front">WRITE policy</div>
+          <div class="fface back">What to store and when: never the raw transcript — distill. Hot-path (during conversation: immediate, adds latency) vs background consolidation (cron agent, zero latency). ADD / UPDATE / DELETE / NOOP per new info.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: read policy"><div class="fcard-inner">
+          <div class="fface front">READ policy</div>
+          <div class="fface back">Recall just-in-time: top-k ranked by relevance × recency via semantic search + filters. Facts load into the prompt; skills read on-demand. Never dump the whole cabinet on the desk.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: memory scope"><div class="fcard-inner">
+          <div class="fface front">Memory scope</div>
+          <div class="fface back">Default to (user_id,) so one user's memories never leak into another user's run. Shared/org memory is read-only (populated by app code) — writable shared memory is a prompt-injection channel.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: forgetting is a feature"><div class="fcard-inner">
+          <div class="fface front">Forgetting is a feature</div>
+          <div class="fface back">TTLs, decay curves, eviction. Temporal systems are bi-temporal: facts get SUPERSEDED, not deleted, so the agent can answer what was believed in March. Stale cards get thrown out.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: memory is not truth"><div class="fcard-inner">
+          <div class="fface front">Memory ≠ truth</div>
+          <div class="fface back">A stored note says what someone said last week — it can't prove a balance, permission, or policy is still true today. Defenses: provenance, TTLs, verify-before-trust; re-read live facts at task time.</div>
+        </div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">11</span> Reach for this when…</h2>
+      <div class="triggers">
+        <div class="trigger"><strong>Your agent starts every session from zero</strong> — users re-explain preferences, and the agent repeats mistakes it made last week. The desk is fine; it's the filing cabinet that's missing.</div>
+        <div class="trigger"><strong>You're stuffing everything into the context window</strong> — user profile, past tickets, style guides — and paying the full token tax plus distraction cost every turn. Move it to a namespace-scoped store and fetch just-in-time.</div>
+        <div class="trigger"><strong>The agent's "memory" is one shared bucket anyone can write</strong> — leakage between users, or a poisoning surface for injected instructions. Scope by user, make shared memory read-only, give facts TTLs.</div>
+      </div>
+    </section>
+
+    <a class="back-link" href="../index.html#daily-topics">← Back to the learning portal</a>
+  </div>
+
+  <script>
+    // copy buttons
+    const status = document.getElementById('live-status');
+    document.querySelectorAll('.copy-btn').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const target = document.getElementById(button.dataset.copy);
+        const text = target.innerText;
+        try {
+          await navigator.clipboard.writeText(text);
+          const original = button.textContent;
+          button.textContent = 'Copied';
+          status.textContent = 'Prompt copied to clipboard.';
+          setTimeout(() => button.textContent = original, 1600);
+        } catch {
+          const range = document.createRange();
+          range.selectNodeContents(target);
+          const selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+          status.textContent = 'Prompt selected. Copy it with your device copy command.';
+        }
+      });
+    });
+
+    // quiz
+    const explanations = [
+      ["A durable checkpointer is still thread-scoped short-term memory — durability of the wrong scope doesn't buy cross-session recall.",
+       "Right. Checkpointers preserve this run's state; they don't carry knowledge across sessions. Cross-session recall needs a long-term store outside the window, keyed by namespace like (user_id,).",
+       "Checkpointers persist message history just fine — the problem is scope: thread-scoped state dies with the thread.",
+       "Context window size is orthogonal — the issue is that a checkpointer is the wrong memory kind for cross-session recall."],
+      ["That's semantic — a fact about the fix, filed on an index card, not the experience of finding it.",
+       "That's procedural — but only after the pattern is trusted enough to become a rule; this one is still an experience, not an instruction.",
+       "Right. Episodic = past experiences: what was tried, in what order, what worked. Practice: recall as few-shot examples or searchable threads — and promote to procedural once the pattern is trusted.",
+       "Wrong scope: if it only lives in short-term history, next month's session has no record of it. That's exactly the failure this topic fixes."],
+      ["More writes make the latency and quality problems worse, not better — coverage isn't the bottleneck.",
+       "Right. Hot-path filing costs latency and makes the agent multitask, so both answers and memories degrade. Keep hot-path writes to what the next turn needs; move consolidation to a background agent on a cron matched to real usage.",
+       "Overkill — memory is load-bearing for agents that run across sessions; the fix is where the writes happen, not whether.",
+       "The read path is the wrong place to file — writes need their own policy: hot-path vs background."],
+      ["Disk is the least of your worries with a writable shared store.",
+       "Quota conflicts are real but minor — the injection channel is the one that compromises another user's session.",
+       "Right. Writable shared state is a prompt-injection channel: one user writes instructions that another user's run reads and follows. Default to (user_id,); shared/org memory stays read-only, populated by application code.",
+       "Cross-namespace search is supported and useful — that's not the risk; the risk is who can write into it."],
+      ["Right. Freshness is the failure class: TTLs, supersede-don't-delete (bi-temporal so old beliefs stay answerable), provenance on every fact, and verify-before-trust. Memory is not truth — re-read live facts at task time.",
+       "Better ranking helps find the right card — it doesn't fix a card that's gone stale. Freshness is a write-policy problem, not a read-policy one.",
+       "Embeddings affect which cards you find, not whether the card's content is still true. A perfect embedding still retrieves a six-month-old fact.",
+       "The namespace may be correct and the fact still stale — scope controls who reads it, not whether it's still true."]
+    ];
+    const questions = [...document.querySelectorAll('.quiz-q')];
+    let score = 0, answered = 0;
+    questions.forEach((q, qi) => {
+      const correct = parseInt(q.dataset.answer, 10);
+      const exp = q.querySelector('.qexp');
+      q.querySelectorAll('.qopt').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          if (q.dataset.done) return;
+          q.dataset.done = "1";
+          const chosen = parseInt(btn.dataset.i, 10);
+          const ok = chosen === correct;
+          q.querySelectorAll('.qopt').forEach((b) => {
+            b.disabled = true;
+            if (parseInt(b.dataset.i, 10) === correct) b.classList.add('correct');
+          });
+          if (!ok) btn.classList.add('wrong');
+          else score++;
+          answered++;
+          exp.hidden = false;
+          exp.innerHTML = (ok ? '<strong class="ok">Correct.</strong> ' : '<strong class="no">Not quite.</strong> ') + explanations[qi][chosen];
+          if (answered === questions.length) {
+            const box = document.getElementById('quiz-score');
+            box.style.display = 'block';
+            const verdict = score === 5 ? "Flawless — you know the desk, the cabinet, and both librarians."
+              : score >= 3 ? "Solid. Re-read the two you missed — they're the write/read boundary."
+              : "Worth a second pass — sections 04 and 06 are the short path back.";
+            box.innerHTML = 'You scored <strong>' + score + ' / 5</strong>. ' + verdict;
+            box.scrollIntoView({behavior: 'smooth', block: 'nearest'});
+          }
+        });
+      });
+    });
+
+    // flashcards
+    document.querySelectorAll('.fcard').forEach((card) => {
+      const flip = () => card.classList.toggle('flipped');
+      card.addEventListener('click', flip);
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); }
+      });
+    });
+  </script>
+
+</body>
+</html>
