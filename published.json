@@ -82,5 +82,12 @@
     "date": "2026-09-24",
     "summary": "A team of agents is an organizational design problem, not a model problem: split work only for genuine parallelism or isolated context, pick the topology by who owns the final answer, hand off with a written memo, keep one writer \u2014 and put the 15x token bill on the eval scorecard.",
     "skill": "multi-agent-orchestration"
+  },
+  {
+    "slug": "2026-09-25-llm-evals-llm-as-judge",
+    "title": "LLM evals and LLM-as-judge: building trust in outputs",
+    "date": "2026-09-25",
+    "summary": "You can't improve what you can't measure \u2014 and stochastic outputs need measuring differently. Error analysis tells you which evals to write, code graders catch the objective failures, an LLM judge grades the subjective ones \u2014 but the judge stays on probation until it agrees with humans.",
+    "skill": "llm-evals-llm-as-judge"
   }
 ]
