@@ -89,5 +89,12 @@
     "date": "2026-09-25",
     "summary": "You can't improve what you can't measure \u2014 and stochastic outputs need measuring differently. Error analysis tells you which evals to write, code graders catch the objective failures, an LLM judge grades the subjective ones \u2014 but the judge stays on probation until it agrees with humans.",
     "skill": "llm-evals-llm-as-judge"
+  },
+  {
+    "slug": "2026-09-26-eval-driven-development",
+    "title": "Eval-driven development for AI features",
+    "date": "2026-09-26",
+    "summary": "TDD's red-green loop for AI features: define \"good\" as a labeled dataset of tasks plus graders before any prompt, model, or tooling change; score every change in CI; harvest production failures into the suite.",
+    "skill": "eval-driven-development"
   }
 ]
