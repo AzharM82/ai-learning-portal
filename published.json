@@ -96,5 +96,12 @@
     "date": "2026-09-26",
     "summary": "TDD's red-green loop for AI features: define \"good\" as a labeled dataset of tasks plus graders before any prompt, model, or tooling change; score every change in CI; harvest production failures into the suite.",
     "skill": "eval-driven-development"
+  },
+  {
+    "slug": "2026-09-27-fine-tuning-vs-rag-vs-prompting",
+    "title": "Fine-tuning vs RAG vs prompting: how to choose",
+    "date": "2026-09-27",
+    "summary": "Three levers, three different jobs: prompting steers behavior in-session, RAG supplies fresh facts, fine-tuning bakes in style and task format. The ladder order, the dataset bar, the cost math \u2014 and how to combine them.",
+    "skill": "fine-tuning-vs-rag-vs-prompting"
   }
 ]
