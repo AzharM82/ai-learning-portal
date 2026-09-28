@@ -103,5 +103,12 @@
     "date": "2026-09-27",
     "summary": "Three levers, three different jobs: prompting steers behavior in-session, RAG supplies fresh facts, fine-tuning bakes in style and task format. The ladder order, the dataset bar, the cost math \u2014 and how to combine them.",
     "skill": "fine-tuning-vs-rag-vs-prompting"
+  },
+  {
+    "slug": "2026-09-28-guardrails-safety-prompt-injection-defense",
+    "title": "Guardrails, safety, and prompt-injection defense",
+    "date": "2026-09-28",
+    "summary": "Prompt injection is LLM01 on the OWASP Top 10 because instructions and data share one text channel. Assume the injection succeeds and make success harmless: least privilege, input/output guardrails, gated tools, and human confirmation for irreversible actions.",
+    "skill": "guardrails-safety-prompt-injection-defense"
   }
 ]
