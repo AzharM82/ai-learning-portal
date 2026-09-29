@@ -110,5 +110,12 @@
     "date": "2026-09-28",
     "summary": "Prompt injection is LLM01 on the OWASP Top 10 because instructions and data share one text channel. Assume the injection succeeds and make success harmless: least privilege, input/output guardrails, gated tools, and human confirmation for irreversible actions.",
     "skill": "guardrails-safety-prompt-injection-defense"
+  },
+  {
+    "slug": "2026-09-29-inference-optimization-quantization-vllm",
+    "title": "Inference optimization: quantization, vLLM, batching",
+    "date": "2026-09-29",
+    "summary": "Serving an LLM is a memory-bandwidth problem: shrink weights with quantization, kill KV-cache waste with PagedAttention, and keep the GPU busy with continuous batching.",
+    "skill": "inference-optimization-quantization-vllm"
   }
 ]

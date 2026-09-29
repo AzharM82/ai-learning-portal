@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inference optimization: quantization, vLLM, batching &middot; AI Learning Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+    :root {
+      --ink: #14212b; --muted: #53636f; --paper: #f6f8f7; --white: #ffffff;
+      --line: #cbd5d8; --navy: #163247; --navy-2: #21465e; --teal: #0b8174;
+      --teal-soft: #dff2ee; --orange: #d66332; --orange-soft: #f8e4d8;
+      --gold: #d8a524; --gold-soft: #f7edc8; --blue-soft: #e3eef4;
+      --red: #b3402e; --red-soft: #f9e3de; --green: #1e7a3c; --green-soft: #e2f2e6;
+      --shadow: 0 18px 45px rgba(20, 33, 43, .09); --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; color: var(--ink);
+      background: linear-gradient(rgba(20,33,43,.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(20,33,43,.035) 1px, transparent 1px), var(--paper);
+      background-size: 28px 28px;
+      font-family: "Source Sans 3", sans-serif; font-size: 17px; line-height: 1.58;
+    }
+    .shell { width: min(960px, calc(100% - 40px)); margin: 0 auto; }
+    .portal-nav{position:sticky;top:0;z-index:50;background:rgba(22,50,71,.97);border-bottom:1px solid rgba(255,255,255,.12)}
+    .portal-nav-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;flex-wrap:wrap}
+    .portal-brand{color:#fff;text-decoration:none;font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:15px}
+    .portal-brand span{color:var(--gold);font-weight:400}
+    .portal-links{display:flex;gap:18px;flex-wrap:wrap}
+    .portal-links a{color:#dbe7ee;text-decoration:none;font-size:14.5px}
+    .portal-links a:hover{color:#fff;text-decoration:underline}
+    .hero { padding: 56px 0 36px; }
+    .chapter-mark { display:inline-flex;align-items:center;gap:10px;color:var(--navy);
+      font:600 12px/1.2 "IBM Plex Mono",monospace;letter-spacing:.09em;text-transform:uppercase;margin-bottom:18px; }
+    .chapter-mark::before { content:"";width:42px;height:3px;background:var(--orange); }
+    h1 { font-size: clamp(36px, 5vw, 58px); line-height: 1.02; letter-spacing:-.03em; margin:0 0 14px; }
+    .lede { color: var(--muted); font-size: clamp(18px,2vw,22px); max-width: 64ch; margin:0 0 8px; }
+    .date-line { font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--muted); }
+    section.block { margin: 44px 0; }
+    h2 { font-size: 26px; letter-spacing:-.02em; margin:0 0 6px; display:flex;align-items:center;gap:12px; }
+    h2 .num { font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:600;color:var(--white);
+      background:var(--navy);border-radius:999px;min-width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center; }
+    .sub { color:var(--muted); margin:0 0 18px; max-width: 68ch; }
+    .card { background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+      padding:24px;box-shadow:var(--shadow); }
+    .skill-card { background:var(--navy);color:#eaf2f7;border-radius:var(--radius);padding:22px 24px;
+      font-family:"IBM Plex Mono",monospace;font-size:14.5px;overflow-x:auto;box-shadow:var(--shadow); }
+    .skill-card .k { color:var(--gold); }
+    .idea { font-size:21px;line-height:1.5;border-left:4px solid var(--teal);padding:6px 0 6px 20px;max-width:62ch; }
+    .idea strong { color:var(--navy); }
+    .mechanics { display:grid;gap:14px; }
+    .mech { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:18px 20px;
+      display:grid;grid-template-columns:44px 1fr;gap:14px;align-items:start; }
+    .mech .mnum { font-family:"IBM Plex Mono",monospace;font-weight:600;color:var(--teal);
+      background:var(--teal-soft);border-radius:10px;width:44px;height:44px;display:flex;align-items:center;justify-content:center; }
+    .mech h3 { margin:0 0 6px;font-size:18px; }
+    .mech p { margin:0;color:var(--muted);font-size:15.5px; }
+    .mech code, .inline-code { font-family:"IBM Plex Mono",monospace;font-size:.88em;background:var(--blue-soft);
+      padding:2px 7px;border-radius:6px;color:var(--navy); }
+    pre.code { background:#0f2233;color:#e8f1f5;border-radius:14px;padding:20px 22px;overflow-x:auto;
+      font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.6;margin:0; }
+    pre.code .c { color:#8ba3b0; } pre.code .s { color:#ffd479; } pre.code .k { color:#7fd6c2; }
+    .fail { border-left:4px solid var(--orange); }
+    .fail h3 .fix { display:block;margin-top:8px;font-size:15px;font-weight:500;color:var(--green); }
+    .ref-list { display:grid;gap:12px; }
+    .ref { display:flex;gap:14px;align-items:flex-start;background:var(--white);border:1px solid var(--line);
+      border-radius:14px;padding:16px 18px;text-decoration:none;color:inherit; }
+    .ref:hover { border-color:var(--teal); }
+    .ref .badge { flex:none;font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;letter-spacing:.06em;
+      padding:5px 10px;border-radius:999px;text-transform:uppercase; }
+    .badge.doc { background:var(--blue-soft);color:var(--navy); }
+    .badge.vid { background:var(--orange-soft);color:var(--orange); }
+    .ref h3 { margin:0 0 4px;font-size:17px; }
+    .ref p { margin:0;color:var(--muted);font-size:14.5px; }
+    .prompt-block { background:#0f2233;border-radius:var(--radius);overflow:hidden;margin-bottom:18px;box-shadow:var(--shadow); }
+    .prompt-top { display:flex;justify-content:space-between;align-items:center;gap:12px;
+      padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.12); }
+    .prompt-top strong { color:#fff;font-size:13px;letter-spacing:.06em;font-family:"IBM Plex Mono",monospace; }
+    .copy-btn { border:1px solid #6c8796;background:transparent;color:#fff;border-radius:6px;padding:7px 11px;
+      cursor:pointer;font-weight:700;font-size:14px; }
+    .copy-btn:hover { background:rgba(255,255,255,.1); }
+    .copy-btn:focus-visible { outline:2px solid var(--gold);outline-offset:2px; }
+    .prompt-text { color:#e8f1f5;font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.65;
+      padding:18px;white-space:pre-wrap;margin:0; }
+    .sr-only { position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0); }
+    .quiz-q { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px; }
+    .quiz-q .qq { font-weight:700;margin:0 0 12px;font-size:18px; }
+    .qopts { display:grid;gap:8px; }
+    .qopt { text-align:left;background:var(--paper);border:1px solid var(--line);border-radius:10px;
+      padding:12px 14px;cursor:pointer;font-size:15.5px;color:var(--ink); }
+    .qopt:hover:not(:disabled) { border-color:var(--navy); }
+    .qopt:disabled { cursor:default;opacity:.85; }
+    .qopt.correct { background:var(--green-soft);border-color:var(--green); }
+    .qopt.wrong { background:var(--red-soft);border-color:var(--red); }
+    .qexp { margin:12px 0 0;font-size:15px;color:var(--muted); }
+    .qexp strong.ok { color:var(--green); } .qexp strong.no { color:var(--red); }
+    #quiz-score { display:none;margin-top:8px;background:var(--navy);color:#fff;border-radius:14px;
+      padding:20px 24px;font-size:19px; }
+    #quiz-score strong { color:var(--gold); }
+    .fgrid { display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px; }
+    .fcard { perspective:900px;cursor:pointer;min-height:170px; }
+    .fcard-inner { position:relative;width:100%;height:100%;min-height:170px;transform-style:preserve-3d;transition:transform .45s; }
+    .fcard.flipped .fcard-inner { transform:rotateY(180deg); }
+    .fface { position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+      border-radius:14px;padding:18px;display:flex;align-items:center;justify-content:center;text-align:center;
+      border:1px solid var(--line);background:var(--white);box-shadow:var(--shadow);font-size:15.5px; }
+    .fface.front { font-weight:700;color:var(--navy); }
+    .fface.back { transform:rotateY(180deg);background:var(--teal-soft);color:var(--ink);font-size:14.5px; }
+    .fcard:focus-visible { outline:2px solid var(--teal);outline-offset:3px;border-radius:14px; }
+    .triggers { display:grid;gap:10px; }
+    .trigger { background:var(--gold-soft);border-radius:12px;padding:14px 18px;font-size:16px; }
+    .trigger strong { color:var(--navy); }
+    .back-link { display:inline-block;margin:8px 0 60px;font-weight:600;color:var(--teal);text-decoration:none;font-size:17px; }
+    .back-link:hover { text-decoration:underline; }
+    .fig { background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+      padding:12px;box-shadow:var(--shadow);overflow-x:auto; }
+    .fig svg { display:block;width:100%;height:auto; }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior:auto; } .fcard-inner{transition:none;} }
+  </style>
+</head>
+<body>
+<nav class="portal-nav">
+    <div class="shell portal-nav-inner">
+      <a class="portal-brand" href="../index.html">AI Engineering <span>&middot; Learning Portal</span></a>
+      <div class="portal-links">
+        <a href="../index.html#daily-topics">Daily topics</a>
+        <a href="../index.html#loop">Loop</a>
+        <a href="../index.html#graph">Graph</a>
+        <a href="../index.html#harness">Harness</a>
+      </div>
+    </div>
+  </nav>
+  <div class="shell">
+
+    <header class="hero">
+      <div class="chapter-mark">Daily topic &middot; AI engineering</div>
+      <h1>Inference optimization: quantization, vLLM, batching</h1>
+      <p class="lede">A model that answers one user in a notebook is a demo. A model that answers thousands of users without renting a data center is a product. The bridge between the two is <strong>inference optimization</strong>: making every GPU byte smaller (quantization), wasting none of it (PagedAttention), and never letting the GPU sit idle (continuous batching).</p>
+      <p class="date-line">2026-09-29 &middot; Topic 017</p>
+    </header>
+
+    <section class="block">
+      <h2><span class="num">01</span> The skill card</h2>
+      <p class="sub">Every topic on this portal is designed like a Codex skill: a name, a trigger, and concrete steps.</p>
+      <div class="skill-card"><pre style="margin:0">---
+<span class="k">name:</span> inference-optimization-quantization-vllm
+<span class="k">description:</span> Reach for this when an LLM feature leaves the prototype and
+  needs to serve real traffic cheaply: GPU costs climbing, long-context
+  OOMs, or token latency degrading under load. Size the workload (weights
+  + KV cache vs VRAM), pick a quantization format matched to the hardware
+  (INT4/AWQ on consumer GPUs, FP8 on Hopper), serve with vLLM
+  (PagedAttention + continuous batching + prefix caching), and tune the
+  throughput-vs-latency knobs under an SLO.
+---</pre></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">02</span> The one-idea version</h2>
+      <p class="idea">LLM serving is a <strong>memory-bandwidth problem, not a compute problem</strong>: decoding reads the entire weight set once per generated token, so the wins come from <strong>smaller weights</strong> (quantization), <strong>zero-waste memory</strong> (PagedAttention pages the KV cache like an OS pages RAM), and <strong>zero-idle scheduling</strong> (continuous batching fills every freed slot instead of waiting for the slowest request).</p>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">03</span> The visual</h2>
+      <div class="fig" role="img" aria-label="Diagram: weights shrink with quantization, PagedAttention maps logical KV blocks to non-contiguous physical blocks, and continuous batching replaces static batches">
+      <svg viewBox="0 0 920 380" xmlns="http://www.w3.org/2000/svg" font-family="IBM Plex Mono, monospace">
+        <rect x="0" y="0" width="920" height="380" rx="12" fill="#ffffff"/>
+        <text x="24" y="34" font-size="15" font-weight="600" fill="#163247">QUANTIZATION — 70B MODEL, WEIGHTS ONLY</text>
+        <g font-size="12" fill="#53636f">
+          <text x="24" y="66">FP16</text>
+          <rect x="90" y="52" width="180" height="22" rx="6" fill="#d66332"/>
+          <text x="280" y="69" font-size="12">140 GB</text>
+          <text x="24" y="100">FP8</text>
+          <rect x="90" y="86" width="90" height="22" rx="6" fill="#d66332" opacity="0.85"/>
+          <text x="190" y="103" font-size="12">70 GB</text>
+          <text x="24" y="134">INT4</text>
+          <rect x="90" y="120" width="45" height="22" rx="6" fill="#d66332" opacity="0.7"/>
+          <text x="145" y="137" font-size="12">35 GB</text>
+          <text x="24" y="160" font-size="11" fill="#0b8174">smaller weights = fewer bytes moved per token</text>
+        </g>
+        <line x1="300" y1="20" x2="300" y2="180" stroke="#cbd5d8"/>
+        <text x="330" y="34" font-size="15" font-weight="600" fill="#163247">PAGEDATTENTION — KV CACHE AS PAGES</text>
+        <g font-size="11" fill="#53636f">
+          <text x="330" y="60">logical sequence (what attention sees)</text>
+          <rect x="330" y="68" width="52" height="26" rx="4" fill="#0b8174" opacity="0.9"/>
+          <rect x="386" y="68" width="52" height="26" rx="4" fill="#0b8174" opacity="0.9"/>
+          <rect x="442" y="68" width="52" height="26" rx="4" fill="#0b8174" opacity="0.9"/>
+          <text x="330" y="112">block table</text>
+          <line x1="356" y1="96" x2="356" y2="126" stroke="#163247"/>
+          <line x1="412" y1="96" x2="446" y2="126" stroke="#163247"/>
+          <line x1="468" y1="96" x2="382" y2="126" stroke="#163247"/>
+          <text x="330" y="130">↓ mapped to</text>
+          <text x="330" y="146">physical GPU blocks (scattered, no waste)</text>
+          <rect x="330" y="152" width="40" height="20" rx="3" fill="#163247" opacity="0.75"/>
+          <rect x="376" y="152" width="40" height="20" rx="3" fill="#163247" opacity="0.75"/>
+          <rect x="422" y="152" width="40" height="20" rx="3" fill="#163247" opacity="0.75"/>
+          <text x="330" y="188" font-size="11" fill="#0b8174">waste &lt; 4% vs 60–80% with contiguous pre-allocation</text>
+        </g>
+        <line x1="620" y1="20" x2="620" y2="180" stroke="#cbd5d8"/>
+        <text x="648" y="34" font-size="15" font-weight="600" fill="#163247">CONTINUOUS BATCHING</text>
+        <g font-size="11" fill="#53636f">
+          <text x="648" y="60">static: request waits for the whole batch</text>
+          <rect x="648" y="66" width="150" height="20" rx="4" fill="#d8a524" opacity="0.55"/>
+          <rect x="648" y="66" width="60" height="20" rx="4" fill="#d8a524"/>
+          <text x="810" y="81" font-size="10">idle wait →</text>
+          <text x="648" y="108">continuous: freed slots refill each iteration</text>
+          <rect x="648" y="114" width="60" height="20" rx="4" fill="#0b8174"/>
+          <rect x="712" y="114" width="50" height="20" rx="4" fill="#0b8174" opacity="0.7"/>
+          <rect x="766" y="114" width="55" height="20" rx="4" fill="#0b8174" opacity="0.45"/>
+          <text x="648" y="150" font-size="11" fill="#0b8174">scheduling at iteration granularity (Orca, 2022)</text>
+        </g>
+        <line x1="24" y1="210" x2="896" y2="210" stroke="#cbd5d8"/>
+        <text x="24" y="240" font-size="15" font-weight="600" fill="#163247">WHERE THE TIME GOES</text>
+        <g font-size="12" fill="#53636f">
+          <text x="24" y="268" font-weight="600" fill="#163247">PREFILL</text>
+          <text x="24" y="288">reads the prompt once,</text>
+          <text x="24" y="306">computes all tokens in parallel</text>
+          <text x="24" y="330" font-size="12" fill="#0b8174">compute-bound → scale with FLOPs</text>
+          <text x="330" y="268" font-weight="600" fill="#163247">DECODE</text>
+          <text x="330" y="288">generates one token at a time,</text>
+          <text x="330" y="306">re-reads weights + KV cache per step</text>
+          <text x="330" y="330" font-size="12" fill="#0b8174">memory-bound → scale with bandwidth</text>
+          <text x="640" y="268" font-weight="600" fill="#163247">THE RULE</text>
+          <text x="640" y="288">optimize decode with smaller</text>
+          <text x="640" y="306">weights, zero-waste KV memory,</text>
+          <text x="640" y="324">and batches that never go idle.</text>
+        </g>
+      </svg>
+      </div>
+    </section>
+    <section class="block">
+      <h2><span class="num">04</span> How it works</h2>
+      <p class="sub">Six mechanics. Each is a concrete action, not a slogan.</p>
+      <div class="mechanics">
+        <div class="mech"><div class="mnum">1</div><div>
+          <h3>Measure which phase you are in</h3>
+          <p>Prefill (processing the prompt) is compute-bound; decode (token-by-token generation) is memory-bound. Most serving cost is decode. So profile decode tokens/second/GPU first — if that number is low, more FLOPs won't help you; less memory movement will.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">2</div><div>
+          <h3>Shrink the weights with quantization</h3>
+          <p>Store each parameter in fewer bits: FP16 → 2 bytes, FP8/INT8 → 1 byte, INT4 → half a byte. Fewer bytes per parameter means the model fits on cheaper GPUs <em>and</em> each decode step moves less data. Match the format to hardware: <code>AWQ/GPTQ</code> INT4 on consumer NVIDIA cards, native <code>FP8</code> on Hopper/Ada, GGUF k-quants for CPU and Apple Silicon.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">3</div><div>
+          <h3>Don't forget the KV cache</h3>
+          <p>Weight quantization leaves the KV cache at full precision — and in long-context serving the cache dominates memory. vLLM's <code>kv_cache_dtype="fp8"</code> compresses it separately. Treat the cache as its own quantization decision, not an afterthought.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">4</div><div>
+          <h3>Page the KV cache (PagedAttention)</h3>
+          <p>Traditional serving pre-allocates one contiguous KV block per request — sequence lengths vary, so 60–80% of that memory is wasted on fragmentation and over-reservation. PagedAttention splits the cache into fixed-size blocks mapped through a block table, exactly like OS virtual memory. Waste drops below 4%, freed blocks return instantly, and copy-on-write lets parallel samples share prompt blocks.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">5</div><div>
+          <h3>Batch continuously, not statically</h3>
+          <p>Static batching makes new requests wait for the longest sequence in the batch to finish. Continuous batching (Orca, 2022) schedules at iteration granularity: the moment one request finishes, another takes its slot. Long generations no longer hold the GPU hostage while short requests queue.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">6</div><div>
+          <h3>Cache prefixes, chunk long prefills</h3>
+          <p>Requests that share a system prompt can reuse the same KV blocks — enable prefix caching so you never recompute them. And when a long prompt arrives, chunk its prefill (Sarathi-style) so decode requests don't stall waiting behind one giant prompt.</p>
+        </div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">05</span> Code sketch</h2>
+      <p class="sub">Size the job before buying hardware: weights + KV cache, then serve with vLLM.</p>
+<pre class="code"><span class="c"># 1. Memory math: does the model + context fit on one GPU?</span>
+<span class="k">params</span>     = 70e9          <span class="c"># 70B model</span>
+<span class="k">bytes_p</span>    = 0.5           <span class="c"># INT4 weights ≈ half a byte per param</span>
+weights_gb = params * bytes_p / 1e9   <span class="c"># ≈ 35 GB</span>
+
+layers, d_model = 80, 8192
+seq_len, batch = 8192, 16            <span class="c"># 8k context × 16 concurrent requests</span>
+<span class="c"># K+V per token = 2 × layers × d_model values</span>
+kv_gb = 2 * layers * d_model * seq_len * batch * 2 / 1e9  <span class="c"># ≈ 34 GB at FP16</span>
+<span class="k">print</span>(weights_gb + kv_gb)       <span class="c"># ≈ 69 GB → won't fit an 80GB A100 with headroom</span>
+<span class="k">print</span>(weights_gb + kv_gb / 2)   <span class="c"># ≈ 52 GB with FP8 KV cache → fits comfortably</span>
+
+<span class="c"># 2. Serve it: vLLM with FP8 weights + FP8 KV cache</span>
+<span class="k">from</span> vllm <span class="k">import</span> LLM, SamplingParams
+llm = LLM(model=<span class="s">"meta-llama/Llama-3.1-70B-Instruct"</span>,
+          quantization=<span class="s">"fp8"</span>,        <span class="c"># native FP8 on H100/H200</span>
+          kv_cache_dtype=<span class="s">"fp8"</span>,     <span class="c"># compress the KV cache too</span>
+          max_model_len=8192)
+out = llm.generate([<span class="s">"Explain quantization in one sentence:"</span>],
+                   SamplingParams(max_tokens=64, temperature=0))
+<span class="k">print</span>(out[0].outputs[0].text)</pre>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">06</span> Failure modes</h2>
+      <p class="sub">Named pitfalls, each with a one-line fix.</p>
+      <div class="mechanics">
+        <div class="mech fail"><div class="mnum">F1</div><div>
+          <h3>Chasing bits without quality gates<span class="fix">Fix: validate quantized checkpoints on perplexity AND the downstream benchmarks your users actually care about — perplexity can look flat while coding accuracy drops 30%.</span></h3>
+        </div></div>
+        <div class="mech fail"><div class="mnum">F2</div><div>
+          <h3>Turning on FP8 where no FP8 hardware exists<span class="fix">Fix: FP8 on A100-or-older falls back to emulation and the speedup disappears; use SmoothQuant-style W8A8 for full INT8 throughput on pre-Hopper GPUs.</span></h3>
+        </div></div>
+        <div class="mech fail"><div class="mnum">F3</div><div>
+          <h3>Expecting weight-only INT4 to speed up serving<span class="fix">Fix: weight-only quantization saves VRAM — the math still runs at FP16, so generation speed barely moves; latency wins need full (W8A8/FP8) quantization with matching tensor-core kernels.</span></h3>
+        </div></div>
+        <div class="mech fail"><div class="mnum">F4</div><div>
+          <h3>Quantizing the weights, ignoring the KV cache<span class="fix">Fix: long contexts make the cache dominate — budget cache bytes per token in the memory math and quantize the cache (e.g. FP8) alongside the weights.</span></h3>
+        </div></div>
+        <div class="mech fail"><div class="mnum">F5</div><div>
+          <h3>Cranking batch size until first-token latency explodes<span class="fix">Fix: throughput and latency trade off — chunk long prefills so decodes keep flowing, and size max_num_seqs against a TTFT SLO, not vibes.</span></h3>
+        </div></div>
+        <div class="mech fail"><div class="mnum">F6</div><div>
+          <h3>Recomputing the same system prompt on every request<span class="fix">Fix: enable prefix caching so shared prefixes reuse identical KV blocks instead of burning prefill compute per request.</span></h3>
+        </div></div>
+      </div>
+    </section>
+    <section class="block">
+      <h2><span class="num">07</span> Go deeper</h2>
+      <p class="sub">Curated and real — every link opened and verified today.</p>
+      <div class="ref-list">
+        <a class="ref" href="https://blog.vllm.ai/2023/06/20/vllm.html" target="_blank" rel="noopener">
+          <span class="badge doc">doc</span>
+          <div><h3>vLLM: Easy, Fast, and Cheap LLM Serving with PagedAttention</h3>
+          <p>The original vLLM announcement from the UC Berkeley team: the KV-cache memory problem, how paging kills fragmentation, and the 24x throughput numbers over HuggingFace Transformers.</p></div>
+        </a>
+        <a class="ref" href="https://medium.com/@adnansattar09/from-140gb-to-40gb-an-engineers-guide-to-llm-quantization-7e2c63fb9a07" target="_blank" rel="noopener">
+          <span class="badge doc">doc</span>
+          <div><h3>From 140GB to 40GB: An Engineer's Guide to LLM Quantization</h3>
+          <p>An engineer's tour of GGUF, GPTQ, AWQ, FP8, and SmoothQuant — what each one actually compresses, where each runs, and how to pick between them in production.</p></div>
+        </a>
+        <a class="ref" href="https://github.com/osolmaz/tools/blob/HEAD/agents/skills/llm-inference-fundamentals/references/model-preparation/llm-quantization.md" target="_blank" rel="noopener">
+          <span class="badge doc">doc</span>
+          <div><h3>LLM quantization (inference fundamentals reference)</h3>
+          <p>A concise reference on quantization: the format ladder, what to quantize (weights vs activations vs KV cache), why weight quantization doesn't shrink the cache by itself, and when it isn't worth it.</p></div>
+        </a>
+        <a class="ref" href="https://www.youtube.com/watch?v=lxjWiVuK5cA" target="_blank" rel="noopener">
+          <span class="badge vid">video</span>
+          <div><h3>Optimize LLM inference with vLLM — Red Hat</h3>
+          <p>~6 minutes with a vLLM contributor: why traditional serving wastes GPU, and how PagedAttention, continuous batching, and prefix caching deliver the gains.</p></div>
+        </a>
+        <a class="ref" href="https://www.youtube.com/watch?v=QMQV9LvQQoc" target="_blank" rel="noopener">
+          <span class="badge vid">video</span>
+          <div><h3>Building Ultra-Fast AI Serving in Practice with vLLM</h3>
+          <p>A deeper walkthrough: continuous batching eliminating request waiting, memory-waste below 4%, prefix caching, and where 4-bit quantization fits the serving story.</p></div>
+        </a>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">08</span> Sample prompts</h2>
+      <p class="sub">Copy-paste prompts for working through your own serving decisions.</p>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>PROMPT 1 &middot; SIZE THE DEPLOYMENT</strong><button class="copy-btn" data-copy="p1">Copy</button></div>
+        <p class="prompt-text" id="p1">I'm serving a 70B dense model (80 layers, d_model 8192) at 16k context with up to 32 concurrent requests on A100 80GB GPUs. Walk me through the memory budget: weights at INT4, FP8, and FP16, plus KV cache per token at FP16 and FP8. Tell me how many concurrent requests actually fit per GPU, and which format you'd choose for an H100 instead — with the math shown.</p>
+      </div>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>PROMPT 2 &middot; PICK A QUANTIZATION FORMAT</strong><button class="copy-btn" data-copy="p2">Copy</button></div>
+        <p class="prompt-text" id="p2">Compare AWQ INT4, GPTQ INT4, SmoothQuant W8A8, and FP8 E4M3 for serving a 70B instruction-tuned model on a single RTX 4090. For each: what gets compressed, what hardware it needs, the expected quality trade-off vs FP16, and when you'd rule it out. End with a ranked recommendation for a latency-sensitive chat API.</p>
+      </div>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>PROMPT 3 &middot; TUNE THE SERVER</strong><button class="copy-btn" data-copy="p3">Copy</button></div>
+        <p class="prompt-text" id="p3">I'm running vLLM for a chat product where 70% of requests share the same 4k-token system prompt, and p95 time-to-first-token must stay under 2 seconds. Explain which settings matter — prefix caching, max_num_seqs, chunked prefill — what each one trades off, and how you'd diagnose whether I'm throughput-bound or latency-bound from the serving metrics.</p>
+      </div>
+      <div class="sr-only" id="live-status" role="status"></div>
+    </section>
+    <section class="block">
+      <h2><span class="num">09</span> Quiz</h2>
+      <p class="sub">Click an answer — you'll get right/wrong immediately with an explanation.</p>
+
+      <div class="quiz-q" data-answer="2">
+        <p class="qq">1. Why is LLM decoding usually memory-bound rather than compute-bound?</p>
+        <div class="qopts">
+          <button class="qopt" data-i="0">A. Modern GPUs don't have enough FLOPs for autoregressive generation</button>
+          <button class="qopt" data-i="1">B. KV-cache fragmentation slows every attention computation</button>
+          <button class="qopt" data-i="2">C. Each decode step re-reads the entire weight set to produce a single token, so memory bandwidth dominates</button>
+          <button class="qopt" data-i="3">D. Small batch sizes leave the compute units idle</button>
+        </div>
+        <p class="qexp" hidden></p>
+      </div>
+
+      <div class="quiz-q" data-answer="1">
+        <p class="qq">2. You quantize your model's weights to INT4 on a consumer GPU. What changes?</p>
+        <div class="qopts">
+          <button class="qopt" data-i="0">A. Generation gets roughly 4x faster because the weights are 4x smaller</button>
+          <button class="qopt" data-i="1">B. The model fits in far less VRAM, but generation speed barely moves — the math still runs at FP16</button>
+          <button class="qopt" data-i="2">C. The KV cache shrinks 4x, so you can serve 4x longer contexts</button>
+          <button class="qopt" data-i="3">D. Per-token latency drops because INT4 tensor cores are 4x faster</button>
+        </div>
+        <p class="qexp" hidden></p>
+      </div>
+
+      <div class="quiz-q" data-answer="0">
+        <p class="qq">3. What problem does PagedAttention actually solve?</p>
+        <div class="qopts">
+          <button class="qopt" data-i="0">A. The 60–80% of GPU memory wasted by contiguous KV-cache pre-allocation: fragmentation and over-reservation</button>
+          <button class="qopt" data-i="1">B. The model's limited context window — paging lets you attend over unlimited tokens</button>
+          <button class="qopt" data-i="2">C. Attention quality degradation at long sequence lengths</button>
+          <button class="qopt" data-i="3">D. Prompt injection, by isolating instruction pages from data pages</button>
+        </div>
+        <p class="qexp" hidden></p>
+      </div>
+
+      <div class="quiz-q" data-answer="3">
+        <p class="qq">4. How does continuous batching differ from static batching?</p>
+        <div class="qopts">
+          <button class="qopt" data-i="0">A. It's a training technique — it accumulates gradient batches continuously</button>
+          <button class="qopt" data-i="1">B. It removes the KV cache, so requests never block on memory</button>
+          <button class="qopt" data-i="2">C. It only works at temperature 0, when outputs are deterministic</button>
+          <button class="qopt" data-i="3">D. It schedules at iteration granularity: a finished request's slot is immediately reused instead of waiting for the whole batch to finish</button>
+        </div>
+        <p class="qexp" hidden></p>
+      </div>
+
+      <div class="quiz-q" data-answer="2">
+        <p class="qq">5. You enable FP8 inference on an A100 (pre-Hopper, no native FP8). What happens?</p>
+        <div class="qopts">
+          <button class="qopt" data-i="0">A. You get roughly 2x throughput — the driver emulates FP8 transparently at full speed</button>
+          <button class="qopt" data-i="1">B. The model refuses to load because the weights are incompatible with the hardware</button>
+          <button class="qopt" data-i="2">C. FP8 falls back to emulation and the speedup disappears — you should use SmoothQuant-style W8A8 on this hardware instead</button>
+          <button class="qopt" data-i="3">D. Memory halves but generation gets slower, so it's never worth doing</button>
+        </div>
+        <p class="qexp" hidden></p>
+      </div>
+
+      <div id="quiz-score" role="status"></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">10</span> Flashcards</h2>
+      <p class="sub">Click or press Enter/Space to flip each card.</p>
+      <div class="fgrid">
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: KV cache"><div class="fcard-inner">
+          <div class="fface front">KV cache</div>
+          <div class="fface back">The cached key and value tensors of every previous token, kept in GPU memory so decoding doesn't recompute them. It's what makes generation fast — and what eats memory at long contexts.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: prefill vs decode"><div class="fcard-inner">
+          <div class="fface front">Prefill vs decode</div>
+          <div class="fface back">Prefill processes the whole prompt in one parallel pass (compute-bound). Decode generates one token at a time, re-reading weights and cache each step (memory-bound). Optimize each differently.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: PagedAttention"><div class="fcard-inner">
+          <div class="fface front">PagedAttention</div>
+          <div class="fface back">KV cache stored in fixed-size blocks mapped through a block table — virtual memory for attention. Memory waste drops from 60–80% to under 4%, and blocks can be shared copy-on-write.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: continuous batching"><div class="fcard-inner">
+          <div class="fface front">Continuous batching</div>
+          <div class="fface back">Scheduling requests at iteration granularity instead of waiting for a whole batch to finish. A finished request's slot is immediately reused (Orca, 2022) — no more waiting behind the longest generation.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: weight-only quantization"><div class="fcard-inner">
+          <div class="fface front">Weight-only quantization</div>
+          <div class="fface back">Compress weights to INT4/INT8, decompress to FP16 at compute time (GPTQ, AWQ, GGUF). Saves VRAM so bigger models fit — but barely speeds up generation, since the math is still full precision.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: W8A8"><div class="fcard-inner">
+          <div class="fface front">W8A8</div>
+          <div class="fface back">Both weights AND activations quantized to 8 bits. Needs FP8-capable hardware (Hopper/Ada) or SmoothQuant's activation smoothing on older GPUs. This is what actually buys throughput, not just memory savings.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: FP8 E4M3 vs E5M2"><div class="fcard-inner">
+          <div class="fface front">FP8: E4M3 vs E5M2</div>
+          <div class="fface back">E4M3 (4 exponent, 3 mantissa) = higher precision, narrow range — used for weights, activations, KV cache. E5M2 (5 exponent, 2 mantissa) = wider range, lower precision — used for gradients in training.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: prefix caching"><div class="fcard-inner">
+          <div class="fface front">Prefix caching</div>
+          <div class="fface back">Requests sharing an identical prompt prefix (e.g. the same system prompt) reuse the same KV blocks instead of recomputing them. Big win when most of your traffic shares a long prompt.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: chunked prefill"><div class="fcard-inner">
+          <div class="fface front">Chunked prefill (Sarathi)</div>
+          <div class="fface back">Split a long prompt's prefill into chunks so decode requests don't stall behind one giant prompt. The fix for "big prefill holds every small request hostage" — latency stays smooth at high throughput.</div>
+        </div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">11</span> Reach for this when&hellip;</h2>
+      <div class="triggers">
+        <div class="trigger"><strong>GPU spend per request is climbing</strong> — size weights + KV cache, pick a hardware-matched quantization format, and serve with vLLM instead of the reference implementation.</div>
+        <div class="trigger"><strong>Long-context requests OOM the server</strong> — budget cache bytes per token first, then quantize the KV cache and let PagedAttention reclaim the wasted 60–80%.</div>
+        <div class="trigger"><strong>Users complain about slow first tokens or stalled streams under load</strong> — check whether static batching or giant prefills are the culprit; continuous batching plus chunked prefill is the fix.</div>
+      </div>
+    </section>
+
+    <a class="back-link" href="../index.html#daily-topics">&larr; Back to all daily topics</a>
+  </div>
+
+<script>
+    // copy buttons
+    const status = document.getElementById('live-status');
+    document.querySelectorAll('.copy-btn').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const target = document.getElementById(button.dataset.copy);
+        const text = target.innerText;
+        try {
+          await navigator.clipboard.writeText(text);
+          const original = button.textContent;
+          button.textContent = 'Copied';
+          status.textContent = 'Prompt copied to clipboard.';
+          setTimeout(() => button.textContent = original, 1600);
+        } catch {
+          const range = document.createRange();
+          range.selectNodeContents(target);
+          const selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+          status.textContent = 'Prompt selected. Copy it with your device copy command.';
+        }
+      });
+    });
+
+    // quiz
+    const explanations = [
+      ["Modern GPUs have plenty of FLOPs — the problem is feeding them. One decode step does a full pass over the weights for a single token, so the bottleneck is memory bandwidth, not compute.",
+       "Fragmentation is real (that's what PagedAttention fixes), but it isn't why decoding is memory-bound — the per-token full weight re-read is.",
+       "Right. Autoregressive decoding re-reads the entire weight set for every single generated token. That's why the optimizations that matter are smaller weights, smaller caches, and more tokens per byte moved.",
+       "Batch size changes utilization, not the fundamental ratio: even at full occupancy, decode is dominated by moving weights and cache through memory bandwidth."],
+      ["A 4x smaller weight file does not mean 4x faster math — weight-only quantization decompresses back to FP16 before the actual computation. Smaller file, same-speed arithmetic.",
+       "Right. Weight-only quantization (GPTQ, AWQ, GGUF) compresses storage so the model fits in less VRAM, but the computation runs at full precision — so generation speed barely changes. For latency wins you need W8A8/FP8 with matching tensor-core kernels.",
+       "Weight quantization doesn't touch the KV cache by itself — the cache is generated at runtime and needs to be quantized separately (e.g. fp8_kv_cache_dtype).",
+       "There are no INT4 tensor cores doing the matmuls here — weights are dequantized to FP16 for computation, so no 4x speedup exists."],
+      ["Right. Traditional serving pre-allocates one contiguous KV block per request, and because sequence lengths vary wildly, 60–80% of that memory is wasted on fragmentation and over-reservation. PagedAttention replaces that with non-contiguous fixed-size blocks plus a block table — waste drops below 4%.",
+       "Paging doesn't extend the context window — max_model_len still limits you. It makes the memory you already have near-fully usable.",
+       "Attention quality is unchanged — PagedAttention computes exactly the same attention, just with blocks stored non-contiguously. It's a memory-management change, not a math change.",
+       "PagedAttention has nothing to do with prompt injection — that's a trust-boundary problem (see Topic 016), not a memory-layout problem."],
+      ["That's describing gradient accumulation in training — nothing to do with serving requests.",
+       "Removing the KV cache would make decoding absurdly slow, not fast — you'd recompute every prior token for every new token. Continuous batching is about scheduling, not about deleting the cache.",
+       "Temperature affects sampling, not scheduling. Continuous batching works at any temperature — it's about when requests enter and leave the batch.",
+       "Right. Static batching waits for the longest sequence to finish before admitting new requests. Continuous batching schedules at each iteration: the moment one request finishes decoding, another takes its slot."],
+      ["Emulation runs through slow paths — nothing about this is transparent or full-speed. The whole point of native FP8 hardware is dedicated tensor cores.",
+       "The weights are fine — they just don't run fast on this GPU. FP8 is a data format, not a hardware lock; the issue is throughput, not compatibility.",
+       "Right. FP8 tensor cores exist on Hopper/Ada and newer; on an A100 FP8 falls back to emulation and the speedup disappears. On pre-Hopper hardware the right tool for full INT8 throughput is SmoothQuant-style W8A8.",
+       "Memory does halve, but it's not that generation gets slower — it just doesn't get faster. And on the right hardware FP8 is absolutely worth doing."]
+    ];
+    const questions = [...document.querySelectorAll('.quiz-q')];
+    let score = 0, answered = 0;
+    questions.forEach((q, qi) => {
+      const correct = parseInt(q.dataset.answer, 10);
+      const exp = q.querySelector('.qexp');
+      q.querySelectorAll('.qopt').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          if (q.dataset.done) return;
+          q.dataset.done = "1";
+          const chosen = parseInt(btn.dataset.i, 10);
+          const ok = chosen === correct;
+          q.querySelectorAll('.qopt').forEach((b) => {
+            b.disabled = true;
+            if (parseInt(b.dataset.i, 10) === correct) b.classList.add('correct');
+          });
+          if (!ok) btn.classList.add('wrong');
+          else score++;
+          answered++;
+          exp.hidden = false;
+          exp.innerHTML = ok
+            ? "<strong class=\"ok\">Correct.</strong> " + explanations[qi][chosen]
+            : "<strong class=\"no\">Not quite.</strong> " + explanations[qi][chosen];
+          if (answered === questions.length) {
+            const box = document.getElementById('quiz-score');
+            box.style.display = "block";
+            box.innerHTML = "You scored <strong>" + score + " / " + questions.length + "</strong>." +
+              (score === questions.length ? " Clean sweep — you're ready to serve." :
+               score >= 3 ? " Solid — re-read the section you missed." :
+               " Worth a re-read of section 04 before moving on.");
+          }
+        });
+      });
+    });
+
+    // flashcards
+    document.querySelectorAll('.fcard').forEach((card) => {
+      const flip = () => card.classList.toggle('flipped');
+      card.addEventListener('click', flip);
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); }
+      });
+    });
+  </script>
+</body>
+</html>
