@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Streaming UX for AI products &middot; AI Learning Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+    :root {
+      --ink: #14212b; --muted: #53636f; --paper: #f6f8f7; --white: #ffffff;
+      --line: #cbd5d8; --navy: #163247; --navy-2: #21465e; --teal: #0b8174;
+      --teal-soft: #dff2ee; --orange: #d66332; --orange-soft: #f8e4d8;
+      --gold: #d8a524; --gold-soft: #f7edc8; --blue-soft: #e3eef4;
+      --red: #b3402e; --red-soft: #f9e3de; --green: #1e7a3c; --green-soft: #e2f2e6;
+      --shadow: 0 18px 45px rgba(20, 33, 43, .09); --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; color: var(--ink);
+      background: linear-gradient(rgba(20,33,43,.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(20,33,43,.035) 1px, transparent 1px), var(--paper);
+      background-size: 28px 28px;
+      font-family: "Source Sans 3", sans-serif; font-size: 17px; line-height: 1.58;
+    }
+    .shell { width: min(960px, calc(100% - 40px)); margin: 0 auto; }
+    .portal-nav{position:sticky;top:0;z-index:50;background:rgba(22,50,71,.97);border-bottom:1px solid rgba(255,255,255,.12)}
+    .portal-nav-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;flex-wrap:wrap}
+    .portal-brand{color:#fff;text-decoration:none;font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:15px}
+    .portal-brand span{color:var(--gold);font-weight:400}
+    .portal-links{display:flex;gap:18px;flex-wrap:wrap}
+    .portal-links a{color:#dbe7ee;text-decoration:none;font-size:14.5px}
+    .portal-links a:hover{color:#fff;text-decoration:underline}
+    .hero { padding: 56px 0 36px; }
+    .chapter-mark { display:inline-flex;align-items:center;gap:10px;color:var(--navy);
+      font:600 12px/1.2 "IBM Plex Mono",monospace;letter-spacing:.09em;text-transform:uppercase;margin-bottom:18px; }
+    .chapter-mark::before { content:"";width:42px;height:3px;background:var(--orange); }
+    h1 { font-size: clamp(36px, 5vw, 58px); line-height: 1.02; letter-spacing:-.03em; margin:0 0 14px; }
+    .lede { color: var(--muted); font-size: clamp(18px,2vw,22px); max-width: 64ch; margin:0 0 8px; }
+    .date-line { font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--muted); }
+    section.block { margin: 44px 0; }
+    h2 { font-size: 26px; letter-spacing:-.02em; margin:0 0 6px; display:flex;align-items:center;gap:12px; }
+    h2 .num { font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:600;color:var(--white);
+      background:var(--navy);border-radius:999px;min-width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center; }
+    .sub { color:var(--muted); margin:0 0 18px; max-width: 68ch; }
+    .card { background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+      padding:24px;box-shadow:var(--shadow); }
+    .skill-card { background:var(--navy);color:#eaf2f7;border-radius:var(--radius);padding:22px 24px;
+      font-family:"IBM Plex Mono",monospace;font-size:14.5px;overflow-x:auto;box-shadow:var(--shadow); }
+    .skill-card .k { color:var(--gold); }
+    .idea { font-size:21px;line-height:1.5;border-left:4px solid var(--teal);padding:6px 0 6px 20px;max-width:62ch; }
+    .idea strong { color:var(--navy); }
+    .mechanics { display:grid;gap:14px; }
+    .mech { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:18px 20px;
+      display:grid;grid-template-columns:44px 1fr;gap:14px;align-items:start; }
+    .mech .mnum { font-family:"IBM Plex Mono",monospace;font-weight:600;color:var(--teal);
+      background:var(--teal-soft);border-radius:10px;width:44px;height:44px;display:flex;align-items:center;justify-content:center; }
+    .mech h3 { margin:0 0 6px;font-size:18px; }
+    .mech p { margin:0;color:var(--muted);font-size:15.5px; }
+    .mech code, .inline-code { font-family:"IBM Plex Mono",monospace;font-size:.88em;background:var(--blue-soft);
+      padding:2px 7px;border-radius:6px;color:var(--navy); }
+    pre.code { background:#0f2233;color:#e8f1f5;border-radius:14px;padding:20px 22px;overflow-x:auto;
+      font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.6;margin:0; }
+    pre.code .c { color:#8ba3b0; } pre.code .s { color:#ffd479; } pre.code .k { color:#7fd6c2; }
+    .fail { border-left:4px solid var(--orange); }
+    .fail h3 .fix { display:block;margin-top:8px;font-size:15px;font-weight:500;color:var(--green); }
+    .ref-list { display:grid;gap:12px; }
+    .ref { display:flex;gap:14px;align-items:flex-start;background:var(--white);border:1px solid var(--line);
+      border-radius:14px;padding:16px 18px;text-decoration:none;color:inherit; }
+    .ref:hover { border-color:var(--teal); }
+    .ref .badge { flex:none;font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;letter-spacing:.06em;
+      padding:5px 10px;border-radius:999px;text-transform:uppercase; }
+    .badge.doc { background:var(--blue-soft);color:var(--navy); }
+    .badge.vid { background:var(--orange-soft);color:var(--orange); }
+    .ref h3 { margin:0 0 4px;font-size:17px; }
+    .ref p { margin:0;color:var(--muted);font-size:14.5px; }
+    .prompt-block { background:#0f2233;border-radius:var(--radius);overflow:hidden;margin-bottom:18px;box-shadow:var(--shadow); }
+    .prompt-top { display:flex;justify-content:space-between;align-items:center;gap:12px;
+      padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.12); }
+    .prompt-top strong { color:#fff;font-size:13px;letter-spacing:.06em;font-family:"IBM Plex Mono",monospace; }
+    .copy-btn { border:1px solid #6c8796;background:transparent;color:#fff;border-radius:6px;padding:7px 11px;
+      cursor:pointer;font-weight:700;font-size:14px; }
+    .copy-btn:hover { background:rgba(255,255,255,.1); }
+    .copy-btn:focus-visible { outline:2px solid var(--gold);outline-offset:2px; }
+    .prompt-text { color:#e8f1f5;font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.65;
+      padding:18px;white-space:pre-wrap;margin:0; }
+    .sr-only { position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0); }
+    .quiz-q { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px; }
+    .quiz-q .qq { font-weight:700;margin:0 0 12px;font-size:18px; }
+    .qopts { display:grid;gap:8px; }
+    .qopt { text-align:left;background:var(--paper);border:1px solid var(--line);border-radius:10px;
+      padding:12px 14px;cursor:pointer;font-size:15.5px;color:var(--ink); }
+    .qopt:hover:not(:disabled) { border-color:var(--navy); }
+    .qopt:disabled { cursor:default;opacity:.85; }
+    .qopt.correct { background:var(--green-soft);border-color:var(--green); }
+    .qopt.wrong { background:var(--red-soft);border-color:var(--red); }
+    .qexp { margin:12px 0 0;font-size:15px;color:var(--muted); }
+    .qexp strong.ok { color:var(--green); } .qexp strong.no { color:var(--red); }
+    #quiz-score { display:none;margin-top:8px;background:var(--navy);color:#fff;border-radius:14px;
+      padding:20px 24px;font-size:19px; }
+    #quiz-score strong { color:var(--gold); }
+    .fgrid { display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px; }
+    .fcard { perspective:900px;cursor:pointer;min-height:170px; }
+    .fcard-inner { position:relative;width:100%;height:100%;min-height:170px;transform-style:preserve-3d;transition:transform .45s; }
+    .fcard.flipped .fcard-inner { transform:rotateY(180deg); }
+    .fface { position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+      border-radius:14px;padding:18px;display:flex;align-items:center;justify-content:center;text-align:center;
+      border:1px solid var(--line);background:var(--white);box-shadow:var(--shadow);font-size:15.5px; }
+    .fface.front { font-weight:700;color:var(--navy); }
+    .fface.back { transform:rotateY(180deg);background:var(--teal-soft);color:var(--ink);font-size:14.5px; }
+    .fcard:focus-visible { outline:2px solid var(--teal);outline-offset:3px;border-radius:14px; }
+    .triggers { display:grid;gap:10px; }
+    .trigger { background:var(--gold-soft);border-radius:12px;padding:14px 18px;font-size:16px; }
+    .trigger strong { color:var(--navy); }
+    .back-link { display:inline-block;margin:8px 0 60px;font-weight:600;color:var(--teal);text-decoration:none;font-size:17px; }
+    .back-link:hover { text-decoration:underline; }
+    .fig { background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+      padding:12px;box-shadow:var(--shadow);overflow-x:auto; }
+    .fig svg { display:block;width:100%;height:auto; }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior:auto; } .fcard-inner{transition:none;} }
+  </style>
+</head>
+<body>
+<nav class="portal-nav">
+    <div class="shell portal-nav-inner">
+      <a class="portal-brand" href="../index.html">AI Engineering <span>&middot; Learning Portal</span></a>
+      <div class="portal-links">
+        <a href="../index.html#daily-topics">Daily topics</a>
+        <a href="../index.html#loop">Loop</a>
+        <a href="../index.html#graph">Graph</a>
+        <a href="../index.html#harness">Harness</a>
+      </div>
+    </div>
+  </nav>
+  <div class="shell">
+
+    <header class="hero">
+      <div class="chapter-mark">Daily topic &middot; AI engineering</div>
+      <h1>Streaming UX for AI products</h1>
+      <p class="lede">A chat product that waits 8 seconds then drops the whole answer at once feels broken. The same 8-second answer streamed token by token feels instant. <strong>Streaming UX</strong> is the craft of closing that gap: proxying token deltas to the browser without buffering, rendering partial markdown safely, and designing the stream's state machine — submitted, streaming, stopped, done, failed — so the UI is never lying.</p>
+      <p class="date-line">2026-09-30 &middot; Topic 018</p>
+    </header>
+
+    <section class="block">
+      <h2><span class="num">01</span> The skill card</h2>
+      <p class="sub">Every topic on this portal is designed like a Codex skill: a name, a trigger, and concrete steps.</p>
+      <div class="skill-card"><pre style="margin:0">---
+<span class="k">name:</span> streaming-ux-ai-products
+<span class="k">description:</span> Reach for this when an AI feature takes seconds to answer and
+  users stare at a spinner: stream the model output as it generates, render
+  partial markdown safely, and design status, stop, and retry around the stream.
+---</pre></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">02</span> The one-idea version</h2>
+      <p class="idea">Streaming trades <strong>total wait for perceived wait</strong>: the only latency number users feel is <strong>time-to-first-token (TTFT)</strong>. The wire gives you token deltas over SSE; the craft is everything after — proxying without buffering, appending (never replacing) chunks, healing incomplete markdown so the render never flickers, and keeping the UI honest about five states: submitted, streaming, stopped, done, failed.</p>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">03</span> The visual</h2>
+      <div class="fig" role="img" aria-label="Diagram: streaming an 8-second answer collapses perceived latency from 8s to 0.8s time-to-first-token, and the pipeline moves token deltas from the LLM API through a server proxy to the browser for healing and rendering">
+      <svg viewBox="0 0 920 470" xmlns="http://www.w3.org/2000/svg" font-family="IBM Plex Mono, monospace">
+        <rect x="0" y="0" width="920" height="470" rx="12" fill="#ffffff"/>
+        <text x="24" y="34" font-size="15" font-weight="600" fill="#163247">PERCEIVED LATENCY — SAME 8s ANSWER, TWO EXPERIENCES</text>
+        <text x="24" y="66" font-size="12" fill="#53636f">no streaming — one blocking request</text>
+        <rect x="24" y="74" width="392" height="28" rx="6" fill="#f6f8f7" stroke="#cbd5d8"/>
+        <text x="36" y="93" font-size="12" fill="#53636f">spinner… spinner… spinner…</text>
+        <rect x="416" y="74" width="188" height="28" rx="6" fill="#d66332"/>
+        <text x="428" y="93" font-size="12" fill="#ffffff">full answer at 8s</text>
+        <text x="24" y="124" font-size="11" fill="#b3402e">TTFT = 8s — every second feels like a freeze</text>
+        <text x="24" y="154" font-size="12" fill="#53636f">streaming — tokens arrive as generated</text>
+        <rect x="24" y="162" width="40" height="28" rx="6" fill="#f6f8f7" stroke="#cbd5d8"/>
+        <rect x="64" y="162" width="540" height="28" rx="6" fill="#0b8174"/>
+        <text x="30" y="181" font-size="12" fill="#53636f">…</text>
+        <text x="76" y="181" font-size="12" fill="#ffffff">first token at 0.8s, words keep coming, done at 8s</text>
+        <text x="24" y="212" font-size="11" fill="#0b8174">TTFT = 0.8s — feels instant, identical total time</text>
+        <line x1="24" y1="236" x2="896" y2="236" stroke="#cbd5d8"/>
+        <text x="24" y="266" font-size="15" font-weight="600" fill="#163247">THE PIPELINE — EVERY CHUNK IS A DELTA, APPEND, NEVER REPLACE</text>
+        <g font-size="12">
+          <rect x="24" y="284" width="150" height="76" rx="10" fill="#163247"/>
+          <text x="38" y="308" font-weight="600" fill="#ffffff">LLM API</text>
+          <text x="38" y="330" font-size="10.5" fill="#dbe7ee">stream: true</text>
+          <text x="38" y="346" font-size="10.5" fill="#dbe7ee">SSE text deltas</text>
+          <text x="182" y="328" font-size="16" fill="#53636f">→</text>
+          <rect x="204" y="284" width="150" height="76" rx="10" fill="#0b8174"/>
+          <text x="218" y="308" font-weight="600" fill="#ffffff">YOUR SERVER</text>
+          <text x="218" y="330" font-size="10.5" fill="#e8f1f5">proxy + auth</text>
+          <text x="218" y="346" font-size="10.5" fill="#e8f1f5">flush each chunk</text>
+          <text x="362" y="328" font-size="16" fill="#53636f">→</text>
+          <rect x="384" y="284" width="150" height="76" rx="10" fill="#21465e"/>
+          <text x="398" y="308" font-weight="600" fill="#ffffff">BROWSER</text>
+          <text x="398" y="330" font-size="10.5" fill="#dbe7ee">append deltas</text>
+          <text x="398" y="346" font-size="10.5" fill="#dbe7ee">to a buffer</text>
+          <text x="542" y="328" font-size="16" fill="#53636f">→</text>
+          <rect x="564" y="284" width="150" height="76" rx="10" fill="#d8a524"/>
+          <text x="578" y="308" font-weight="600" fill="#163247">HEAL</text>
+          <text x="578" y="330" font-size="10.5" fill="#163247">close “**bo” → “**bo**”</text>
+          <text x="578" y="346" font-size="10.5" fill="#163247">before rendering</text>
+          <text x="722" y="328" font-size="16" fill="#53636f">→</text>
+          <rect x="744" y="284" width="150" height="76" rx="10" fill="#d66332"/>
+          <text x="758" y="308" font-weight="600" fill="#ffffff">RENDER</text>
+          <text x="758" y="330" font-size="10.5" fill="#ffffff">markdown + caret
+          </text>
+          <rect x="758" y="338" width="8" height="14" fill="#ffffff">
+            <animate attributeName="opacity" values="1;0;1" dur="1.2s" repeatCount="indefinite"/>
+          </rect>
+        </g>
+        <line x1="24" y1="382" x2="896" y2="382" stroke="#cbd5d8"/>
+        <text x="24" y="408" font-size="12" fill="#53636f">the stream contract: </text>
+        <text x="206" y="408" font-size="12" font-weight="600" fill="#163247">data: {"delta":"Qu"}</text>
+        <text x="390" y="408" font-size="12" fill="#53636f">… data: {"delta":"antum"} … </text>
+        <text x="590" y="408" font-size="12" font-weight="600" fill="#b3402e">data: [DONE]</text>
+        <text x="24" y="432" font-size="11" fill="#0b8174">no terminator received? treat it as an interrupted stream, not a finished answer</text>
+      </svg>
+      </div>
+    </section>
+    <section class="block">
+      <h2><span class="num">04</span> How it works</h2>
+      <p class="sub">Six mechanics. Each is a concrete action, not a slogan.</p>
+      <div class="mechanics">
+        <div class="mech"><div class="mnum">1</div><div>
+          <h3>Ask the provider for deltas, not a document</h3>
+          <p>Set <code>stream=True</code> and you get a sequence of text deltas over SSE (server-sent events): one long-lived HTTP response, <code>data:</code> lines, and a <code>[DONE]</code> terminator. Each chunk carries only the <em>new</em> text — the client must accumulate. SSE is one-way and browser-native (<code>EventSource</code>); reach for WebSockets only if the conversation also needs client-to-server pushes mid-stream.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">2</div><div>
+          <h3>Proxy through your server — never from the browser</h3>
+          <p>Calling the provider from client-side JavaScript leaks your API key to every user. Your server holds the key, calls the provider, and forwards each chunk to the browser as it arrives. Set the flush headers on your response (<code>Content-Type: text/event-stream</code>, <code>Cache-Control: no-cache</code>, <code>X-Accel-Buffering: no</code> for nginx) and flush per chunk — any layer that buffers turns your stream into a surprise 8-second blocking request.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">3</div><div>
+          <h3>Append deltas to a buffer; render incrementally</h3>
+          <p>Maintain one growing string per response: <code>buffer += delta</code>. Re-render from the buffer each time a chunk lands — never render the raw chunk alone, or mid-word boundaries will corrupt code blocks, links, and lists. The buffer is also your recovery asset: on a dropped connection, the partial text is what you keep, and you resume or retry from there.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">4</div><div>
+          <h3>Heal partial markdown before it reaches the renderer</h3>
+          <p>Tokens don't respect markdown boundaries: the stream will hand you <code>**bo</code> with the closing <code>**</code> still on the way. Feeding that to a plain renderer flips the page between raw asterisks and bold text every chunk. Run a self-healing pass (Vercel's <code>remend</code> / <code>Streamdown</code> auto-close unterminated bold, italic, code, links, and math) so the render converges smoothly as tokens arrive.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">5</div><div>
+          <h3>Model the stream as a state machine, not a boolean</h3>
+          <p>Five states: <code>submitted</code> (waiting for first token — show an honest "thinking" indicator), <code>streaming</code> (tokens arriving — show a caret), <code>stopped</code> (user aborted — normal, not an error), <code>done</code> (terminator received), <code>failed</code> (dropped or errored). Give the user a stop button backed by <code>AbortController</code>; aborting must also cancel the server-side request, or the meter keeps running on text nobody reads.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">6</div><div>
+          <h3>Instrument TTFT, not just total latency</h3>
+          <p>Log time-to-first-token and inter-token pacing alongside total duration. A 0.8s TTFT with 10s total feels instant; an 8s spinner for a 10s total feels broken — same model, same cost. If TTFT is slow, the fix is upstream (faster first chunk: shorter prompts, warmer models, provider choice), not in the renderer.</p>
+        </div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">05</span> Code sketch</h2>
+      <p class="sub">A minimal streaming proxy: the API key stays on the server, chunks flush to the browser as they arrive.</p>
+<pre class="code"><span class="k">from</span> fastapi <span class="k">import</span> FastAPI
+<span class="k">from</span> fastapi.responses <span class="k">import</span> StreamingResponse
+<span class="k">from</span> openai <span class="k">import</span> OpenAI
+<span class="k">import</span> json
+
+app = FastAPI()
+client = OpenAI()  <span class="c"># key lives on the server, never in the browser</span>
+
+<span class="k">def</span> <span class="s">token_events</span>(question: <span class="k">str</span>):
+    stream = client.chat.completions.create(
+        model=<span class="s">"gpt-4o"</span>,
+        messages=[{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: question}],
+        stream=<span class="k">True</span>,
+    )
+    <span class="k">for</span> chunk <span class="k">in</span> stream:
+        <span class="k">if</span> d := chunk.choices[0].delta.content:   <span class="c"># delta: new text only</span>
+            <span class="k">yield</span> <span class="s">f"data: {json.dumps({'delta': d})}\n\n"</span>
+    <span class="k">yield</span> <span class="s">"data: [DONE]\n\n"</span>   <span class="c"># terminator: the client trusts only this</span>
+
+@app.post(<span class="s">"/api/chat"</span>)
+<span class="k">async def</span> <span class="s">chat</span>(q: <span class="k">str</span>):
+    <span class="k">return</span> StreamingResponse(
+        token_events(q),
+        media_type=<span class="s">"text/event-stream"</span>,
+        headers={<span class="s">"Cache-Control"</span>: <span class="s">"no-cache"</span>,
+                 <span class="s">"X-Accel-Buffering"</span>: <span class="s">"no"</span>},  <span class="c"># nginx must not buffer</span>
+    )</pre>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">06</span> Failure modes</h2>
+      <p class="sub">Named pitfalls, each with a one-line fix.</p>
+      <div class="mechanics">
+        <div class="mech fail"><div class="mnum">F1</div><div>
+          <h3>A proxy that silently buffers the whole stream<span class="fix">Fix: set text/event-stream, Cache-Control: no-cache, X-Accel-Buffering: no, and flush per chunk — then verify with curl that chunks arrive over time, not all at once at the end.</span></h3>
+        </div></div>
+        <div class="mech fail"><div class="mnum">F2</div><div>
+          <h3>Rendering raw chunks without healing the markdown<span class="fix">Fix: run a self-healing pass (remend / Streamdown) on the buffer before rendering — it auto-closes unterminated bold, italic, code, links, and math so partial tokens render smoothly.</span></h3>
+        </div></div>
+        <div class="mech fail"><div class="mnum">F3</div><div>
+          <h3>Treating a dropped connection as a finished answer<span class="fix">Fix: the only completion signal is the terminator event ([DONE] / response.completed) — a stream that ends without it is interrupted: keep the partial text visible, mark it incomplete, and offer retry.</span></h3>
+        </div></div>
+        <div class="mech fail"><div class="mnum">F4</div><div>
+          <h3>No stop button — or a stop button that doesn't stop the meter<span class="fix">Fix: back the stop button with AbortController, and make abort cancel the server-side provider request too — otherwise generation (and billing) continues on text nobody reads.</span></h3>
+        </div></div>
+        <div class="mech fail"><div class="mnum">F5</div><div>
+          <h3>Optimizing total latency while users watch a spinner<span class="fix">Fix: instrument time-to-first-token separately from total duration — shaving TTFT under ~1s does more for perceived speed than any total-latency optimization nobody sees.</span></h3>
+        </div></div>
+        <div class="mech fail"><div class="mnum">F6</div><div>
+          <h3>Calling the provider API directly from the browser<span class="fix">Fix: the API key must live on the server — proxy the stream through your own endpoint, which also gives you auth, logging, event normalization, and a place to attach guardrails.</span></h3>
+        </div></div>
+      </div>
+    </section>
+    <section class="block">
+      <h2><span class="num">07</span> Go deeper</h2>
+      <p class="sub">Curated and real — every link opened and verified today.</p>
+      <div class="ref-list">
+        <a class="ref" href="https://github.com/openai/openai-node/blob/HEAD/docs/streaming.md" target="_blank" rel="noopener">
+          <span class="badge doc">doc</span>
+          <div><h3>Streaming responses — openai-node docs</h3>
+          <p>The official streaming guide: raw SSE event iteration, the accumulating helper with snapshots, cancellation, and how to proxy a stream to the browser while keeping the API key server-side.</p></div>
+        </a>
+        <a class="ref" href="https://github.com/vercel/streamdown/blob/HEAD/apps/website/content/docs/getting-started.mdx" target="_blank" rel="noopener">
+          <span class="badge doc">doc</span>
+          <div><h3>Streamdown getting started — official docs</h3>
+          <p>Vercel's streaming-optimized markdown renderer: install, the required Tailwind setup, and the drop-in replacement for react-markdown that heals incomplete syntax token by token instead of flickering.</p></div>
+        </a>
+        <a class="ref" href="https://vercel.com/blog/introducing-the-vercel-ai-sdk?mkt_tok=MDAxLUxSRy0xOTQAAAGMowk6df5s9rD9KtG8lNSAyZqjh9G-xErey8eFBGpzvq9MbzPnfuDvlQp15v2SdJd6YBo1Kqbety30hmonltwWJ4yRM21P90n4q93yQjUx" target="_blank" rel="noopener">
+          <span class="badge doc">doc</span>
+          <div><h3>Introducing the Vercel AI SDK — Vercel blog</h3>
+          <p>The original announcement of the streaming-first SDK: why <code>useChat</code> and <code>useCompletion</code> replaced hand-rolled SSE plumbing, and how server callbacks persist completed streams.</p></div>
+        </a>
+        <a class="ref" href="https://www.youtube.com/watch?v=VQCNVpzrR5Q" target="_blank" rel="noopener">
+          <span class="badge vid">video</span>
+          <div><h3>How Vercel Builds Agents and AI Apps</h3>
+          <p>Hayden Bleasel speed-runs the Vercel AI stack: streaming LLM content into a React UI with AI SDK hooks, then the Streamdown segment (~7:07) on self-healing markdown for incomplete streaming chunks.</p></div>
+        </a>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">08</span> Sample prompts</h2>
+      <p class="sub">Copy-paste prompts for working through your own serving decisions.</p>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>PROMPT 1 &middot; DESIGN THE STREAMING PATH</strong><button class="copy-btn" data-copy="p1">Copy</button></div>
+        <p class="prompt-text" id="p1">I'm building a chat product on FastAPI + React. Design the streaming path end to end: how the provider's SSE gets proxied through my server without buffering (exact response headers, flush behavior), how the React client consumes and accumulates deltas, where markdown healing fits in the render pipeline, and what happens on a disconnect mid-stream. Include the state machine for the send / stop / retry buttons.</p>
+      </div>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>PROMPT 2 &middot; DEBUG PRODUCTION BUFFERING</strong><button class="copy-btn" data-copy="p2">Copy</button></div>
+        <p class="prompt-text" id="p2">My AI chat UI streams fine locally but arrives all at once in production behind nginx. Walk me through diagnosing where the buffering happens — response headers, nginx config, framework streaming defaults — and the fix for each layer. Tell me how to verify with curl that chunks arrive incrementally rather than as one payload at the end.</p>
+      </div>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>PROMPT 3 &middot; REVIEW THE STREAM STATES</strong><button class="copy-btn" data-copy="p3">Copy</button></div>
+        <p class="prompt-text" id="p3">Review my chat UI's streaming behavior like a senior frontend engineer. For each state — waiting for the first token, actively streaming, user hits stop, network drops mid-stream, stream errors — tell me what the user should see, what copy to use, and what gets persisted. Flag anywhere my UI could be lying about whether the answer is complete.</p>
+      </div>
+      <div class="sr-only" id="live-status" role="status"></div>
+    </section>
+    <section class="block">
+      <h2><span class="num">09</span> Quiz</h2>
+      <p class="sub">Click an answer — you'll get right/wrong immediately with an explanation.</p>
+
+      <div class="quiz-q" data-answer="1">
+        <p class="qq">1. Streaming an 8-second answer makes it feel fast even though the total time is unchanged. Why?</p>
+        <div class="qopts">
+          <button class="qopt" data-i="0">A. The browser renders tokens in parallel, so the model actually finishes sooner</button>
+          <button class="qopt" data-i="1">B. The user sees the first token within about a second (time-to-first-token), so perceived latency collapses even though total generation time is identical</button>
+          <button class="qopt" data-i="2">C. Streaming reduces the number of tokens the model has to generate</button>
+          <button class="qopt" data-i="3">D. SSE compresses the response, so less data crosses the network</button>
+        </div>
+        <p class="qexp" hidden></p>
+      </div>
+
+      <div class="quiz-q" data-answer="2">
+        <p class="qq">2. Your chat renders <code>**bo</code>, then flips to <strong>bo</strong> a moment later, then back. What's happening?</p>
+        <div class="qopts">
+          <button class="qopt" data-i="0">A. The model is sending contradictory formatting tokens — raise the temperature to stabilize it</button>
+          <button class="qopt" data-i="1">B. The browser's font is loading late — preload the bold font weight</button>
+          <button class="qopt" data-i="2">C. The renderer is parsing markdown mid-token: the closing <code>**</code> hasn't arrived yet. Heal partial markdown (e.g. remend / Streamdown) before rendering</button>
+          <button class="qopt" data-i="3">D. The SSE stream is delivering chunks out of order — add sequence numbers</button>
+        </div>
+        <p class="qexp" hidden></p>
+      </div>
+
+      <div class="quiz-q" data-answer="3">
+        <p class="qq">3. Streaming works on your laptop but arrives as one payload at the end in production behind nginx. Most likely cause?</p>
+        <div class="qopts">
+          <button class="qopt" data-i="0">A. The provider disables streaming for production API keys</button>
+          <button class="qopt" data-i="1">B. The browser's EventSource doesn't work over HTTPS</button>
+          <button class="qopt" data-i="2">C. The React client is debouncing renders and batching all chunks</button>
+          <button class="qopt" data-i="3">D. A proxy layer is buffering the response — send <code>X-Accel-Buffering: no</code>, flush per chunk, and verify with curl that chunks arrive over time</button>
+        </div>
+        <p class="qexp" hidden></p>
+      </div>
+
+      <div class="quiz-q" data-answer="0">
+        <p class="qq">4. A stream ends but the client never received the <code>[DONE]</code> terminator. Correct behavior?</p>
+        <div class="qopts">
+          <button class="qopt" data-i="0">A. Treat it as interrupted, not complete: keep the partial text visible, mark it incomplete, and offer retry</button>
+          <button class="qopt" data-i="1">B. Treat the truncated text as the final answer — the terminator is only cosmetic</button>
+          <button class="qopt" data-i="2">C. Discard the partial text and show a generic error with no retry</button>
+          <button class="qopt" data-i="3">D. Silently re-request the full answer in the background and swap it in</button>
+        </div>
+        <p class="qexp" hidden></p>
+      </div>
+
+      <div class="quiz-q" data-answer="2">
+        <p class="qq">5. Why must the provider stream be proxied through your server instead of called from the browser?</p>
+        <div class="qopts">
+          <button class="qopt" data-i="0">A. Browsers can't maintain SSE connections for more than a few seconds</button>
+          <button class="qopt" data-i="1">B. JSON parsing in the browser is too slow for token-rate chunks</button>
+          <button class="qopt" data-i="2">C. The API key would be exposed to every user — and the server proxy is also where you put auth, logging, event normalization, and guardrails</button>
+          <button class="qopt" data-i="3">D. CORS forbids streaming responses; only buffered responses are allowed cross-origin</button>
+        </div>
+        <p class="qexp" hidden></p>
+      </div>
+
+      <div id="quiz-score" role="status"></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">10</span> Flashcards</h2>
+      <p class="sub">Click or press Enter/Space to flip each card.</p>
+      <div class="fgrid">
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: SSE"><div class="fcard-inner">
+          <div class="fface front">SSE (Server-Sent Events)</div>
+          <div class="fface back">A one-way streaming protocol over plain HTTP: one long-lived response, text/event-stream content type, data: lines, and a [DONE] terminator. Browser-native via EventSource — no WebSocket needed for token streams.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: TTFT"><div class="fcard-inner">
+          <div class="fface front">TTFT</div>
+          <div class="fface back">Time-to-first-token: how long until the user sees anything. The only latency number users feel. A 0.8s TTFT with 10s total feels instant; an 8s spinner for the same answer feels broken.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: text delta"><div class="fcard-inner">
+          <div class="fface front">Text delta</div>
+          <div class="fface back">Each stream chunk carries only the NEW text since the last chunk — not the whole response. The client must append (buffer += delta), never replace. Rendering a chunk alone corrupts mid-word boundaries.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: DONE terminator"><div class="fcard-inner">
+          <div class="fface front">[DONE] / terminator event</div>
+          <div class="fface back">The one completion signal you can trust. A stream that ends without its terminator is interrupted, not finished — keep the partial text, mark it incomplete, offer retry.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: X-Accel-Buffering"><div class="fcard-inner">
+          <div class="fface front">X-Accel-Buffering: no</div>
+          <div class="fface back">The nginx header that disables response buffering. Without it, proxies hold your whole stream and deliver it at the end — your carefully built streaming UX degrades into an 8-second spinner.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: markdown healing"><div class="fcard-inner">
+          <div class="fface front">Markdown healing (remend)</div>
+          <div class="fface back">Self-healing markdown for streams: auto-closes unterminated bold, italic, code, links, and math before rendering. The stream gives you "**bo" with the closing "**" still on the way — heal it or the page flickers.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: AbortController"><div class="fcard-inner">
+          <div class="fface front">AbortController</div>
+          <div class="fface back">What backs the stop button. Cancels the in-flight stream — but it must also cancel the server-side provider request, or generation and billing keep running on text nobody reads.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: Streamdown"><div class="fcard-inner">
+          <div class="fface front">Streamdown</div>
+          <div class="fface back">Vercel's streaming-optimized markdown renderer (replaces react-markdown for AI UIs). Combines remend healing with remark rendering, streaming-aware animation, and code/math/diagram plugins.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: stream state machine"><div class="fcard-inner">
+          <div class="fface front">The stream's five states</div>
+          <div class="fface back">submitted (waiting for first token), streaming (tokens arriving), stopped (user aborted — normal, not an error), done (terminator received), failed (dropped or errored). Design honest UI for each.</div>
+        </div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">11</span> Reach for this when&hellip;</h2>
+      <div class="triggers">
+        <div class="trigger"><strong>Users stare at a spinner for seconds before anything appears</strong> — stream the tokens; getting first meaningful content under ~1s TTFT matters more than any total-latency optimization.</div>
+        <div class="trigger"><strong>The chat UI shows raw <code>**</code> or flickers between raw and rendered text mid-generation</strong> — heal partial markdown on the buffer (remend / Streamdown) before every render.</div>
+        <div class="trigger"><strong>Streams work locally but arrive all-at-once in production</strong> — a proxy is buffering: set the flush headers at every layer and verify with curl that chunks arrive incrementally.</div>
+      </div>
+    </section>
+
+    <a class="back-link" href="../index.html#daily-topics">&larr; Back to all daily topics</a>
+  </div>
+
+<script>
+    // copy buttons
+    const status = document.getElementById('live-status');
+    document.querySelectorAll('.copy-btn').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const target = document.getElementById(button.dataset.copy);
+        const text = target.innerText;
+        try {
+          await navigator.clipboard.writeText(text);
+          const original = button.textContent;
+          button.textContent = 'Copied';
+          status.textContent = 'Prompt copied to clipboard.';
+          setTimeout(() => button.textContent = original, 1600);
+        } catch {
+          const range = document.createRange();
+          range.selectNodeContents(target);
+          const selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+          status.textContent = 'Prompt selected. Copy it with your device copy command.';
+        }
+      });
+    });
+
+    // quiz
+    const explanations = [
+      ["Parallel rendering doesn't speed up generation — tokens still arrive at the same rate. The improvement is perception, not throughput.",
+       "Right. Streaming changes when the user sees text, not how fast it's produced. First token at ~0.8s vs an 8s spinner is the entire difference in perceived latency.",
+       "Token count is unchanged — streaming affects delivery, not generation. The model generates the same tokens either way.",
+       "SSE doesn't compress anything; chunks may even add slight overhead. The win is timing, not bytes."],
+      ["The model isn't contradicting itself — markdown tokens arrive across chunk boundaries. Temperature has nothing to do with it.",
+       "Font loading causes a flash of unstyled text, not alternating raw/bold states on the same words. This is a streaming-boundary artifact.",
+       "Right. Tokens don't respect markdown boundaries: the closing ** arrives in a later chunk. A self-healing pass (remend/Streamdown) auto-closes unterminated markers before each render so the display converges smoothly.",
+       "SSE over a single connection is ordered — chunks arrive in sequence. The issue is markdown parsed across chunk boundaries, not ordering."],
+      ["Providers don't gate streaming by key tier — the same stream:true works everywhere. The difference is your infrastructure, not the provider.",
+       "EventSource works fine over HTTPS — and local vs production wouldn't differ on this. The difference is the network path between client and server.",
+       "Render debouncing could batch updates, but it wouldn't turn a working local stream into one end-of-response payload. Something upstream is holding the response.",
+       "Right. Works-locally-but-bursts-in-production is the signature of a buffering proxy. Set X-Accel-Buffering: no, flush per chunk, and curl the endpoint watching timestamps to prove chunks arrive incrementally."],
+      ["Right. The terminator ([DONE] / response.completed) is the only completion signal. Without it the stream was interrupted — show the partial text honestly marked as incomplete, and offer retry from what you already have.",
+       "The terminator is the protocol's completion contract, not decoration. Treating truncated output as final is exactly how UIs lie about completeness.",
+       "Keep the partial text — it's real generated content the user can read and the retry can build on. Discarding it wastes tokens and patience.",
+       "Silently swapping content is dishonest UX: the user may have already read (and trusted) the partial version. Mark the interruption and offer retry explicitly."],
+      ["Browsers hold SSE connections fine — long-lived streams are exactly what EventSource is for. That's not the reason.",
+       "JSON parsing of tiny chunks is trivial. Performance is not why the browser must not hold the key.",
+       "Right. An API key in client-side JavaScript is public to every user. The server proxy keeps the key secret — and it's also the natural place for auth, logging, event normalization, and guardrails.",
+       "CORS doesn't forbid streams — providers serve streaming endpoints to browsers just fine. The constraint is key secrecy, not CORS."]
+    ];
+    const questions = [...document.querySelectorAll('.quiz-q')];
+    let score = 0, answered = 0;
+    questions.forEach((q, qi) => {
+      const correct = parseInt(q.dataset.answer, 10);
+      const exp = q.querySelector('.qexp');
+      q.querySelectorAll('.qopt').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          if (q.dataset.done) return;
+          q.dataset.done = "1";
+          const chosen = parseInt(btn.dataset.i, 10);
+          const ok = chosen === correct;
+          q.querySelectorAll('.qopt').forEach((b) => {
+            b.disabled = true;
+            if (parseInt(b.dataset.i, 10) === correct) b.classList.add('correct');
+          });
+          if (!ok) btn.classList.add('wrong');
+          else score++;
+          answered++;
+          exp.hidden = false;
+          exp.innerHTML = ok
+            ? "<strong class=\"ok\">Correct.</strong> " + explanations[qi][chosen]
+            : "<strong class=\"no\">Not quite.</strong> " + explanations[qi][chosen];
+          if (answered === questions.length) {
+            const box = document.getElementById('quiz-score');
+            box.style.display = "block";
+            box.innerHTML = "You scored <strong>" + score + " / " + questions.length + "</strong>." +
+              (score === questions.length ? " Clean sweep — you're ready to stream." :
+               score >= 3 ? " Solid — re-read the section you missed." :
+               " Worth a re-read of section 04 before moving on.");
+          }
+        });
+      });
+    });
+
+    // flashcards
+    document.querySelectorAll('.fcard').forEach((card) => {
+      const flip = () => card.classList.toggle('flipped');
+      card.addEventListener('click', flip);
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); }
+      });
+    });
+  </script>
+</body>
+</html>

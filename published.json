@@ -117,5 +117,12 @@
     "date": "2026-09-29",
     "summary": "Serving an LLM is a memory-bandwidth problem: shrink weights with quantization, kill KV-cache waste with PagedAttention, and keep the GPU busy with continuous batching.",
     "skill": "inference-optimization-quantization-vllm"
+  },
+  {
+    "slug": "2026-09-30-streaming-ux-ai-products",
+    "title": "Streaming UX for AI products",
+    "date": "2026-09-30",
+    "summary": "Streaming trades total wait for perceived wait: first tokens in under a second, partial markdown rendered safely, and a stream state machine that treats drops and stops as normal.",
+    "skill": "streaming-ux-ai-products"
   }
 ]
