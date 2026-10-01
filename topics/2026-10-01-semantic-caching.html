@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Semantic caching to cut cost and latency &middot; AI Learning Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+    :root {
+      --ink: #14212b; --muted: #53636f; --paper: #f6f8f7; --white: #ffffff;
+      --line: #cbd5d8; --navy: #163247; --navy-2: #21465e; --teal: #0b8174;
+      --teal-soft: #dff2ee; --orange: #d66332; --orange-soft: #f8e4d8;
+      --gold: #d8a524; --gold-soft: #f7edc8; --blue-soft: #e3eef4;
+      --red: #b3402e; --red-soft: #f9e3de; --green: #1e7a3c; --green-soft: #e2f2e6;
+      --shadow: 0 18px 45px rgba(20, 33, 43, .09); --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; color: var(--ink);
+      background: linear-gradient(rgba(20,33,43,.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(20,33,43,.035) 1px, transparent 1px), var(--paper);
+      background-size: 28px 28px;
+      font-family: "Source Sans 3", sans-serif; font-size: 17px; line-height: 1.58;
+    }
+    .shell { width: min(960px, calc(100% - 40px)); margin: 0 auto; }
+    .portal-nav{position:sticky;top:0;z-index:50;background:rgba(22,50,71,.97);border-bottom:1px solid rgba(255,255,255,.12)}
+    .portal-nav-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;flex-wrap:wrap}
+    .portal-brand{color:#fff;text-decoration:none;font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:15px}
+    .portal-brand span{color:var(--gold);font-weight:400}
+    .portal-links{display:flex;gap:18px;flex-wrap:wrap}
+    .portal-links a{color:#dbe7ee;text-decoration:none;font-size:14.5px}
+    .portal-links a:hover{color:#fff;text-decoration:underline}
+    .hero { padding: 56px 0 36px; }
+    .chapter-mark { display:inline-flex;align-items:center;gap:10px;color:var(--navy);
+      font:600 12px/1.2 "IBM Plex Mono",monospace;letter-spacing:.09em;text-transform:uppercase;margin-bottom:18px; }
+    .chapter-mark::before { content:"";width:42px;height:3px;background:var(--orange); }
+    h1 { font-size: clamp(36px, 5vw, 58px); line-height: 1.02; letter-spacing:-.03em; margin:0 0 14px; }
+    .lede { color: var(--muted); font-size: clamp(18px,2vw,22px); max-width: 64ch; margin:0 0 8px; }
+    .date-line { font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--muted); }
+    section.block { margin: 44px 0; }
+    h2 { font-size: 26px; letter-spacing:-.02em; margin:0 0 6px; display:flex;align-items:center;gap:12px; }
+    h2 .num { font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:600;color:var(--white);
+      background:var(--navy);border-radius:999px;min-width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center; }
+    .sub { color:var(--muted); margin:0 0 18px; max-width: 68ch; }
+    .card { background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+      padding:24px;box-shadow:var(--shadow); }
+    .skill-card { background:var(--navy);color:#eaf2f7;border-radius:var(--radius);padding:22px 24px;
+      font-family:"IBM Plex Mono",monospace;font-size:14.5px;overflow-x:auto;box-shadow:var(--shadow); }
+    .skill-card .k { color:var(--gold); }
+    .idea { font-size:21px;line-height:1.5;border-left:4px solid var(--teal);padding:6px 0 6px 20px;max-width:62ch; }
+    .idea strong { color:var(--navy); }
+    .mechanics { display:grid;gap:14px; }
+    .mech { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:18px 20px;
+      display:grid;grid-template-columns:44px 1fr;gap:14px;align-items:start; }
+    .mech .mnum { font-family:"IBM Plex Mono",monospace;font-weight:600;color:var(--teal);
+      background:var(--teal-soft);border-radius:10px;width:44px;height:44px;display:flex;align-items:center;justify-content:center; }
+    .mech h3 { margin:0 0 6px;font-size:18px; }
+    .mech p { margin:0;color:var(--muted);font-size:15.5px; }
+    .mech code, .inline-code { font-family:"IBM Plex Mono",monospace;font-size:.88em;background:var(--blue-soft);
+      padding:2px 7px;border-radius:6px;color:var(--navy); }
+    pre.code { background:#0f2233;color:#e8f1f5;border-radius:14px;padding:20px 22px;overflow-x:auto;
+      font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.6;margin:0; }
+    pre.code .c { color:#8ba3b0; } pre.code .s { color:#ffd479; } pre.code .k { color:#7fd6c2; }
+    .fail { border-left:4px solid var(--orange); }
+    .fail h3 .fix { display:block;margin-top:8px;font-size:15px;font-weight:500;color:var(--green); }
+    .ref-list { display:grid;gap:12px; }
+    .ref { display:flex;gap:14px;align-items:flex-start;background:var(--white);border:1px solid var(--line);
+      border-radius:14px;padding:16px 18px;text-decoration:none;color:inherit; }
+    .ref:hover { border-color:var(--teal); }
+    .ref .badge { flex:none;font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;letter-spacing:.06em;
+      padding:5px 10px;border-radius:999px;text-transform:uppercase; }
+    .badge.doc { background:var(--blue-soft);color:var(--navy); }
+    .badge.vid { background:var(--orange-soft);color:var(--orange); }
+    .ref h3 { margin:0 0 4px;font-size:17px; }
+    .ref p { margin:0;color:var(--muted);font-size:14.5px; }
+    .prompt-block { background:#0f2233;border-radius:var(--radius);overflow:hidden;margin-bottom:18px;box-shadow:var(--shadow); }
+    .prompt-top { display:flex;justify-content:space-between;align-items:center;gap:12px;
+      padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.12); }
+    .prompt-top strong { color:#fff;font-size:13px;letter-spacing:.06em;font-family:"IBM Plex Mono",monospace; }
+    .copy-btn { border:1px solid #6c8796;background:transparent;color:#fff;border-radius:6px;padding:7px 11px;
+      cursor:pointer;font-weight:700;font-size:14px; }
+    .copy-btn:hover { background:rgba(255,255,255,.1); }
+    .copy-btn:focus-visible { outline:2px solid var(--gold);outline-offset:2px; }
+    .prompt-text { color:#e8f1f5;font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.65;
+      padding:18px;white-space:pre-wrap;margin:0; }
+    .sr-only { position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0); }
+    .quiz-q { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px; }
+    .quiz-q .qq { font-weight:700;margin:0 0 12px;font-size:18px; }
+    .qopts { display:grid;gap:8px; }
+    .qopt { text-align:left;background:var(--paper);border:1px solid var(--line);border-radius:10px;
+      padding:12px 14px;cursor:pointer;font-size:15.5px;color:var(--ink); }
+    .qopt:hover:not(:disabled) { border-color:var(--navy); }
+    .qopt:disabled { cursor:default;opacity:.85; }
+    .qopt.correct { background:var(--green-soft);border-color:var(--green); }
+    .qopt.wrong { background:var(--red-soft);border-color:var(--red); }
+    .qexp { margin:12px 0 0;font-size:15px;color:var(--muted); }
+    .qexp strong.ok { color:var(--green); } .qexp strong.no { color:var(--red); }
+    #quiz-score { display:none;margin-top:8px;background:var(--navy);color:#fff;border-radius:14px;
+      padding:20px 24px;font-size:19px; }
+    #quiz-score strong { color:var(--gold); }
+    .fgrid { display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px; }
+    .fcard { perspective:900px;cursor:pointer;min-height:170px; }
+    .fcard-inner { position:relative;width:100%;height:100%;min-height:170px;transform-style:preserve-3d;transition:transform .45s; }
+    .fcard.flipped .fcard-inner { transform:rotateY(180deg); }
+    .fface { position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+      border-radius:14px;padding:18px;display:flex;align-items:center;justify-content:center;text-align:center;
+      border:1px solid var(--line);background:var(--white);box-shadow:var(--shadow);font-size:15.5px; }
+    .fface.front { font-weight:700;color:var(--navy); }
+    .fface.back { transform:rotateY(180deg);background:var(--teal-soft);color:var(--ink);font-size:14.5px; }
+    .fcard:focus-visible { outline:2px solid var(--teal);outline-offset:3px;border-radius:14px; }
+    .triggers { display:grid;gap:10px; }
+    .trigger { background:var(--gold-soft);border-radius:12px;padding:14px 18px;font-size:16px; }
+    .trigger strong { color:var(--navy); }
+    .back-link { display:inline-block;margin:8px 0 60px;font-weight:600;color:var(--teal);text-decoration:none;font-size:17px; }
+    .back-link:hover { text-decoration:underline; }
+    .fig { background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+      padding:12px;box-shadow:var(--shadow);overflow-x:auto; }
+    .fig svg { display:block;width:100%;height:auto; }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior:auto; } .fcard-inner{transition:none;} }
+  </style>
+</head>
+<body>
+<nav class="portal-nav">
+    <div class="shell portal-nav-inner">
+      <a class="portal-brand" href="../index.html">AI Engineering <span>&middot; Learning Portal</span></a>
+      <div class="portal-links">
+        <a href="../index.html#daily-topics">Daily topics</a>
+        <a href="../index.html#loop">Loop</a>
+        <a href="../index.html#graph">Graph</a>
+        <a href="../index.html#harness">Harness</a>
+      </div>
+    </div>
+  </nav>
+  <div class="shell">
+
+    <header class="hero">
+      <div class="chapter-mark">Daily topic &middot; AI engineering</div>
+      <h1>Semantic caching to cut cost and latency</h1>
+      <p class="lede">Every LLM call you skip is a call you don't pay for. A semantic cache answers "has someone already asked this?" by <strong>meaning</strong>, not spelling: embed the incoming prompt, find the nearest cached question by cosine similarity, and — if it clears your threshold — serve the stored answer in milliseconds with no model call at all. The threshold is the whole game: too loose and you confidently serve the answer to a different question.</p>
+      <p class="date-line">2026-10-01 &middot; Topic 019</p>
+    </header>
+
+    <section class="block">
+      <h2><span class="num">01</span> The skill card</h2>
+      <p class="sub">Every topic on this portal is designed like a Codex skill: a name, a trigger, and concrete steps.</p>
+      <div class="skill-card"><pre style="margin:0">---
+<span class="k">name:</span> semantic-caching
+<span class="k">description:</span> Reach for this when repeated LLM questions cost too much or
+  answer too slowly: embed each prompt, match it against cached answers by
+  meaning, and serve the stored response when similarity clears a tuned
+  threshold — with tenant-scoped keys, TTLs, and a measured break-even.
+---</pre></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">02</span> The one-idea version</h2>
+      <p class="idea">An exact-match cache almost never fires on human input — nobody types the same sentence twice. A semantic cache moves the key <strong>from the string to the meaning</strong>: each prompt is embedded into a vector, the cache index finds the nearest previously answered prompt, and if its cosine similarity clears a tuned threshold &tau;, the stored answer is served directly. On a hit the model never runs: latency drops from seconds to milliseconds and the call costs nothing. On a miss you pay one extra embedding — so the cache pays for itself at hit rates as low as ~2%, <strong>as long as the threshold keeps false hits out</strong>.</p>
+    </section>
+    <section class="block">
+      <h2><span class="num">03</span> The visual</h2>
+      <div class="fig" role="img" aria-label="Diagram: a prompt is embedded and searched against a cache index by cosine similarity; a hit serves the stored answer in milliseconds at zero cost, a miss calls the LLM and stores the entry. The threshold tau is the whole game: too loose causes false hits, too tight collapses to exact match">
+      <svg viewBox="0 0 920 500" xmlns="http://www.w3.org/2000/svg" font-family="IBM Plex Mono, monospace">
+        <rect x="0" y="0" width="920" height="500" rx="12" fill="#ffffff"/>
+        <text x="24" y="34" font-size="15" font-weight="600" fill="#163247">THE LOOKUP — MEANING, NOT SPELLING</text>
+
+        <rect x="24" y="56" width="200" height="76" rx="8" fill="#e3eef4" stroke="#163247"/>
+        <text x="40" y="82" font-size="12" font-weight="600" fill="#163247">PROMPT</text>
+        <text x="40" y="102" font-size="12" fill="#53636f">"how do I return an item?"</text>
+        <text x="40" y="120" font-size="11" fill="#53636f">any phrasing works</text>
+
+        <rect x="264" y="56" width="160" height="76" rx="8" fill="#f6f8f7" stroke="#cbd5d8"/>
+        <text x="280" y="82" font-size="12" font-weight="600" fill="#163247">EMBED</text>
+        <text x="280" y="102" font-size="12" fill="#53636f">small cheap model</text>
+        <text x="280" y="120" font-size="11" fill="#53636f">text → vector [0.13…]</text>
+
+        <rect x="464" y="56" width="180" height="76" rx="8" fill="#f6f8f7" stroke="#cbd5d8"/>
+        <text x="480" y="82" font-size="12" font-weight="600" fill="#163247">VECTOR SEARCH</text>
+        <text x="480" y="102" font-size="12" fill="#53636f">nearest cached prompt</text>
+        <text x="480" y="120" font-size="11" fill="#53636f">cosine similarity score</text>
+
+        <rect x="684" y="56" width="212" height="76" rx="8" fill="#f7edc8" stroke="#d8a524"/>
+        <text x="700" y="82" font-size="12" font-weight="600" fill="#163247">THRESHOLD CHECK</text>
+        <text x="700" y="102" font-size="12" fill="#53636f">best similarity ≥ τ?</text>
+        <text x="700" y="120" font-size="11" fill="#53636f">τ ≈ 0.92–0.95 (tuned)</text>
+
+        <line x1="224" y1="94" x2="264" y2="94" stroke="#163247" stroke-width="2"/>
+        <polygon points="256,88 266,94 256,100" fill="#163247"/>
+        <line x1="424" y1="94" x2="464" y2="94" stroke="#163247" stroke-width="2"/>
+        <polygon points="456,88 466,94 456,100" fill="#163247"/>
+        <line x1="644" y1="94" x2="684" y2="94" stroke="#163247" stroke-width="2"/>
+        <polygon points="676,88 686,94 676,100" fill="#163247"/>
+
+        <line x1="790" y1="132" x2="790" y2="176" stroke="#53636f" stroke-width="2"/>
+        <line x1="790" y1="176" x2="240" y2="176" stroke="#53636f" stroke-width="2"/>
+        <line x1="790" y1="176" x2="790" y2="216" stroke="#53636f" stroke-width="2"/>
+        <line x1="240" y1="176" x2="240" y2="216" stroke="#53636f" stroke-width="2"/>
+        <polygon points="234,216 240,226 246,216" fill="#53636f"/>
+        <polygon points="784,216 790,226 796,216" fill="#53636f"/>
+
+        <rect x="100" y="226" width="280" height="96" rx="8" fill="#0b8174"/>
+        <text x="120" y="254" font-size="13" font-weight="600" fill="#ffffff">HIT — serve the stored answer</text>
+        <text x="120" y="278" font-size="12" fill="#ffffff">model never runs · ~50 ms · $0</text>
+        <text x="120" y="298" font-size="11" fill="#e3eef4">the rephrasing is free</text>
+
+        <rect x="560" y="226" width="300" height="96" rx="8" fill="#d66332"/>
+        <text x="580" y="254" font-size="13" font-weight="600" fill="#ffffff">MISS — call the LLM</text>
+        <text x="580" y="278" font-size="12" fill="#ffffff">pay embedding + full call · ~3 s</text>
+        <text x="580" y="298" font-size="11" fill="#f8e4d8">then store (prompt, vector, answer)</text>
+
+        <line x1="24" y1="352" x2="896" y2="352" stroke="#cbd5d8"/>
+        <text x="24" y="382" font-size="15" font-weight="600" fill="#163247">τ — THE WHOLE GAME</text>
+
+        <rect x="24" y="394" width="300" height="30" rx="6" fill="#f9e3de"/>
+        <rect x="324" y="394" width="320" height="30" rx="6" fill="#e2f2e6"/>
+        <rect x="644" y="394" width="252" height="30" rx="6" fill="#e3eef4"/>
+        <text x="36" y="414" font-size="11" fill="#b3402e">τ too low → false hits (confident, cheap, WRONG)</text>
+        <text x="336" y="414" font-size="11" fill="#1e7a3c">sweet spot ~0.92–0.95 — tune on labeled pairs</text>
+        <text x="656" y="414" font-size="11" fill="#163247">τ too high → exact match only, no paraphrase hits</text>
+        <text x="24" y="450" font-size="11" fill="#53636f">Never set τ by raw hit rate — a higher hit rate at a looser τ is how confident wrongness happens.</text>
+      </svg>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">04</span> How it works</h2>
+      <p class="sub">Six mechanics, each one a decision you'd make in production.</p>
+      <div class="mechanics">
+        <div class="mech"><div class="mnum">M1</div><div>
+          <h3>Embed the question with a small, cheap model</h3>
+          <p>The cache's own lookup cost is one embedding call. Run <code>all-MiniLM-L6-v2</code> locally or call a hosted small model like <code>text-embedding-3-small</code>. If the embedding costs nearly as much as the call you're avoiding, the cache can never win.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">M2</div><div>
+          <h3>Store prompt + vector + response as one entry</h3>
+          <p>The vector is the index, the prompt text is the audit trail (so you can inspect what actually matched), and the response is the payload. Entries carry metadata too — model id, tenant, timestamps.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">M3</div><div>
+          <h3>Match by cosine similarity against a tuned threshold &tau;</h3>
+          <p>Serve only when the best match clears &tau;. Start around <code>0.92–0.95</code> for precision, then tune &tau; on labeled should-hit / should-not-hit pairs. Raw hit rate is a vanity metric here — false-hit rate is the real score.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">M4</div><div>
+          <h3>Scope every key per tenant and model</h3>
+          <p>The lookup filter includes the user or tenant and the model version — a cache keyed on question text alone serves user A's answer to user B. Multi-tenant semantic caches are a security boundary, not just a lookup.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">M5</div><div>
+          <h3>TTL stable content; expire volatile content aggressively</h3>
+          <p>Definitions, policies, and how-tos can cache for days. Prices, stock levels, "today's" anything: minutes or no caching at all. And invalidate the whole cache when the underlying model changes — yesterday's answers were shaped by yesterday's model.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">M6</div><div>
+          <h3>Run the break-even math before you build</h3>
+          <p>Expected cost = h·c_hit + (1−h)·(c_embed + c_model). Caching nets positive above h* = c_embed/(c_model − c_hit) — about <code>2%</code> hit rate for typical ratios. The economics are easy; the threshold quality is the hard part.</p>
+        </div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">05</span> Code sketch</h2>
+      <p class="sub">The whole pattern in 22 lines. Production versions swap the list for RedisVL or GPTCache — the flow is identical.</p>
+      <pre class="code"><span class="k">import</span> time
+<span class="k">import</span> numpy <span class="k">as</span> np
+
+<span class="k">class</span> <span class="s">SemanticCache</span>:
+    <span class="s">"""Minimal in-memory semantic cache. Swap the list for RedisVL/GPTCache at scale."""</span>
+
+    <span class="k">def</span> <span class="s">__init__</span>(self, embed, threshold=<span class="s">0.93</span>, ttl=<span class="s">3600</span>):
+        self.embed, self.threshold, self.ttl = embed, threshold, ttl
+        self.entries = []  <span class="c"># (vector, prompt, response, expires_at)</span>
+
+    <span class="k">def</span> <span class="s">ask</span>(self, prompt, llm_call):
+        q = self.embed(prompt)                       <span class="c"># 1. meaning of the question</span>
+        <span class="k">if</span> self.entries:
+            vecs = np.stack([e[<span class="s">0</span>] <span class="k">for</span> e <span class="k">in</span> self.entries])
+            sims = (vecs @ q) / (np.linalg.norm(vecs, axis=<span class="s">1</span>) * np.linalg.norm(q))
+            best = <span class="k">int</span>(np.argmax(sims))              <span class="c"># nearest cached prompt</span>
+            e = self.entries[best]
+            <span class="k">if</span> sims[best] &gt;= self.threshold <span class="k">and</span> e[<span class="s">3</span>] &gt; time.time():
+                <span class="k">return</span> e[<span class="s">2</span>], <span class="k">True</span>              <span class="c"># HIT: serve, model never runs</span>
+        answer = llm_call(prompt)                    <span class="c"># MISS: pay embedding + full call</span>
+        self.entries.append((q, prompt, answer, time.time() + self.ttl))
+        <span class="k">return</span> answer, <span class="k">False</span></pre>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">06</span> Failure modes</h2>
+      <p class="sub">Named pitfalls, each with a one-line fix.</p>
+      <div class="mechanics">
+        <div class="mech fail"><div class="mnum">F1</div><div>
+          <h3>A loose threshold serves confident wrong answers — "revenue in 2023" embeds almost identically to "revenue in 2024"<span class="fix">Fix: tune &tau; on labeled should-hit / should-not-hit pairs, never on raw hit rate — a higher hit rate at a looser &tau; is how confident wrongness happens.</span></h3>
+        </div></div>
+        <div class="mech fail"><div class="mnum">F2</div><div>
+          <h3>One customer's answer served to another user from a shared cache keyed on question text alone<span class="fix">Fix: scope every cache key by tenant/user and model; treat a leaked cache entry as a security bug, not a cache bug.</span></h3>
+        </div></div>
+        <div class="mech fail"><div class="mnum">F3</div><div>
+          <h3>An embedding-model upgrade silently invalidates the index — new vectors live in a different space than old entries<span class="fix">Fix: pin the embedding model, version cache keys with the model name, and rebuild the index when the model changes.</span></h3>
+        </div></div>
+        <div class="mech fail"><div class="mnum">F4</div><div>
+          <h3>Stale answers outlive reality — cached prices, policies, or model behavior changed underneath<span class="fix">Fix: set TTLs by content volatility (minutes for anything time-sensitive), and invalidate the whole cache on underlying-model upgrades.</span></h3>
+        </div></div>
+        <div class="mech fail"><div class="mnum">F5</div><div>
+          <h3>The cache costs more than it saves — embeddings plus vector storage on traffic with no repeat rate<span class="fix">Fix: run the break-even math first (h* &approx; c_embed/(c_model &minus; c_hit)) and disable the cache if measured hit rate sits below it.</span></h3>
+        </div></div>
+      </div>
+    </section>
+    <section class="block">
+      <h2><span class="num">07</span> Go deeper</h2>
+      <p class="sub">Curated and real — every link opened and verified today.</p>
+      <div class="ref-list">
+        <a class="ref" href="https://docs.redisvl.com/en/stable/user_guide/03_llmcache.html" target="_blank" rel="noopener">
+          <span class="badge doc">doc</span>
+          <div><h3>Cache LLM Responses — RedisVL user guide</h3>
+          <p>The official Redis semantic-cache API: store/check by meaning, the distance-threshold dial, TTL policies, and tag-based access controls for multi-user caches — all in one guide.</p></div>
+        </a>
+        <a class="ref" href="https://github.com/zilliztech/GPTCache" target="_blank" rel="noopener">
+          <span class="badge doc">doc</span>
+          <div><h3>GPTCache — semantic cache for LLMs</h3>
+          <p>The reference open-source semantic-cache library (8k+ stars): exact plus similarity matching, pluggable vector stores, a drop-in OpenAI adapter, and LangChain/llama_index integration.</p></div>
+        </a>
+        <a class="ref" href="https://github.com/neurarch-ai/awesome-llm-system-design/blob/HEAD/book/cost-optimization/04-caching-and-compression.md" target="_blank" rel="noopener">
+          <span class="badge doc">doc</span>
+          <div><h3>Caching and compression — awesome-llm-system-design, ch. 4</h3>
+          <p>The decision layer: exact vs semantic vs prefix caching side by side, the break-even hit-rate math (caching pays at ~2% hit rate), and what never to cache.</p></div>
+        </a>
+        <a class="ref" href="https://www.youtube.com/watch?v=f0Y_NUJ5_Es" target="_blank" rel="noopener">
+          <span class="badge vid">video</span>
+          <div><h3>Semantic Caching for Azure OpenAI with Embeddings</h3>
+          <p>Builds one for Azure OpenAI in Python — embed, cosine nearest-neighbor, threshold — then walks the three production settings that decide everything (threshold, TTL, key scope) and the false-hit and leakage traps.</p></div>
+        </a>
+        <a class="ref" href="https://www.youtube.com/watch?v=Z1iybB5IRBY" target="_blank" rel="noopener">
+          <span class="badge vid">video</span>
+          <div><h3>How Caching Works in AI: 10x Your Chatbot Speed &amp; Slash API Costs</h3>
+          <p>The big-picture episode: how caching applies across chatbots, RAG, and agents, with Redis Semantic Cache, GPTCache, and Upstash in one concept-first overview.</p></div>
+        </a>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">08</span> Sample prompts</h2>
+      <p class="sub">Copy-paste prompts for working through your own caching decisions.</p>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>PROMPT 1 &middot; TUNE THE THRESHOLD</strong><button class="copy-btn" data-copy="p1">Copy</button></div>
+        <p class="prompt-text" id="p1">I have a support bot with 500 logged Q&A pairs — many paraphrases of the same 40 intents. Design a labeled evaluation set of should-hit and should-not-hit pairs, then sweep the cosine similarity threshold from 0.85 to 0.98. Show me how to pick the smallest threshold where precision on should-hit pairs stays at or above 0.95, and what to log in production to keep watching for false hits after launch.</p>
+      </div>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>PROMPT 2 &middot; DESIGN THE CACHE KEY</strong><button class="copy-btn" data-copy="p2">Copy</button></div>
+        <p class="prompt-text" id="p2">I'm adding a semantic cache to a multi-tenant SaaS served by three models, and our embedding model changes quarterly. Design the cache entry schema and key: what goes into the lookup filter (tenant, model, prompt), how entries expire by content volatility, and how an embedding-model upgrade invalidates the index without downtime. Also tell me which answers must never be cached.</p>
+      </div>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>PROMPT 3 &middot; RUN THE COST MATH</strong><button class="copy-btn" data-copy="p3">Copy</button></div>
+        <p class="prompt-text" id="p3">My chatbot serves 200k requests per month at an average model cost of $0.004 per request, and I estimate 25% of questions are paraphrase repeats. Estimate the embedding cost per lookup and the vector-store cost, then compute the break-even hit rate with h* = c_embed / (c_model - c_hit). Tell me whether a semantic cache pays off for this workload and where my estimate could be wrong.</p>
+      </div>
+      <div class="sr-only" id="live-status" role="status"></div>
+    </section>
+    <section class="block">
+      <h2><span class="num">09</span> Quiz</h2>
+      <p class="sub">Click an answer — you'll get right/wrong immediately with an explanation.</p>
+
+      <div class="quiz-q" data-answer="0">
+        <p class="qq">1. Your support chatbot has an exact string-match cache in front of it. Hit rate: 1%. Why?</p>
+        <div class="qopts">
+          <button class="qopt" data-i="0">A. Users almost never type the identical sentence twice — paraphrases of the same question miss an exact-match key even though the meaning is identical</button>
+          <button class="qopt" data-i="1">B. The embedding model is too slow to keep up with chatbot traffic — switch back to exact matching</button>
+          <button class="qopt" data-i="2">C. The cache TTL is too long, so answers go stale before anyone re-asks them</button>
+          <button class="qopt" data-i="3">D. Redis can't handle the write throughput of a chatbot, so entries are dropped</button>
+        </div>
+        <p class="qexp" hidden></p>
+      </div>
+
+      <div class="quiz-q" data-answer="1">
+        <p class="qq">2. A semantic cache answers "what was revenue in 2024?" with the cached 2023 figure. What went wrong?</p>
+        <div class="qopts">
+          <button class="qopt" data-i="0">A. The embedding model can't tell years apart at all — you need a much larger model</button>
+          <button class="qopt" data-i="1">B. The similarity threshold was too loose: "revenue in 2023" and "revenue in 2024" embed almost identically, so a near-neighbor answer cleared &tau; — tighten it and tune on labeled should-hit/should-not-hit pairs</button>
+          <button class="qopt" data-i="2">C. The cache TTL was too short, so the correct 2024 answer had already expired</button>
+          <button class="qopt" data-i="3">D. The vector index used L2 distance instead of cosine similarity</button>
+        </div>
+        <p class="qexp" hidden></p>
+      </div>
+
+      <div class="quiz-q" data-answer="2">
+        <p class="qq">3. A multi-tenant SaaS serves cached answers from one shared semantic cache keyed only on the question text. What's the failure mode?</p>
+        <div class="qopts">
+          <button class="qopt" data-i="0">A. Hit rate collapses, because different tenants ask completely different questions</button>
+          <button class="qopt" data-i="1">B. Latency increases, because the vector index grows with every tenant</button>
+          <button class="qopt" data-i="2">C. User A's cached answer can be served to user B — a privacy leak. Scope cache keys by tenant (and model), and treat a leaked entry as a security bug</button>
+          <button class="qopt" data-i="3">D. Embeddings from different tenants can't be compared — you need one embedding model per tenant</button>
+        </div>
+        <p class="qexp" hidden></p>
+      </div>
+
+      <div class="quiz-q" data-answer="0">
+        <p class="qq">4. A model call costs 1.0, a cache lookup costs 0.005, and the embedding on a miss costs 0.02. Above what hit rate does the cache pay for itself?</p>
+        <div class="qopts">
+          <button class="qopt" data-i="0">A. About 2%: h* = c_embed / (c_model − c_hit) = 0.02 / 0.995. Even modest hit rates win — the question is whether your threshold delivers them without false hits</button>
+          <button class="qopt" data-i="1">B. About 50%: caching only pays when most traffic hits</button>
+          <button class="qopt" data-i="2">C. About 98%: the embedding cost dominates everything else</button>
+          <button class="qopt" data-i="3">D. It never pays: a miss pays both the embedding and the full model call</button>
+        </div>
+        <p class="qexp" hidden></p>
+      </div>
+
+      <div class="quiz-q" data-answer="2">
+        <p class="qq">5. On a cache hit, how do a semantic cache and a provider prompt (prefix) cache differ?</p>
+        <div class="qopts">
+          <button class="qopt" data-i="0">A. The semantic cache is faster but approximate; the prefix cache is exact</button>
+          <button class="qopt" data-i="1">B. The prefix cache skips the whole model call; the semantic cache only skips the prefill</button>
+          <button class="qopt" data-i="2">C. The semantic cache serves the stored response with no model call at all; the prefix cache still runs the model and only reuses the prefill computation over the shared prefix — they compose rather than compete</button>
+          <button class="qopt" data-i="3">D. They're the same mechanism with different names</button>
+        </div>
+        <p class="qexp" hidden></p>
+      </div>
+
+      <div id="quiz-score" role="status"></div>
+    </section>
+    <section class="block">
+      <h2><span class="num">10</span> Flashcards</h2>
+      <p class="sub">Click or press Enter/Space to flip each card.</p>
+      <div class="fgrid">
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: semantic cache"><div class="fcard-inner">
+          <div class="fface front">Semantic cache</div>
+          <div class="fface back">An LLM response cache that matches prompts by meaning (embedding similarity), not exact text. A rephrased question can hit a cached answer — and the model never runs.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: cosine similarity"><div class="fcard-inner">
+          <div class="fface front">Cosine similarity</div>
+          <div class="fface back">The cosine of the angle between two embedding vectors: 1 = identical direction (same meaning), 0 = unrelated. With normalized embeddings it reduces to a dot product.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: tau threshold"><div class="fcard-inner">
+          <div class="fface front">&tau; — the similarity threshold</div>
+          <div class="fface back">The cutoff that decides hit vs miss. Start around 0.92–0.95 for precision. The whole game: tune it on labeled should-hit/should-not-hit pairs, never on raw hit rate.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: false hit"><div class="fcard-inner">
+          <div class="fface front">False hit</div>
+          <div class="fface back">A near-neighbor prompt that clears &tau; but means something different — served confidently, cheaply, and wrong. The signature failure of a loose threshold.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: key scoping"><div class="fcard-inner">
+          <div class="fface front">Key scoping</div>
+          <div class="fface back">Cache keys must include tenant/user and model — not just the question text. Without it, user A's cached answer leaks to user B, and that's a security bug.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: TTL by volatility"><div class="fcard-inner">
+          <div class="fface front">TTL by volatility</div>
+          <div class="fface back">Cache stable content (definitions, policies) for days; give volatile facts (prices, "today's" anything) minutes or no caching at all. Invalidate everything on model upgrades.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: embedding drift"><div class="fcard-inner">
+          <div class="fface front">Embedding drift</div>
+          <div class="fface back">Upgrading the embedding model puts new vectors in a different space than stored entries — old matches go wrong or die. Pin the model, version keys with its name, rebuild on upgrade.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: break-even hit rate"><div class="fcard-inner">
+          <div class="fface front">Break-even hit rate</div>
+          <div class="fface back">h* = c_embed / (c_model − c_hit) ≈ 2% for typical ratios. Caching pays at surprisingly low hit rates; the constraint is threshold quality, not the cost math.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: GPTCache"><div class="fcard-inner">
+          <div class="fface front">GPTCache</div>
+          <div class="fface back">The reference open-source semantic-cache library (Zilliz, 8k+ stars): exact plus similarity matching, pluggable vector stores, a drop-in OpenAI adapter, and LangChain/llama_index integration.</div>
+        </div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">11</span> Reach for this when&hellip;</h2>
+      <div class="triggers">
+        <div class="trigger"><strong>The same stable questions arrive in many phrasings</strong> (support, docs, policies) <strong>and the LLM bill is climbing</strong> — embed once and serve by meaning instead of paying full token price per rephrasing.</div>
+        <div class="trigger"><strong>Users wait seconds for deterministic answers</strong> — a cache hit answers in milliseconds with zero model calls, which no model upgrade can beat.</div>
+        <div class="trigger"><strong>A spend review shows heavy cost on repeated classification, extraction, or FAQ-style calls</strong> — the cheapest LLM call is the one you never make.</div>
+      </div>
+    </section>
+
+    <a class="back-link" href="../index.html#daily-topics">&larr; Back to all daily topics</a>
+  </div>
+
+<script>
+    // copy buttons
+    const status = document.getElementById('live-status');
+    document.querySelectorAll('.copy-btn').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const target = document.getElementById(button.dataset.copy);
+        const text = target.innerText;
+        try {
+          await navigator.clipboard.writeText(text);
+          const original = button.textContent;
+          button.textContent = 'Copied';
+          status.textContent = 'Prompt copied to clipboard.';
+          setTimeout(() => button.textContent = original, 1600);
+        } catch {
+          const range = document.createRange();
+          range.selectNodeContents(target);
+          const selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+          status.textContent = 'Prompt selected. Copy it with your device copy command.';
+        }
+      });
+    });
+
+    // quiz
+    const explanations = [
+      ["Right. Exact matching keys on the string — two users asking the same thing in different words produce different keys. This is exactly the problem semantic caching exists to solve.",
+       "There is no embedding model in an exact-match cache — and latency doesn't determine whether a key matches. The misses come from the key itself, not the speed.",
+       "TTL affects freshness, not whether incoming queries match stored keys. The misses are phrasing mismatches, not expired entries.",
+       "Redis handles this trivially. Throughput affects tail latency, not hit rate — the misses are key mismatches, not dropped writes."],
+      ["The model doesn't need to be larger — the issue is that near-identical meanings can clear a loose threshold. No embedding model fixes that; only the threshold does.",
+       "Right. 'revenue in 2023' and 'revenue in 2024' embed almost identically, so a loose threshold treats a near-neighbor as a match. Tighten it and tune on labeled should-hit/should-not-hit pairs — never on raw hit rate.",
+       "A short TTL would produce misses, not wrong answers. This answer was wrong because it matched — that's a threshold problem, not an expiration problem.",
+       "Distance metric isn't the issue — both L2 and cosine capture the same near-identity here. The question is where you draw the line: the threshold."],
+      ["Tenants asking different questions would actually make leakage less likely, not more — but the failure mode is about the questions they ask in common.",
+       "Index size affects lookup latency slightly, not correctness. The failure here is who gets whose answer, not how fast.",
+       "Right. One shared cache keyed on question text alone serves user A's stored answer to user B. Scope every key by tenant (and model) — a leaked entry is a security bug, not a cache bug.",
+       "Embeddings from one model are directly comparable regardless of tenant. You don't need per-tenant models — you need per-tenant key scoping."],
+      ["Right. h* = c_embed / (c_model − c_hit) = 0.02 / 0.995 ≈ 2%. Caching pays at surprisingly low hit rates — the hard constraint is whether the threshold delivers hits without false ones, not the cost math.",
+       "Not even close: at typical embedding-vs-model cost ratios the break-even is single-digit percentages. 50% would require the embedding to cost half a model call.",
+       "98% is backwards — it would mean caching almost never pays. The embedding is ~2% of the model call, so the math lands near 2%, not 98%.",
+       "A miss does pay both — but that's exactly what the expectation accounts for: h·c_hit + (1−h)·(c_embed + c_model). At ~2% hit rate the savings already outweigh the overhead."],
+      ["'Faster but approximate' is true but misses the real difference: it's about whether the model runs at all, not relative speed or precision.",
+       "That's reversed: the semantic cache is the one that skips the whole model call. The prefix cache only skips the prefill over the shared prefix.",
+       "Right. A semantic cache hit serves stored text with no model call; a prefix-cache hit still runs the model and only reuses the prefill computation. One matches meaning, the other matches tokens — the standard design runs both in series.",
+       "Different in kind: one reuses a finished answer by meaning, the other reuses internal computation over exact token prefixes. Both are called 'cache' — that naming is why designs confuse them."]
+    ];
+    const questions = [...document.querySelectorAll('.quiz-q')];
+    let score = 0, answered = 0;
+    questions.forEach((q, qi) => {
+      const correct = parseInt(q.dataset.answer, 10);
+      const exp = q.querySelector('.qexp');
+      q.querySelectorAll('.qopt').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          if (q.dataset.done) return;
+          q.dataset.done = "1";
+          const chosen = parseInt(btn.dataset.i, 10);
+          const ok = chosen === correct;
+          q.querySelectorAll('.qopt').forEach((b) => {
+            b.disabled = true;
+            if (parseInt(b.dataset.i, 10) === correct) b.classList.add('correct');
+          });
+          if (!ok) btn.classList.add('wrong');
+          else score++;
+          answered++;
+          exp.hidden = false;
+          exp.innerHTML = ok
+            ? "<strong class=\"ok\">Correct.</strong> " + explanations[qi][chosen]
+            : "<strong class=\"no\">Not quite.</strong> " + explanations[qi][chosen];
+          if (answered === questions.length) {
+            const box = document.getElementById('quiz-score');
+            box.style.display = "block";
+            box.innerHTML = "You scored <strong>" + score + " / " + questions.length + "</strong>." +
+              (score === questions.length ? " Clean sweep — you're ready to cache." :
+               score >= 3 ? " Solid — re-read the section you missed." :
+               " Worth a re-read of section 04 before moving on.");
+          }
+        });
+      });
+    });
+
+    // flashcards
+    document.querySelectorAll('.fcard').forEach((card) => {
+      const flip = () => card.classList.toggle('flipped');
+      card.addEventListener('click', flip);
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); }
+      });
+    });
+  </script>
+</body>
+</html>

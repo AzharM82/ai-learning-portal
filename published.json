@@ -124,5 +124,12 @@
     "date": "2026-09-30",
     "summary": "Streaming trades total wait for perceived wait: first tokens in under a second, partial markdown rendered safely, and a stream state machine that treats drops and stops as normal.",
     "skill": "streaming-ux-ai-products"
+  },
+  {
+    "slug": "2026-10-01-semantic-caching",
+    "title": "Semantic caching to cut cost and latency",
+    "date": "2026-10-01",
+    "summary": "Stop paying full token price for rephrased questions: embed each prompt, match it against cached answers by meaning, and skip the LLM call entirely \u2014 plus the threshold, TTL, and key-scoping rules that keep the cache honest.",
+    "skill": "semantic-caching"
   }
 ]
