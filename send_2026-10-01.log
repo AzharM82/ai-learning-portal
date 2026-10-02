@@ -1,0 +1,12 @@
+rc: 0
+stdout:
+{
+  "id": "1a0f84cde24150c0",
+  "labelIds": [
+    "SENT"
+  ],
+  "threadId": "1a0f84cde24150c0"
+}
+
+stderr:
+

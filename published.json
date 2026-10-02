@@ -131,5 +131,12 @@
     "date": "2026-10-01",
     "summary": "Stop paying full token price for rephrased questions: embed each prompt, match it against cached answers by meaning, and skip the LLM call entirely \u2014 plus the threshold, TTL, and key-scoping rules that keep the cache honest.",
     "skill": "semantic-caching"
+  },
+  {
+    "slug": "2026-10-02-model-routing-fallbacks-cost-control",
+    "title": "Model routing, fallbacks, and cost control",
+    "date": "2026-10-02",
+    "summary": "Stop hard-coding providers: route a logical model name across deployments by strategy, fail over through ordered backups, and hard-cap spend with per-key budgets.",
+    "skill": "model-routing-fallbacks-cost-control"
   }
 ]
