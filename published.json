@@ -138,5 +138,12 @@
     "date": "2026-10-02",
     "summary": "Stop hard-coding providers: route a logical model name across deployments by strategy, fail over through ordered backups, and hard-cap spend with per-key budgets.",
     "skill": "model-routing-fallbacks-cost-control"
+  },
+  {
+    "slug": "2026-10-03-distillation-small-models",
+    "title": "Distillation: small models from big ones",
+    "date": "2026-10-03",
+    "summary": "Train a small student to imitate a big teacher: soft targets and temperature (white-box), teacher generations (black-box), the T-squared loss formula, prune-then-distill \u2014 and why students shine on narrow tasks but keep an imitation gap on broad reasoning.",
+    "skill": "distillation"
   }
 ]

@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Distillation: small models from big ones &middot; AI Learning Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+    :root {
+      --ink: #14212b; --muted: #53636f; --paper: #f6f8f7; --white: #ffffff;
+      --line: #cbd5d8; --navy: #163247; --navy-2: #21465e; --teal: #0b8174;
+      --teal-soft: #dff2ee; --orange: #d66332; --orange-soft: #f8e4d8;
+      --gold: #d8a524; --gold-soft: #f7edc8; --blue-soft: #e3eef4;
+      --red: #b3402e; --red-soft: #f9e3de; --green: #1e7a3c; --green-soft: #e2f2e6;
+      --shadow: 0 18px 45px rgba(20, 33, 43, .09); --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; color: var(--ink);
+      background: linear-gradient(rgba(20,33,43,.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(20,33,43,.035) 1px, transparent 1px), var(--paper);
+      background-size: 28px 28px;
+      font-family: "Source Sans 3", sans-serif; font-size: 17px; line-height: 1.58;
+    }
+    .shell { width: min(960px, calc(100% - 40px)); margin: 0 auto; }
+    .portal-nav{position:sticky;top:0;z-index:50;background:rgba(22,50,71,.97);border-bottom:1px solid rgba(255,255,255,.12)}
+    .portal-nav-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;flex-wrap:wrap}
+    .portal-brand{color:#fff;text-decoration:none;font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:15px}
+    .portal-brand span{color:var(--gold);font-weight:400}
+    .portal-links{display:flex;gap:18px;flex-wrap:wrap}
+    .portal-links a{color:#dbe7ee;text-decoration:none;font-size:14.5px}
+    .portal-links a:hover{color:#fff;text-decoration:underline}
+    .hero { padding: 56px 0 36px; }
+    .chapter-mark { display:inline-flex;align-items:center;gap:10px;color:var(--navy);
+      font:600 12px/1.2 "IBM Plex Mono",monospace;letter-spacing:.09em;text-transform:uppercase;margin-bottom:18px; }
+    .chapter-mark::before { content:"";width:42px;height:3px;background:var(--orange); }
+    h1 { font-size: clamp(36px, 5vw, 58px); line-height: 1.02; letter-spacing:-.03em; margin:0 0 14px; }
+    .lede { color: var(--muted); font-size: clamp(18px,2vw,22px); max-width: 64ch; margin:0 0 8px; }
+    .date-line { font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--muted); }
+    section.block { margin: 44px 0; }
+    h2 { font-size: 26px; letter-spacing:-.02em; margin:0 0 6px; display:flex;align-items:center;gap:12px; }
+    h2 .num { font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:600;color:var(--white);
+      background:var(--navy);border-radius:999px;min-width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center; }
+    .sub { color:var(--muted); margin:0 0 18px; max-width: 68ch; }
+    .card { background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+      padding:24px;box-shadow:var(--shadow); }
+    .skill-card { background:var(--navy);color:#eaf2f7;border-radius:var(--radius);padding:22px 24px;
+      font-family:"IBM Plex Mono",monospace;font-size:14.5px;overflow-x:auto;box-shadow:var(--shadow); }
+    .skill-card .k { color:var(--gold); }
+    .idea { font-size:21px;line-height:1.5;border-left:4px solid var(--teal);padding:6px 0 6px 20px;max-width:62ch; }
+    .idea strong { color:var(--navy); }
+    .mechanics { display:grid;gap:14px; }
+    .mech { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:18px 20px;
+      display:grid;grid-template-columns:44px 1fr;gap:14px;align-items:start; }
+    .mech .mnum { font-family:"IBM Plex Mono",monospace;font-weight:600;color:var(--teal);
+      background:var(--teal-soft);border-radius:10px;width:44px;height:44px;display:flex;align-items:center;justify-content:center; }
+    .mech h3 { margin:0 0 6px;font-size:18px; }
+    .mech p { margin:0;color:var(--muted);font-size:15.5px; }
+    .mech code, .inline-code { font-family:"IBM Plex Mono",monospace;font-size:.88em;background:var(--blue-soft);
+      padding:2px 7px;border-radius:6px;color:var(--navy); }
+    pre.code { background:#0f2233;color:#e8f1f5;border-radius:14px;padding:20px 22px;overflow-x:auto;
+      font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.6;margin:0; }
+    pre.code .c { color:#8ba3b0; } pre.code .s { color:#ffd479; } pre.code .k { color:#7fd6c2; }
+    .fail { border-left:4px solid var(--orange); }
+    .fail h3 .fix { display:block;margin-top:8px;font-size:15px;font-weight:500;color:var(--green); }
+    .ref-list { display:grid;gap:12px; }
+    .ref { display:flex;gap:14px;align-items:flex-start;background:var(--white);border:1px solid var(--line);
+      border-radius:14px;padding:16px 18px;text-decoration:none;color:inherit; }
+    .ref:hover { border-color:var(--teal); }
+    .ref .badge { flex:none;font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;letter-spacing:.06em;
+      padding:5px 10px;border-radius:999px;text-transform:uppercase; }
+    .badge.doc { background:var(--blue-soft);color:var(--navy); }
+    .badge.vid { background:var(--orange-soft);color:var(--orange); }
+    .ref h3 { margin:0 0 4px;font-size:17px; }
+    .ref p { margin:0;color:var(--muted);font-size:14.5px; }
+    .prompt-block { background:#0f2233;border-radius:var(--radius);overflow:hidden;margin-bottom:18px;box-shadow:var(--shadow); }
+    .prompt-top { display:flex;justify-content:space-between;align-items:center;gap:12px;
+      padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.12); }
+    .prompt-top strong { color:#fff;font-size:13px;letter-spacing:.06em;font-family:"IBM Plex Mono",monospace; }
+    .copy-btn { border:1px solid #6c8796;background:transparent;color:#fff;border-radius:6px;padding:7px 11px;
+      cursor:pointer;font-weight:700;font-size:14px; }
+    .copy-btn:hover { background:rgba(255,255,255,.1); }
+    .copy-btn:focus-visible { outline:2px solid var(--gold);outline-offset:2px; }
+    .prompt-text { color:#e8f1f5;font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.65;
+      padding:18px;white-space:pre-wrap;margin:0; }
+    .sr-only { position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0); }
+    .quiz-q { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px; }
+    .quiz-q .qq { font-weight:700;margin:0 0 12px;font-size:18px; }
+    .qopts { display:grid;gap:8px; }
+    .qopt { text-align:left;background:var(--paper);border:1px solid var(--line);border-radius:10px;
+      padding:12px 14px;cursor:pointer;font-size:15.5px;color:var(--ink); }
+    .qopt:hover:not(:disabled) { border-color:var(--navy); }
+    .qopt:disabled { cursor:default;opacity:.85; }
+    .qopt.correct { background:var(--green-soft);border-color:var(--green); }
+    .qopt.wrong { background:var(--red-soft);border-color:var(--red); }
+    .qexp { margin:12px 0 0;font-size:15px;color:var(--muted); }
+    .qexp strong.ok { color:var(--green); } .qexp strong.no { color:var(--red); }
+    #quiz-score { display:none;margin-top:8px;background:var(--navy);color:#fff;border-radius:14px;
+      padding:20px 24px;font-size:19px; }
+    #quiz-score strong { color:var(--gold); }
+    .fgrid { display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px; }
+    .fcard { perspective:900px;cursor:pointer;min-height:170px; }
+    .fcard-inner { position:relative;width:100%;height:100%;min-height:170px;transform-style:preserve-3d;transition:transform .45s; }
+    .fcard.flipped .fcard-inner { transform:rotateY(180deg); }
+    .fface { position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+      border-radius:14px;padding:18px;display:flex;align-items:center;justify-content:center;text-align:center;
+      border:1px solid var(--line);background:var(--white);box-shadow:var(--shadow);font-size:15.5px; }
+    .fface.front { font-weight:700;color:var(--navy); }
+    .fface.back { transform:rotateY(180deg);background:var(--teal-soft);color:var(--ink);font-size:14.5px; }
+    .fcard:focus-visible { outline:2px solid var(--teal);outline-offset:3px;border-radius:14px; }
+    .triggers { display:grid;gap:10px; }
+    .trigger { background:var(--gold-soft);border-radius:12px;padding:14px 18px;font-size:16px; }
+    .trigger strong { color:var(--navy); }
+    .back-link { display:inline-block;margin:8px 0 60px;font-weight:600;color:var(--teal);text-decoration:none;font-size:17px; }
+    .back-link:hover { text-decoration:underline; }
+    .fig { background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+      padding:12px;box-shadow:var(--shadow);overflow-x:auto; }
+    .fig svg { display:block;width:100%;height:auto; }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior:auto; } .fcard-inner{transition:none;} }
+  </style>
+</head>
+<body>
+<nav class="portal-nav">
+    <div class="shell portal-nav-inner">
+      <a class="portal-brand" href="../index.html">AI Engineering <span>&middot; Learning Portal</span></a>
+      <div class="portal-links">
+        <a href="../index.html#daily-topics">Daily topics</a>
+        <a href="../index.html#loop">Loop</a>
+        <a href="../index.html#graph">Graph</a>
+        <a href="../index.html#harness">Harness</a>
+      </div>
+    </div>
+  </nav>
+  <div class="shell">
+
+    <header class="hero">
+      <div class="chapter-mark">Daily topic &middot; AI engineering</div>
+      <h1>Distillation: small models from big ones</h1>
+      <p class="lede">Don't pay frontier prices for production traffic &mdash; copy the behavior instead. Knowledge distillation trains a small <strong>student</strong> to imitate a large <strong>teacher</strong>&rsquo;s outputs: the teacher&rsquo;s softened probability distributions (&ldquo;dark knowledge&rdquo;) reveal similarity structure that hard labels throw away, so the student learns more from every example. A 10&times;&ndash;3,000&times; smaller model keeps most of the teacher&rsquo;s quality on your task &mdash; this is the compression trick behind the cheap, fast small models that actually get deployed.</p>
+      <p class="date-line">2026-10-03 &middot; Topic 021</p>
+    </header>
+
+    <section class="block">
+      <h2><span class="num">01</span> The skill card</h2>
+      <p class="sub">Every topic on this portal is designed like a Codex skill: a name, a trigger, and concrete steps.</p>
+      <div class="skill-card"><pre style="margin:0">---
+<span class="k">name:</span> distillation
+<span class="k">description:</span> Reach for this when a frontier-class model is too costly or
+  slow for production: train a smaller student to imitate a big teacher
+  &mdash; soft targets with temperature for white-box, teacher generations
+  for black-box &mdash; then evaluate the student against the teacher on
+  your real workload plus latency and cost.
+---</pre></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">02</span> The one-idea version</h2>
+      <p class="idea">A big model&rsquo;s behavior is a <strong>function you can copy cheaper than you can run it</strong>. The teacher never hands over its weights &mdash; it hands over its <strong>softened output distributions</strong>, which say not just &ldquo;the answer is 7&rdquo; but &ldquo;it&rsquo;s 90% a 7, 8% a 9, and almost never a 1.&rdquo; Training a small student against that distribution transfers the teacher&rsquo;s <strong>similarity structure</strong>, so each example teaches what many hard-label examples would. The student won&rsquo;t exceed the teacher, but on a well-defined task it gets close &mdash; at a fraction of the cost, latency, and memory.</p>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">03</span> The visual</h2>
+      <div class="fig" role="img" aria-label="Diagram: two flavors of distillation — white-box (match the teacher's temperature-softened logits with KL plus hard-label loss) and black-box (train on teacher API outputs with ordinary supervised learning); both produce a small deployable student.">
+      <svg viewBox="0 0 920 600" xmlns="http://www.w3.org/2000/svg" font-family="IBM Plex Mono, monospace">
+        <rect x="0" y="0" width="920" height="600" rx="12" fill="#ffffff"/>
+        <text x="24" y="36" font-size="15" font-weight="600" fill="#163247">TWO FLAVORS OF DISTILLATION &#8212; MATCH LOGITS, OR MATCH OUTPUTS</text>
+
+        <text x="24" y="66" font-size="12" font-weight="600" fill="#0b8174">WHITE-BOX KD &#8212; you have the teacher&#8217;s weights</text>
+        <rect x="24" y="80" width="400" height="58" rx="8" fill="#163247"/>
+        <text x="40" y="104" font-size="12" font-weight="600" fill="#ffffff">TEACHER &#8212; 70B, logits exposed</text>
+        <text x="40" y="124" font-size="11" fill="#dbe7ee">forward pass in eval mode, no gradients</text>
+        <line x1="224" y1="138" x2="224" y2="158" stroke="#163247" stroke-width="2"/>
+        <polygon points="218,152 224,162 230,152" fill="#163247"/>
+        <rect x="24" y="158" width="400" height="58" rx="8" fill="#dff2ee" stroke="#0b8174"/>
+        <text x="40" y="182" font-size="12" font-weight="600" fill="#163247">SOFTENED LOGITS &#8212; softmax(z / T), T = 2&#8211;5</text>
+        <text x="40" y="202" font-size="11" fill="#53636f">temperature reveals the dark knowledge</text>
+        <line x1="224" y1="216" x2="224" y2="236" stroke="#163247" stroke-width="2"/>
+        <polygon points="218,230 224,240 230,230" fill="#163247"/>
+        <rect x="24" y="236" width="400" height="84" rx="8" fill="#f7edc8" stroke="#d8a524"/>
+        <text x="40" y="262" font-size="12" font-weight="600" fill="#163247">LOSS = &#945;&#183;T&#178;&#183;KL(student, teacher) + (1&#8722;&#945;)&#183;CE</text>
+        <text x="40" y="284" font-size="11" fill="#53636f">student chases the full distribution, not one label</text>
+        <text x="40" y="304" font-size="11" fill="#53636f">T&#178; keeps the KL term on the CE scale</text>
+        <line x1="224" y1="320" x2="224" y2="340" stroke="#163247" stroke-width="2"/>
+        <polygon points="218,334 224,344 230,334" fill="#163247"/>
+        <rect x="24" y="340" width="400" height="58" rx="8" fill="#0b8174"/>
+        <text x="40" y="364" font-size="12" font-weight="600" fill="#ffffff">STUDENT &#8212; 7B, weights updated</text>
+        <text x="40" y="384" font-size="11" fill="#e8f1f5">this is the model you deploy</text>
+
+        <text x="480" y="66" font-size="12" font-weight="600" fill="#d66332">BLACK-BOX KD &#8212; you only have the teacher&#8217;s API</text>
+        <rect x="480" y="80" width="416" height="58" rx="8" fill="#163247"/>
+        <text x="496" y="104" font-size="12" font-weight="600" fill="#ffffff">TEACHER API &#8212; frontier model, no weights</text>
+        <text x="496" y="124" font-size="11" fill="#dbe7ee">you get outputs, not logits</text>
+        <line x1="688" y1="138" x2="688" y2="158" stroke="#163247" stroke-width="2"/>
+        <polygon points="682,152 688,162 694,152" fill="#163247"/>
+        <rect x="480" y="158" width="416" height="58" rx="8" fill="#f8e4d8" stroke="#d66332"/>
+        <text x="496" y="182" font-size="12" font-weight="600" fill="#163247">TEACHER-GENERATED PAIRS &#8212; (input, teacher output)</text>
+        <text x="496" y="202" font-size="11" fill="#53636f">sequences for LLMs, labels for classifiers</text>
+        <line x1="688" y1="216" x2="688" y2="236" stroke="#163247" stroke-width="2"/>
+        <polygon points="682,230 688,240 694,230" fill="#163247"/>
+        <rect x="480" y="236" width="416" height="84" rx="8" fill="#e3eef4" stroke="#163247"/>
+        <text x="496" y="262" font-size="12" font-weight="600" fill="#163247">ORDINARY SUPERVISED TRAINING</text>
+        <text x="496" y="284" font-size="11" fill="#53636f">no KL needed &#8212; the teacher&rsquo;s outputs carry the knowledge</text>
+        <text x="496" y="304" font-size="11" fill="#53636f">reasoning traces distill especially well</text>
+        <line x1="688" y1="320" x2="688" y2="340" stroke="#163247" stroke-width="2"/>
+        <polygon points="682,334 688,344 694,334" fill="#163247"/>
+        <rect x="480" y="340" width="416" height="58" rx="8" fill="#0b8174"/>
+        <text x="496" y="364" font-size="12" font-weight="600" fill="#ffffff">STUDENT &#8212; task-specific, deployable</text>
+        <text x="496" y="384" font-size="11" fill="#e8f1f5">runs on one GPU, a phone, a drone</text>
+
+        <line x1="24" y1="424" x2="896" y2="424" stroke="#cbd5d8"/>
+        <text x="24" y="454" font-size="15" font-weight="600" fill="#163247">RESULTS THAT SHIPPED</text>
+        <rect x="24" y="466" width="430" height="64" rx="8" fill="#dff2ee" stroke="#0b8174"/>
+        <text x="40" y="492" font-size="12" font-weight="600" fill="#163247">DistilBERT &#8212; 40% smaller than BERT</text>
+        <text x="40" y="512" font-size="11" fill="#53636f">~97% of the language-understanding quality (white-box)</text>
+        <rect x="466" y="466" width="430" height="64" rx="8" fill="#f8e4d8" stroke="#d66332"/>
+        <text x="482" y="492" font-size="12" font-weight="600" fill="#163247">Tweet classifier &#8212; 3,240&#215; smaller than Llama 3.1 405B</text>
+        <text x="482" y="512" font-size="11" fill="#53636f">same accuracy on sentiment (black-box, teacher-labeled data)</text>
+
+        <text x="24" y="562" font-size="11" fill="#53636f">Student quality is bounded by the teacher&rsquo;s &#8212; and students mimic style more easily than reasoning.</text>
+        <text x="24" y="582" font-size="11" fill="#53636f">White-box needs the weights. Black-box needs only API access (mind the provider&rsquo;s terms).</text>
+      </svg>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">04</span> How it works</h2>
+      <p class="sub">Six mechanics, each one a decision you'd make in production.</p>
+      <div class="mechanics">
+        <div class="mech"><div class="mnum">M1</div><div>
+          <h3>Pick white-box or black-box</h3>
+          <p><strong>White-box:</strong> you have the teacher's weights — match its softened logits with KL divergence (plus hidden states if architectures align). <strong>Black-box:</strong> you only have API access — generate teacher outputs and train the student on them with ordinary supervised loss. Most production small models today are built black-box.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">M2</div><div>
+          <h3>Mine the dark knowledge</h3>
+          <p>Hard labels say “this is a 7.” The teacher's soft distribution says “90% a 7, 8% a 9, 0.1% a 1” — that's information about similarity structure. Train the student against the <em>softened</em> distribution and one example teaches what many hard-label examples would.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">M3</div><div>
+          <h3>Set temperature and alpha deliberately</h3>
+          <p>Soften the teacher's logits with temperature T (start 2–5) and blend the losses: <code>loss = α·T²·KL(student_T, teacher_T) + (1−α)·CE(student, labels)</code>, α ≈ 0.5–0.7. The T² factor keeps the KL term on the same scale as the cross-entropy term as T changes — Hinton's original formula.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">M4</div><div>
+          <h3>For LLMs, distill at the sequence level</h3>
+          <p>Per-token soft targets are impractical without the teacher's logits and awkward for generation. Instead, generate <em>complete</em> teacher outputs and train the student on those sequences (Kim &amp; Rush, 2016). Reasoning traces, structured formats, and multi-turn dialogues distill especially well this way.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">M5</div><div>
+          <h3>Prune the teacher, then distill</h3>
+          <p>The strongest small models start life as a pruned teacher: <strong>width-prune</strong> (drop neurons/heads/channels) rather than <strong>depth-prune</strong> (drop layers) — accuracy survives width pruning better. Then retrain with distillation <em>exclusively</em>. If depth was heavily cut, distill logits + intermediate states + embeddings; if depth is mostly intact, logit-only is enough (Minitron/NVIDIA guidance).</p>
+        </div></div>
+        <div class="mech"><div class="mnum">M6</div><div>
+          <h3>Evaluate the student like a deployment</h3>
+          <p>Grade the student on the same benchmarks and real workloads as the teacher — the student is bounded by the teacher's quality — <em>and</em> on deployment metrics: latency, throughput, memory, cost per 1k requests. Distillation is a production optimization; judge it by production numbers.</p>
+        </div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">05</span> Code sketch</h2>
+      <p class="sub">Hinton's loss in 22 lines: teacher in eval mode, student chases soft targets plus hard labels.</p>
+      <pre class="code"><span class="k">import</span> torch
+<span class="k">import</span> torch.nn.functional <span class="k">as</span> F
+
+<span class="k">def</span> distill_loss(student_logits, teacher_logits, labels, T=<span class="s">3.0</span>, alpha=<span class="s">0.6</span>):
+    <span class="c"># soft targets: temperature reveals the dark knowledge</span>
+    p_teacher = F.softmax(teacher_logits / T, dim=-<span class="s">1</span>)
+    log_p_student = F.log_softmax(student_logits / T, dim=-<span class="s">1</span>)
+    kd = F.kl_div(log_p_student, p_teacher, reduction=<span class="s">"batchmean"</span>) * T**<span class="s">2</span>
+    <span class="c"># hard labels keep the student grounded in ground truth</span>
+    ce = F.cross_entropy(student_logits, labels)
+    <span class="k">return</span> alpha * kd + (<span class="s">1</span> - alpha) * ce
+
+teacher.eval()  <span class="c"># teacher guides; it never learns</span>
+<span class="k">for</span> x, y <span class="k">in</span> loader:
+    <span class="k">with</span> torch.no_grad():
+        t_logits = teacher(x)          <span class="c"># forward once, no gradients</span>
+    s_logits = student(x)
+    loss = distill_loss(s_logits, t_logits, y, T=<span class="s">3.0</span>, alpha=<span class="s">0.6</span>)
+    loss.backward()
+    opt.step(); opt.zero_grad()</pre>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">06</span> Failure modes</h2>
+      <p class="sub">Named pitfalls, each with a one-line fix.</p>
+      <div class="mechanics">
+        <div class="mech fail"><div class="mnum">F1</div><div>
+          <h3>Student learns the style, not the substance — the imitation gap — The student apes the teacher's tone and formatting but falls short on reasoning and factual correctness.<span class="fix">Fix: Distill on narrow, well-specified tasks; never assume broad reasoning transfers; re-run the teacher's full benchmark suite on the student, not just vibes.</span></h3>
+        </div></div>
+        <div class="mech fail"><div class="mnum">F2</div><div>
+          <h3>Temperature set blindly — T=1 makes soft targets nearly as hard as labels (no dark knowledge learned); T too high flattens everything into noise.<span class="fix">Fix: Sweep T in 2–5 and watch validation; pair it with the α blend so ground truth keeps a vote.</span></h3>
+        </div></div>
+        <div class="mech fail"><div class="mnum">F3</div><div>
+          <h3>Distilling from a stale or shifted teacher — The teacher's guidance is only as good as its fit to your data distribution.<span class="fix">Fix: Lightly fine-tune the teacher on your target data first, then distill; refresh the student when the teacher updates.</span></h3>
+        </div></div>
+        <div class="mech fail"><div class="mnum">F4</div><div>
+          <h3>Judging by accuracy only — The whole point of distillation is deployment — latency, memory, throughput, cost per 1k requests.<span class="fix">Fix: Score the student on the teacher's task benchmarks AND the deployment metrics; ship on the production numbers.</span></h3>
+        </div></div>
+        <div class="mech fail"><div class="mnum">F5</div><div>
+          <h3>Assuming alignment transfers — Small students are weaker at instruction following and safety — distilled models can shed the teacher's refusal behavior and guardrail robustness.<span class="fix">Fix: Re-run your safety and prompt-injection evals on the student itself, not just on the teacher.</span></h3>
+        </div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">07</span> Go deeper</h2>
+      <p class="sub">Curated and real — every link opened and verified today.</p>
+      <div class="ref-list">
+        <a class="ref" href="https://arxiv.org/abs/1503.02531" target="_blank" rel="noopener">
+          <span class="badge doc">doc</span>
+          <div><h3>Distilling the Knowledge in a Neural Network — Hinton, Vinyals &amp; Dean (2015)</h3>
+          <p>The 9-page original: soft targets, temperature, the T² factor. Everything since is commentary.</p></div>
+        </a>
+        <a class="ref" href="https://developer.nvidia.com/blog/llm-model-pruning-and-knowledge-distillation-with-nvidia-nemo-framework/" target="_blank" rel="noopener">
+          <span class="badge doc">doc</span>
+          <div><h3>LLM Model Pruning and Knowledge Distillation with NVIDIA NeMo Framework</h3>
+          <p>End-to-end prune-then-distill pipeline with runnable notebooks: width vs depth pruning trade-offs and distillation-based retraining from the Minitron work.</p></div>
+        </a>
+        <a class="ref" href="https://docs.pytorch.org/tutorials/beginner/knowledge_distillation_tutorial.html" target="_blank" rel="noopener">
+          <span class="badge doc">doc</span>
+          <div><h3>Knowledge Distillation Tutorial — PyTorch</h3>
+          <p>A runnable teacher→student run on CIFAR-10: distillation loss plus hidden-representation matching. The fastest way to feel the temperature/alpha knobs.</p></div>
+        </a>
+        <a class="ref" href="https://www.youtube.com/watch?v=BUCSTKQOzcM" target="_blank" rel="noopener">
+          <span class="badge vid">vid</span>
+          <div><h3>Knowledge Distillation in Neural Networks — Explained! (CodeEmporium)</h3>
+          <p>Teacher and student, soft targets, and temperature in plain terms. The right first watch if this is all new.</p></div>
+        </a>
+        <a class="ref" href="https://www.youtube.com/watch?v=q5REn6OAPRg" target="_blank" rel="noopener">
+          <span class="badge vid">vid</span>
+          <div><h3>Model Distillation: Same LLM Power but 3240x Smaller (Adam Lucek)</h3>
+          <p>Black-box LLM distillation end to end: Llama 3.1 405B labels a tweet dataset, a 125M RoBERTa learns it and matches accuracy at 1/3240th the size. The production version of this topic.</p></div>
+        </a>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">08</span> Sample prompts</h2>
+      <p class="sub">Copy-paste prompts for working through your own distillation decisions.</p>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>PROMPT 1 · DECIDE WHETHER TO DISTILL</strong><button class="copy-btn" data-copy="p1">Copy</button></div>
+        <p class="prompt-text" id="p1">We serve ~X requests/day on [frontier model], p95 latency Y, cost $Z/month. Help me decide if distillation is the right move: what teacher/student pair makes sense, black-box vs white-box given I [have/do not have] the teacher's weights, what data I'd distill on (narrow task vs broad chat), and the failure signals that would tell me to stop and try routing/quantization instead.</p>
+      </div>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>PROMPT 2 · DESIGN THE DISTILLATION RUN</strong><button class="copy-btn" data-copy="p2">Copy</button></div>
+        <p class="prompt-text" id="p2">Design a distillation experiment for my [task]: student architecture, teacher source, training data plan (size, mix of teacher generations vs ground-truth labels), starting temperature and alpha with a sweep plan, and the eval harness — same benchmarks as the teacher plus latency/throughput/cost-per-1k. Tell me the one metric that decides ship vs no-ship.</p>
+      </div>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>PROMPT 3 · PRUNE-THEN-DISTILL PLAN</strong><button class="copy-btn" data-copy="p3">Copy</button></div>
+        <p class="prompt-text" id="p3">Per the NVIDIA/Minitron prune-then-distill guidance: I'm compressing [teacher, N layers, H hidden] to a ~4B student. Tell me how to split the pruning budget between width and depth, which components to cut first, when to use logit-only vs logit+intermediate+embedding distillation, and the retraining recipe (distillation exclusively, no plain SFT). Flag what breaks if I depth-prune too aggressively.</p>
+      </div>
+      <div class="sr-only" id="live-status" role="status"></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">09</span> Quiz</h2>
+      <p class="sub">Click an answer — you'll get right/wrong immediately with an explanation.</p>
+
+            <div class="quiz-q" data-answer="1">
+        <p class="qq">1. What is “dark knowledge” in distillation?</p>
+        <div class="qopts">
+          <button class="qopt" data-i="0">A. The teacher's hidden-layer weights, which the student copies directly</button>
+          <button class="qopt" data-i="1">B. The information in the teacher's full output distribution — e.g. that a “7” looks more like a “9” than a “1” — which hard labels throw away</button>
+          <button class="qopt" data-i="2">C. The teacher's training data, kept secret from the student</button>
+          <button class="qopt" data-i="3">D. Random noise added to labels to prevent overfitting</button>
+        </div>
+        <p class="qexp" hidden></p>
+      </div>
+
+            <div class="quiz-q" data-answer="0">
+        <p class="qq">2. In the classic loss L = α·T²·KL + (1−α)·CE, why is the KL term multiplied by T²?</p>
+        <div class="qopts">
+          <button class="qopt" data-i="0">A. Because the soft-target gradients scale as 1/T², so T² keeps the two loss terms on a comparable scale as temperature changes</button>
+          <button class="qopt" data-i="1">B. To square the temperature and make training converge faster</button>
+          <button class="qopt" data-i="2">C. To make the temperature cancel out of the final loss</button>
+          <button class="qopt" data-i="3">D. It's an arbitrary constant Hinton added for numerical luck</button>
+        </div>
+        <p class="qexp" hidden></p>
+      </div>
+
+            <div class="quiz-q" data-answer="2">
+        <p class="qq">3. You only have API access to a frontier model — no weights, no logits. What can you do, and what do you train the student on?</p>
+        <div class="qopts">
+          <button class="qopt" data-i="0">A. White-box distillation; you train on the teacher's intermediate activations</button>
+          <button class="qopt" data-i="1">B. Nothing; distillation is impossible without the teacher's weights</button>
+          <button class="qopt" data-i="2">C. Black-box (sequence-level) distillation: generate a dataset from the teacher's API outputs and train the student on those input→output pairs with ordinary supervised loss</button>
+          <button class="qopt" data-i="3">D. White-box distillation; every API returns logits if you ask nicely</button>
+        </div>
+        <p class="qexp" hidden></p>
+      </div>
+
+            <div class="quiz-q" data-answer="3">
+        <p class="qq">4. A team distills a frontier model into a 7B student for a narrow classification task and matches teacher accuracy. They now expect the student to inherit the teacher's broad reasoning ability. What's wrong?</p>
+        <div class="qopts">
+          <button class="qopt" data-i="0">A. Nothing — the student inherits everything the teacher knows</button>
+          <button class="qopt" data-i="1">B. The student will actually exceed the teacher on reasoning</button>
+          <button class="qopt" data-i="2">C. Reasoning can't be measured, so the comparison is meaningless</button>
+          <button class="qopt" data-i="3">D. The imitation gap: the student copies the input→output mapping it was trained on, but broad reasoning and factual depth transfer poorly — distillation shines on narrow, well-specified tasks</button>
+        </div>
+        <p class="qexp" hidden></p>
+      </div>
+
+            <div class="quiz-q" data-answer="0">
+        <p class="qq">5. Following the NVIDIA/Minitron prune-then-distill guidance, you need a 4B model from an 8B teacher. What matches their best practices?</p>
+        <div class="qopts">
+          <button class="qopt" data-i="0">A. Width-prune (accuracy holds up better than depth pruning) and retrain with distillation exclusively — logit-only suffices if depth is largely retained</button>
+          <button class="qopt" data-i="1">B. Depth-prune half the layers, then retrain with ordinary supervised fine-tuning</button>
+          <button class="qopt" data-i="2">C. Prune randomly; the distillation step repairs any pruning damage</button>
+          <button class="qopt" data-i="3">D. Skip pruning entirely and train a random 4B student with the standard loss</button>
+        </div>
+        <p class="qexp" hidden></p>
+      </div>
+
+      <div id="quiz-score" role="status"></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">10</span> Flashcards</h2>
+      <p class="sub">Click or press Enter/Space to flip each card.</p>
+            <div class="fgrid">
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: Dark knowledge"><div class="fcard-inner">
+          <div class="fface front">Dark knowledge</div>
+          <div class="fface back">The extra information in the teacher's full output distribution (e.g. “7” is closer to “9” than to “1”) that hard one-hot labels discard. This is what the student actually learns from.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: Soft targets"><div class="fcard-inner">
+          <div class="fface front">Soft targets</div>
+          <div class="fface back">The teacher's probability distribution, softened by temperature. Richer training signal per example than a hard label: the student learns the teacher's ranking of wrong answers too.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: Temperature T"><div class="fcard-inner">
+          <div class="fface front">Temperature T</div>
+          <div class="fface back">The softmax divisor in the distillation loss. Higher T flattens the distribution, exposing more dark knowledge; T=1 gives ordinary predictions. Typical range 2–5.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: Alpha (α)"><div class="fcard-inner">
+          <div class="fface front">Alpha (α)</div>
+          <div class="fface back">The weight balancing the distillation loss (match the teacher) against the hard-label loss (match the ground truth). α ≈ 0.5–0.7 is a common starting point.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: The T² factor"><div class="fcard-inner">
+          <div class="fface front">The T² factor</div>
+          <div class="fface back">Soft-target gradients shrink as 1/T², so the KL term is scaled by T² to stay comparable to the cross-entropy term as temperature changes. It's in Hinton's 2015 formula.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: Black-box distillation"><div class="fcard-inner">
+          <div class="fface front">Black-box distillation</div>
+          <div class="fface back">Distilling with only API access to the teacher: generate teacher outputs for your inputs and train the student on them with ordinary supervised loss. No weights or logits needed.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: Sequence-level distillation"><div class="fcard-inner">
+          <div class="fface front">Sequence-level distillation</div>
+          <div class="fface back">For LLMs: train the student on whole generations produced by the teacher, not per-token soft labels. The form that powers most modern small LLMs (Kim & Rush, 2016).</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: Prune-then-distill"><div class="fcard-inner">
+          <div class="fface front">Prune-then-distill</div>
+          <div class="fface back">Start the student by pruning the teacher itself — width pruning beats depth pruning for accuracy — then retrain with distillation exclusively (NVIDIA/Minitron guidance).</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="Flashcard: The imitation gap"><div class="fcard-inner">
+          <div class="fface front">The imitation gap</div>
+          <div class="fface back">Students mimic the teacher's style easily but inherit broad reasoning and factual depth poorly. Distillation shines on narrow, well-specified tasks.</div>
+        </div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">11</span> Reach for this when&hellip;</h2>
+            <div class="triggers">
+        <div class="trigger"><strong>Your per-request cost is dominated by a frontier model on a narrow, well-defined task</strong> — distillation routinely recovers most of the quality at a fraction of the cost and latency.</div>
+        <div class="trigger"><strong>You need the model on-device, on a single GPU, or under a latency SLO the teacher can't meet</strong> — a distilled student is how frontier capability fits in a phone or a 100ms budget.</div>
+        <div class="trigger"><strong>You're serving the same kind of request thousands of times a day</strong> — distill the teacher's answers once, then serve the cheap student forever; the training cost amortizes in days.</div>
+      </div>
+    </section>
+
+    <a class="back-link" href="../index.html#daily-topics">&larr; Back to all daily topics</a>
+  </div>
+
+<script>
+    // copy buttons
+    const status = document.getElementById('live-status');
+    document.querySelectorAll('.copy-btn').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const target = document.getElementById(button.dataset.copy);
+        const text = target.innerText;
+        try {
+          await navigator.clipboard.writeText(text);
+          const original = button.textContent;
+          button.textContent = 'Copied';
+          status.textContent = 'Prompt copied to clipboard.';
+          setTimeout(() => button.textContent = original, 1600);
+        } catch {
+          const range = document.createRange();
+          range.selectNodeContents(target);
+          const selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+          status.textContent = 'Prompt selected. Copy it with your device copy command.';
+        }
+      });
+    });
+
+    // quiz
+    const explanations = [
+      ["Weights are never copied — the student only sees outputs. Dark knowledge is information, not parameters.",
+       "Right. The teacher's softened distribution encodes similarity structure (“7” is closer to “9” than to “1”), and that's the extra signal hard one-hot labels discard. Matching it is what makes distillation work.",
+       "Training data isn't the point — the student learns from the teacher's outputs, not its dataset.",
+       "Noise regularization is a different technique. Dark knowledge is signal, not noise: the teacher's ranking of the wrong answers."],
+      ["Right. Softening by T shrinks the soft-target gradients by roughly 1/T²; multiplying back by T² keeps the distillation term and the cross-entropy term balanced as you sweep temperature — it's in the 2015 paper, not arbitrary.",
+       "Squaring a constant doesn't speed anything up — the factor exists to normalize gradient magnitudes, not to accelerate.",
+       "It doesn't cancel the temperature: T still shapes how soft the targets are. The T² only fixes the scale.",
+       "It's derived from the gradient scaling of softened softmax targets, and it's why you can compare runs across temperatures."],
+      ["Activations require weight access — you don't have them. That's exactly the black-box situation.",
+       "Not true — most modern small models are built this way. You lose the soft targets, but the teacher's outputs still carry the behavior.",
+       "Right. With only API access you distill behavior, not logits: the teacher generates outputs, the student trains on them. RoBERTa matching Llama 3.1 405B on tweet sentiment is the textbook case.",
+       "Chat APIs return text, not logits. Black-box means accepting that and training on the outputs."],
+      ["Students are bounded by their teachers — and by what they were actually trained on. Reasoning doesn't come free.",
+       "Distillation compresses; it doesn't amplify. Expect the student to be near the teacher on the distilled task, not beyond it anywhere.",
+       "Reasoning is measured on reasoning benchmarks all the time — and that's exactly where distilled students fall short of their teachers.",
+       "Right — the 2023 “False Promise of Imitating Proprietary LLMs” finding. Style and format transfer easily; broad reasoning and factual correctness don't. Scope the student to narrow tasks."],
+      ["Right. Width pruning beats depth pruning on accuracy, distillation — not plain SFT — is the retraining recipe, and logit-only distillation is enough when depth is mostly intact. If depth is heavily cut, add intermediate-state and embedding losses.",
+       "Depth pruning hurts accuracy more, and plain SFT after pruning underperforms distillation-based retraining in their results.",
+       "Pruning damage is real and structured: importance estimation picks what to cut; random cuts destroy the capabilities you're trying to distill.",
+       "A random student can't inherit the teacher's structure — starting from a pruned teacher is the whole point of prune-then-distill."]
+    ];
+    const questions = [...document.querySelectorAll('.quiz-q')];
+    let score = 0, answered = 0;
+    questions.forEach((q, qi) => {
+      const correct = parseInt(q.dataset.answer, 10);
+      const exp = q.querySelector('.qexp');
+      q.querySelectorAll('.qopt').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          if (q.dataset.done) return;
+          q.dataset.done = "1";
+          const chosen = parseInt(btn.dataset.i, 10);
+          const ok = chosen === correct;
+          q.querySelectorAll('.qopt').forEach((b) => {
+            b.disabled = true;
+            if (parseInt(b.dataset.i, 10) === correct) b.classList.add('correct');
+          });
+          if (!ok) btn.classList.add('wrong');
+          else score++;
+          answered++;
+          exp.hidden = false;
+          exp.innerHTML = ok
+            ? "<strong class=\"ok\">Correct.</strong> " + explanations[qi][chosen]
+            : "<strong class=\"no\">Not quite.</strong> " + explanations[qi][chosen];
+          if (answered === questions.length) {
+            const box = document.getElementById('quiz-score');
+            box.style.display = "block";
+            box.innerHTML = "You scored <strong>" + score + " / " + questions.length + "</strong>." +
+              (score === questions.length ? " Clean sweep — you can distill with confidence." :
+               score >= 3 ? " Solid — re-read the section you missed." :
+               " Worth a re-read of section 04 before moving on.");
+          }
+        });
+      });
+    });
+
+    // flashcards
+    document.querySelectorAll('.fcard').forEach((card) => {
+      const flip = () => card.classList.toggle('flipped');
+      card.addEventListener('click', flip);
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); }
+      });
+    });
+  </script>
+</body>
+</html>
