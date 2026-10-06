@@ -152,5 +152,12 @@
     "date": "2026-10-05",
     "summary": "Labeled data is the bottleneck: generate it with an LLM instead. Seed-anchored generation, diversity controls, judge-and-filter pipelines, and decontamination \u2014 the recipe for synthetic training and eval datasets you can actually trust.",
     "skill": "synthetic-data-generation"
+  },
+  {
+    "slug": "2026-10-06-llm-observability-traces-token-accounting",
+    "title": "Observability for LLM apps: traces, token accounting",
+    "date": "2026-10-06",
+    "summary": "Stop debugging your AI app with a stopwatch: model every request as a trace, capture gen_ai.* attributes and token counts on every span, and alert on cost, latency, and errors.",
+    "skill": "llm-observability-traces"
   }
 ]
