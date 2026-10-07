@@ -159,5 +159,12 @@
     "date": "2026-10-06",
     "summary": "Stop debugging your AI app with a stopwatch: model every request as a trace, capture gen_ai.* attributes and token counts on every span, and alert on cost, latency, and errors.",
     "skill": "llm-observability-traces"
+  },
+  {
+    "slug": "2026-10-07-state-machines-for-agents",
+    "title": "State machines for agents: explicit states beat vibes",
+    "date": "2026-10-07",
+    "summary": "A prompt-then-tool-call chain has no concept of where it is or what to do when a step fails. Name every state, declare the allowed transitions, make failure a first-class node, and persist state at each transition \u2014 resumable, auditable agents.",
+    "skill": "state-machines-for-agents"
   }
 ]

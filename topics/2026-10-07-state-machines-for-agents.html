@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>State machines for agents: explicit states beat vibes &middot; AI Learning Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+    :root {
+      --ink: #14212b; --muted: #53636f; --paper: #f6f8f7; --white: #ffffff;
+      --line: #cbd5d8; --navy: #163247; --navy-2: #21465e; --teal: #0b8174;
+      --teal-soft: #dff2ee; --orange: #d66332; --orange-soft: #f8e4d8;
+      --gold: #d8a524; --gold-soft: #f7edc8; --blue-soft: #e3eef4;
+      --red: #b3402e; --red-soft: #f9e3de; --green: #1e7a3c; --green-soft: #e2f2e6;
+      --shadow: 0 18px 45px rgba(20, 33, 43, .09); --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; color: var(--ink);
+      background: linear-gradient(rgba(20,33,43,.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(20,33,43,.035) 1px, transparent 1px), var(--paper);
+      background-size: 28px 28px;
+      font-family: "Source Sans 3", sans-serif; font-size: 17px; line-height: 1.58;
+    }
+    .shell { width: min(960px, calc(100% - 40px)); margin: 0 auto; }
+    .portal-nav{position:sticky;top:0;z-index:50;background:rgba(22,50,71,.97);border-bottom:1px solid rgba(255,255,255,.12)}
+    .portal-nav-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;flex-wrap:wrap}
+    .portal-brand{color:#fff;text-decoration:none;font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:15px}
+    .portal-brand span{color:var(--gold);font-weight:400}
+    .portal-links{display:flex;gap:18px;flex-wrap:wrap}
+    .portal-links a{color:#dbe7ee;text-decoration:none;font-size:14.5px}
+    .portal-links a:hover{color:#fff;text-decoration:underline}
+    .hero { padding: 56px 0 36px; }
+    .chapter-mark { display:inline-flex;align-items:center;gap:10px;color:var(--navy);
+      font:600 12px/1.2 "IBM Plex Mono",monospace;letter-spacing:.09em;text-transform:uppercase;margin-bottom:18px; }
+    .chapter-mark::before { content:"";width:42px;height:3px;background:var(--orange); }
+    h1 { font-size: clamp(36px, 5vw, 58px); line-height: 1.02; letter-spacing:-.03em; margin:0 0 14px; }
+    .lede { color: var(--muted); font-size: clamp(18px,2vw,22px); max-width: 64ch; margin:0 0 8px; }
+    .date-line { font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--muted); }
+    section.block { margin: 44px 0; }
+    h2 { font-size: 26px; letter-spacing:-.02em; margin:0 0 6px; display:flex;align-items:center;gap:12px; }
+    h2 .num { font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:600;color:var(--white);
+      background:var(--navy);border-radius:999px;min-width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center; }
+    .sub { color:var(--muted); margin:0 0 18px; max-width: 68ch; }
+    .card { background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+      padding:24px;box-shadow:var(--shadow); }
+    .skill-card { background:var(--navy);color:#eaf2f7;border-radius:var(--radius);padding:22px 24px;
+      font-family:"IBM Plex Mono",monospace;font-size:14.5px;overflow-x:auto;box-shadow:var(--shadow); }
+    .skill-card .k { color:var(--gold); }
+    .idea { font-size:21px;line-height:1.5;border-left:4px solid var(--teal);padding:6px 0 6px 20px;max-width:62ch; }
+    .idea strong { color:var(--navy); }
+    .mechanics { display:grid;gap:14px; }
+    .mech { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:18px 20px;
+      display:grid;grid-template-columns:44px 1fr;gap:14px;align-items:start; }
+    .mech .mnum { font-family:"IBM Plex Mono",monospace;font-weight:600;color:var(--teal);
+      background:var(--teal-soft);border-radius:10px;width:44px;height:44px;display:flex;align-items:center;justify-content:center; }
+    .mech h3 { margin:0 0 6px;font-size:18px; }
+    .mech p { margin:0;color:var(--muted);font-size:15.5px; }
+    .mech code, .inline-code { font-family:"IBM Plex Mono",monospace;font-size:.88em;background:var(--blue-soft);
+      padding:2px 7px;border-radius:6px;color:var(--navy); }
+    pre.code { background:#0f2233;color:#e8f1f5;border-radius:14px;padding:20px 22px;overflow-x:auto;
+      font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.6;margin:0; }
+    pre.code .c { color:#8ba3b0; } pre.code .s { color:#ffd479; } pre.code .k { color:#7fd6c2; }
+    .fail { border-left:4px solid var(--orange); }
+    .fail h3 .fix { display:block;margin-top:8px;font-size:15px;font-weight:500;color:var(--green); }
+    .ref-list { display:grid;gap:12px; }
+    .ref { display:flex;gap:14px;align-items:flex-start;background:var(--white);border:1px solid var(--line);
+      border-radius:14px;padding:16px 18px;text-decoration:none;color:inherit; }
+    .ref:hover { border-color:var(--teal); }
+    .ref .badge { flex:none;font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;letter-spacing:.06em;
+      padding:5px 10px;border-radius:999px;text-transform:uppercase; }
+    .badge.doc { background:var(--blue-soft);color:var(--navy); }
+    .badge.vid { background:var(--orange-soft);color:var(--orange); }
+    .ref h3 { margin:0 0 4px;font-size:17px; }
+    .ref p { margin:0;color:var(--muted);font-size:14.5px; }
+    .prompt-block { background:#0f2233;border-radius:var(--radius);overflow:hidden;margin-bottom:18px;box-shadow:var(--shadow); }
+    .prompt-top { display:flex;justify-content:space-between;align-items:center;gap:12px;
+      padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.12); }
+    .prompt-top strong { color:#fff;font-size:13px;letter-spacing:.06em;font-family:"IBM Plex Mono",monospace; }
+    .copy-btn { border:1px solid #6c8796;background:transparent;color:#fff;border-radius:6px;padding:7px 11px;
+      cursor:pointer;font-weight:700;font-size:14px; }
+    .copy-btn:hover { background:rgba(255,255,255,.1); }
+    .copy-btn:focus-visible { outline:2px solid var(--gold);outline-offset:2px; }
+    .prompt-text { color:#e8f1f5;font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.65;
+      padding:18px;white-space:pre-wrap;margin:0; }
+    .sr-only { position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0); }
+    .quiz-q { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px; }
+    .quiz-q .qq { font-weight:700;margin:0 0 12px;font-size:18px; }
+    .qopts { display:grid;gap:8px; }
+    .qopt { text-align:left;background:var(--paper);border:1px solid var(--line);border-radius:10px;
+      padding:12px 14px;cursor:pointer;font-size:15.5px;color:var(--ink); }
+    .qopt:hover:not(:disabled) { border-color:var(--navy); }
+    .qopt:disabled { cursor:default;opacity:.85; }
+    .qopt.correct { background:var(--green-soft);border-color:var(--green); }
+    .qopt.wrong { background:var(--red-soft);border-color:var(--red); }
+    .qexp { margin:12px 0 0;font-size:15px;color:var(--muted); }
+    .qexp strong.ok { color:var(--green); } .qexp strong.no { color:var(--red); }
+    #quiz-score { display:none;margin-top:8px;background:var(--navy);color:#fff;border-radius:14px;
+      padding:20px 24px;font-size:19px; }
+    #quiz-score strong { color:var(--gold); }
+    .fgrid { display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px; }
+    .fcard { perspective:900px;cursor:pointer;min-height:170px; }
+    .fcard-inner { position:relative;width:100%;height:100%;min-height:170px;transform-style:preserve-3d;transition:transform .45s; }
+    .fcard.flipped .fcard-inner { transform:rotateY(180deg); }
+    .fface { position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+      border-radius:14px;padding:18px;display:flex;align-items:center;justify-content:center;text-align:center;
+      border:1px solid var(--line);background:var(--white);box-shadow:var(--shadow);font-size:15.5px; }
+    .fface.front { font-weight:700;color:var(--navy); }
+    .fface.back { transform:rotateY(180deg);background:var(--teal-soft);color:var(--ink);font-size:14.5px; }
+    .fcard:focus-visible { outline:2px solid var(--teal);outline-offset:3px;border-radius:14px; }
+    .triggers { display:grid;gap:10px; }
+    .trigger { background:var(--gold-soft);border-radius:12px;padding:14px 18px;font-size:16px; }
+    .trigger strong { color:var(--navy); }
+    .back-link { display:inline-block;margin:8px 0 60px;font-weight:600;color:var(--teal);text-decoration:none;font-size:17px; }
+    .back-link:hover { text-decoration:underline; }
+    .fig { background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+      padding:12px;box-shadow:var(--shadow);overflow-x:auto; }
+    .fig svg { display:block;width:100%;height:auto; }
+    .flow-anim { stroke-dasharray: 8 6; animation: dashmove 1.2s linear infinite; }
+    @keyframes dashmove { to { stroke-dashoffset: -14; } }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior:auto; } .fcard-inner{transition:none;} .flow-anim{animation:none;} }
+  </style>
+</head>
+<body>
+<nav class="portal-nav">
+    <div class="shell portal-nav-inner">
+      <a class="portal-brand" href="../index.html">AI Engineering <span>&middot; Learning Portal</span></a>
+      <div class="portal-links">
+        <a href="../index.html#daily-topics">Daily topics</a>
+        <a href="../index.html#loop">Loop</a>
+        <a href="../index.html#graph">Graph</a>
+        <a href="../index.html#harness">Harness</a>
+      </div>
+    </div>
+  </nav>
+  <div class="shell">
+
+    <header class="hero">
+      <div class="chapter-mark">Daily topic &middot; The trio's adjacents</div>
+      <h1>State machines for agents: explicit states beat vibes</h1>
+      <p class="lede">A prompt-then-tool-call chain has no concept of &ldquo;where am I, and what do I do if this doesn&rsquo;t work.&rdquo; Model the agent as an explicit state machine instead: named states, declared transitions, cycles you can see, and terminal states for both success and give-up. The graph is not cleverer than the prompt &mdash; it is <strong>honest</strong> about what agentic work actually looks like: iterative, fallible, and in need of a memory of its own progress.</p>
+      <p class="date-line">2026-10-07 &middot; Topic 024</p>
+    </header>
+
+    <section class="block">
+      <h2><span class="num">01</span> The skill card</h2>
+      <p class="sub">Every topic on this portal is designed like a Codex skill: a name, a trigger, and concrete steps.</p>
+      <div class="skill-card"><pre style="margin:0">---
+<span class="k">name:</span> state-machines-for-agents
+<span class="k">description:</span> Reach for this when an agent must survive partial failure,
+  retries, human approval, or long runs: name every state, declare the allowed
+  transitions, add explicit terminal states for success and give-up, and persist
+  state at each transition so the run is resumable and auditable.
+---</pre></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">02</span> The one-idea version</h2>
+      <p class="idea">A linear chain encodes progress only as &ldquo;execution reached line N&rdquo; &mdash; it has no vocabulary for retry, escalate, or resume. A state machine gives every phase of the work a <strong>name</strong> and every allowed move an <strong>edge</strong>, so failure becomes a node with options instead of an unhandled exception. The model still reasons, but only inside transitions you approved. <strong>If the bug surprised you, ask: what state was the agent in &mdash; and did the graph even have a name for it?</strong></p>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">03</span> The shape of a stateful agent</h2>
+      <p class="sub">One run of a support-triage agent. Every node is a named state; every arrow is an allowed transition. Note the three things a linear chain has no place to put: the repair cycle, the human-approval branch, and the honest give-up.</p>
+      <div class="fig">
+        <svg viewBox="0 0 960 420" role="img" aria-label="State machine: triage to diagnose to resolve or fail; fail loops to repair then re-runs; exhausted budgets escalate to a human; two terminal states, done and gave-up">
+          <defs>
+            <marker id="arr" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+              <path d="M0,0 L8,3 L0,6 Z" fill="#163247"></path>
+            </marker>
+          </defs>
+          <g font-family="IBM Plex Mono, monospace" font-size="13.5">
+            <!-- entry -->
+            <text x="30" y="60" fill="#53636f">START</text>
+            <line x1="92" y1="56" x2="160" y2="56" stroke="#163247" stroke-width="2" marker-end="url(#arr)"/>
+            <!-- triage -->
+            <rect x="160" y="24" width="150" height="64" rx="12" fill="#163247"/>
+            <text x="235" y="52" fill="#fff" text-anchor="middle" font-weight="600">triage</text>
+            <text x="235" y="72" fill="#8ba3b0" text-anchor="middle" font-size="11">classify request</text>
+            <!-- diagnose -->
+            <line x1="310" y1="56" x2="380" y2="56" stroke="#163247" stroke-width="2" class="flow-anim" marker-end="url(#arr)"/>
+            <rect x="380" y="24" width="150" height="64" rx="12" fill="#163247"/>
+            <text x="455" y="52" fill="#fff" text-anchor="middle" font-weight="600">diagnose</text>
+            <text x="455" y="72" fill="#8ba3b0" text-anchor="middle" font-size="11">gather evidence</text>
+            <!-- resolve -->
+            <line x1="530" y1="56" x2="600" y2="56" stroke="#163247" stroke-width="2" class="flow-anim" marker-end="url(#arr)"/>
+            <rect x="600" y="24" width="150" height="64" rx="12" fill="#163247"/>
+            <text x="675" y="52" fill="#fff" text-anchor="middle" font-weight="600">resolve</text>
+            <text x="675" y="72" fill="#8ba3b0" text-anchor="middle" font-size="11">apply the fix</text>
+            <!-- done terminal -->
+            <line x1="750" y1="56" x2="810" y2="56" stroke="#1e7a3c" stroke-width="2.5" marker-end="url(#arr)"/>
+            <rect x="810" y="24" width="120" height="64" rx="32" fill="#e2f2e6" stroke="#1e7a3c" stroke-width="2.5"/>
+            <text x="870" y="62" fill="#1e7a3c" text-anchor="middle" font-weight="600">done*</text>
+            <!-- fail node -->
+            <line x1="675" y1="88" x2="675" y2="150" stroke="#d66332" stroke-width="2.5" marker-end="url(#arr)"/>
+            <rect x="600" y="150" width="150" height="64" rx="12" fill="#f8e4d8" stroke="#d66332" stroke-width="2.5"/>
+            <text x="675" y="178" fill="#d66332" text-anchor="middle" font-weight="600">tool_failed</text>
+            <text x="675" y="198" fill="#b3402e" text-anchor="middle" font-size="11">a real state, not an exception</text>
+            <!-- repair cycle: fail -> repair -> resolve -->
+            <line x1="600" y1="182" x2="500" y2="182" stroke="#163247" stroke-width="2" class="flow-anim" marker-end="url(#arr)"/>
+            <rect x="350" y="150" width="150" height="64" rx="12" fill="#dff2ee" stroke="#0b8174" stroke-width="2"/>
+            <text x="425" y="178" fill="#0b8174" text-anchor="middle" font-weight="600">repair</text>
+            <text x="425" y="198" fill="#53636f" text-anchor="middle" font-size="11">new plan, budget-aware</text>
+            <line x1="425" y1="150" x2="425" y2="88" stroke="#0b8174" stroke-width="2" class="flow-anim" marker-end="url(#arr)"/>
+            <!-- budget exhausted -> human -->
+            <text x="530" y="242" fill="#b3402e" font-size="11.5">budget exhausted?</text>
+            <line x1="675" y1="214" x2="675" y2="280" stroke="#b3402e" stroke-width="2" marker-end="url(#arr)"/>
+            <rect x="600" y="280" width="150" height="64" rx="12" fill="#fff" stroke="#d8a524" stroke-width="2.5"/>
+            <text x="675" y="308" fill="#163247" text-anchor="middle" font-weight="600">needs_human</text>
+            <text x="675" y="328" fill="#53636f" text-anchor="middle" font-size="11">pause, persist, approve</text>
+            <!-- human -> resolve or give up -->
+            <line x1="600" y1="312" x2="380" y2="312" stroke="#d8a524" stroke-width="2" class="flow-anim" marker-end="url(#arr)"/>
+            <text x="380" y="334" fill="#53636f" font-size="11.5">approved</text>
+            <line x1="750" y1="312" x2="750" y2="380" stroke="#b3402e" stroke-width="2" class="flow-anim" marker-end="url(#arr)"/>
+            <!-- gave-up terminal -->
+            <rect x="690" y="356" width="120" height="64" rx="32" fill="#f9e3de" stroke="#b3402e" stroke-width="2.5"/>
+            <text x="750" y="384" fill="#b3402e" text-anchor="middle" font-weight="600">gave_up*</text>
+            <text x="750" y="404" fill="#b3402e" text-anchor="middle" font-size="11">with the trail</text>
+            <text x="830" y="416" fill="#53636f" font-size="11.5">rejected</text>
+          </g>
+          <text x="30" y="416" font-family="IBM Plex Mono, monospace" font-size="11.5" fill="#53636f">* terminal: no outgoing edges. The transition log is your audit trail.</text>
+        </svg>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">04</span> How it works</h2>
+      <p class="sub">Seven mechanics. The framework matters less than the discipline; this works in LangGraph, in XState, or in fifty lines of plain Python.</p>
+      <div class="mechanics">
+        <div class="mech"><div class="mnum">1</div><div>
+          <h3>Name the states before you write a single node</h3>
+          <p>Write the state list on paper first: <code>planning</code>, <code>awaiting_tool_result</code>, <code>validating_output</code>, <code>needs_human_input</code>, <code>done</code>. States are finite, enumerable, and speak the domain's language. If you can't list them, you don't have a design yet &mdash; you have a prompt and hope.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">2</div><div>
+          <h3>Declare every allowed transition up front</h3>
+          <p>Each state lists its outgoing edges: from <code>tool_failed</code> you may go to <code>repair</code>, <code>fallback_tool</code>, or <code>escalate_to_human</code> &mdash; and to nothing else. The agent can only walk edges that exist, so the reachable-behavior space is auditable before the first run. Impossible states become structurally impossible, not handled by nested ifs.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">3</div><div>
+          <h3>Let the model pick the transition, not the destination</h3>
+          <p>Two flavors work: <strong>code-routed</strong> (a deterministic function reads the state and returns the next node &mdash; cheapest, most predictable) and <strong>LLM-routed</strong> (the model sees the current state plus the list of valid outgoing edges and picks one). Either way the model names a transition, never an arbitrary destination. It cannot invent a state or teleport past your guardrails.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">4</div><div>
+          <h3>Make failure a first-class state, not an exception path</h3>
+          <p><code>tool_failed</code> is a node with its own edges: retry with a new plan, try the fallback tool, escalate. Because the failure lives in the graph, the repair node inherits the full state &mdash; what was tried, what the error was, how many attempts remain &mdash; instead of starting from scratch in a bare <code>try/except</code>.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">5</div><div>
+          <h3>Loops are normal; budgets make them safe</h3>
+          <p>Revise-critique-revise is a cycle, and cycles are exactly what state machines (and directed cyclic graphs) model well &mdash; chains can't. The guard is a budget tracked <em>in the state</em>: a retry counter, an error buffer, a quality threshold. The conditional edge reads it: attempts remain &rarr; loop back; budget exhausted &rarr; escalate. A bare <code>while True</code> retry can never tell you the difference.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">6</div><div>
+          <h3>Persist state after every transition</h3>
+          <p>State must live outside the model: serialized, versioned, checkpointed. After each transition, save the snapshot &mdash; then a crash, a human-approval pause, or a 2 a.m. process restart resumes from the last good state instead of the beginning. This is also what makes the transition log a real audit trail.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">7</div><div>
+          <h3>Shape the state schema before the topology</h3>
+          <p>The single highest-leverage design decision is not the graph layout &mdash; it's the shape of the state object flowing through it. Message history, intermediate results, error counters, retry budgets: decide what each node needs to know to make a correct decision, then wire the nodes and edges that carry it. State shape first, edges second.</p>
+        </div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">05</span> Code sketch</h2>
+      <p class="sub">The whole pattern in plain Python &mdash; no framework. States declare their transitions; the router picks the next edge; terminal states end the loop.</p>
+      <pre class="code"><span class="k">def</span> <span class="k">run</span>(states, initial, max_steps=<span class="s">10</span>):
+    state, context, steps = initial, {}, <span class="s">0</span>
+    <span class="k">while</span> <span class="s">True</span>:
+        node = states[state]
+        context.update(node[<span class="s">"handler"</span>](context))  <span class="c"># do the work</span>
+        <span class="k">if</span> node.get(<span class="s">"terminal"</span>) <span class="k">or</span> <span class="k">not</span> node[<span class="s">"transitions"</span>]:
+            <span class="k">return</span> state, context              <span class="c"># terminal: done or gave_up</span>
+        steps += <span class="s">1</span>
+        <span class="k">if</span> steps &gt;= max_steps:
+            <span class="k">return</span> <span class="s">"gave_up"</span>, context      <span class="c"># budget exhausted: honest exit</span>
+        state = node[<span class="s">"router"</span>](context, node[<span class="s">"transitions"</span>])
+        <span class="k">assert</span> state <span class="k">in</span> node[<span class="s">"transitions"</span>], <span class="s">"illegal transition"</span>
+
+states = {
+    <span class="s">"triage"</span>:    {<span class="s">"handler"</span>: classify,  <span class="s">"router"</span>: route_triage,
+                     <span class="s">"transitions"</span>: [<span class="s">"diagnose"</span>, <span class="s">"resolve"</span>]},
+    <span class="s">"diagnose"</span>:  {<span class="s">"handler"</span>: gather,    <span class="s">"router"</span>: route_diagnose,
+                     <span class="s">"transitions"</span>: [<span class="s">"resolve"</span>, <span class="s">"tool_failed"</span>]},
+    <span class="s">"tool_failed"</span>: {<span class="s">"handler"</span>: log_err, <span class="s">"router"</span>: route_retry,
+                     <span class="s">"transitions"</span>: [<span class="s">"diagnose"</span>, <span class="s">"needs_human"</span>]},
+    <span class="s">"needs_human"</span>: {<span class="s">"handler"</span>: pause,   <span class="s">"router"</span>: route_human,
+                     <span class="s">"transitions"</span>: [<span class="s">"resolve"</span>, <span class="s">"gave_up"</span>]},
+    <span class="s">"resolve"</span>:   {<span class="s">"handler"</span>: fix,      <span class="s">"transitions"</span>: [], <span class="s">"terminal"</span>: <span class="s">True</span>},
+    <span class="s">"gave_up"</span>:   {<span class="s">"handler"</span>: report,   <span class="s">"transitions"</span>: [], <span class="s">"terminal"</span>: <span class="s">True</span>},
+}</pre>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">06</span> Failure modes</h2>
+      <p class="sub">Five ways the pattern breaks &mdash; and the fix for each.</p>
+      <div class="mechanics">
+        <div class="mech fail"><div class="mnum">1</div><div>
+          <h3>Overstuffed state<span class="fix">Fix: store summaries, not raw tool dumps; cap history fields; let nodes re-fetch detail on demand.</span></h3>
+          <p>Every raw tool response gets dumped into the shared state until nodes can no longer see what is relevant &mdash; and token costs balloon because the whole state is fed back to the model at every step.</p>
+        </div></div>
+        <div class="mech fail"><div class="mnum">2</div><div>
+          <h3>Understuffed state<span class="fix">Fix: design the schema from each node's decision needs first; add the retry counter and last-error fields before you need them.</span></h3>
+          <p>The repair node needs the retry count and the last error to decide &mdash; but the state never carried them. It re-derives context it should have been handed, or guesses, and the "smart" router becomes a coin flip.</p>
+        </div></div>
+        <div class="mech fail"><div class="mnum">3</div><div>
+          <h3>Retry in a bare loop instead of in the graph<span class="fix">Fix: make retry a transition on a failure state; track the attempt budget in state so "still trying" and "exhausted" are different edges.</span></h3>
+          <p>A <code>while</code> loop around a tool call has no name, no checkpoint, and no audit trail. Twenty minutes of silent retry looks identical to progress from the outside &mdash; and there is no state to resume from when it crashes.</p>
+        </div></div>
+        <div class="mech fail"><div class="mnum">4</div><div>
+          <h3>No honest give-up state<span class="fix">Fix: add a terminal state that reports what was tried and returns the evidence trail; treat giving up gracefully as a feature.</span></h3>
+          <p>With no <code>gave_up</code> state, an agent that can't finish either hangs forever or hallucinates a fake success. An agent that can say "I couldn't complete this, here's what I tried" is far more trustworthy than either.</p>
+        </div></div>
+        <div class="mech fail"><div class="mnum">5</div><div>
+          <h3>Non-idempotent tool nodes<span class="fix">Fix: make every tool node safe to re-run &mdash; check-then-act, idempotency keys, or dry-run first &mdash; so a resumed checkpoint never double-charges or double-books.</span></h3>
+          <p>Checkpointing only helps if re-running a step is safe. Resume from the last good state and re-execute "book the flight," and without idempotency you've booked it twice.</p>
+        </div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">07</span> Go deeper</h2>
+      <p class="sub">Curated and verified &mdash; every link opened and checked before publishing.</p>
+      <div class="ref-list">
+        <a class="ref" href="https://docs.langchain.com/oss/python/langgraph/graph-api" target="_blank" rel="noopener">
+          <span class="badge doc">doc</span>
+          <div><h3>LangGraph Graph API overview (official docs)</h3>
+          <p>The canonical statement of the three primitives &mdash; State, Nodes, Edges &mdash; plus reducers, super-steps, and checkpointing: the reference implementation of "nodes do the work, edges tell what to do next."</p></div>
+        </a>
+        <a class="ref" href="https://github.com/ather-techie/ai-agents-design-patterns/blob/HEAD/patterns/14-state-machine/README.md" target="_blank" rel="noopener">
+          <span class="badge doc">doc</span>
+          <div><h3>State Machine Agent design pattern (with runnable example)</h3>
+          <p>An explicit finite-state machine where an LLM picks the next transition from the allowed list &mdash; runnable offline, with tests. The clearest statement of when to choose a state machine over ReAct or single-shot routing.</p></div>
+        </a>
+        <a class="ref" href="https://pub.towardsai.net/why-your-ai-agent-keeps-falling-over-and-how-state-machines-fix-it-64136543e507?gi=f3c8cdf3c223" target="_blank" rel="noopener">
+          <span class="badge doc">article</span>
+          <div><h3>The State Machine Pattern Nobody's Using for AI Agents</h3>
+          <p>Why linear chains break in production at 2 a.m. (no memory of position, no branching, no recovery) and the production patterns that recur once failure is a first-class state: bounded retries, human gates, idempotent tools, honest give-up.</p></div>
+        </a>
+        <a class="ref" href="https://www.youtube.com/watch?v=JgBJGAQEqUQ" target="_blank" rel="noopener">
+          <span class="badge vid">video</span>
+          <div><h3>LangGraph Nodes, Edges, And State &mdash; Agentic AI course</h3>
+          <p>A compact lesson on the core mental model: state as the contract between steps, nodes doing work, edges controlling flow, reducers preserving evidence &mdash; and how to test graph paths without live model calls.</p></div>
+        </a>
+        <a class="ref" href="https://www.youtube.com/watch?v=Ym7e0noddpA" target="_blank" rel="noopener">
+          <span class="badge vid">video</span>
+          <div><h3>LangGraph in 3 Minutes (Explained Clearly)</h3>
+          <p>One running example &mdash; an AI order assistant &mdash; carried through nodes, agents, edges, conditional routing, tools, state, compilation, human approval, and checkpoints. The fastest on-ramp if the graph vocabulary is still fuzzy.</p></div>
+        </a>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">08</span> Sample prompts</h2>
+      <p class="sub">Copy, adapt, and ask your coding assistant. Each one applies today's skill card.</p>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>PROMPT 1 &middot; DESIGN THE GRAPH</strong><button class="copy-btn" data-copy="prompt-1">Copy</button></div>
+        <p class="prompt-text" id="prompt-1">Design an explicit state machine for a refund-processing AI agent that must classify requests, gather order evidence, attempt the refund via a payment API, and escalate to a human when the amount exceeds $500 or the payment API fails twice. First list the states (finite, named, domain-language), then the allowed transitions out of each state including explicit failure states, then the terminal states for success and give-up. Specify exactly which fields the shared state schema must carry (retry counters, error info, approval status) and why each is needed. No code yet — I want to review the design first.</p>
+      </div>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>PROMPT 2 &middot; TURN A CHAIN INTO A STATE MACHINE</strong><button class="copy-btn" data-copy="prompt-2">Copy</button></div>
+        <p class="prompt-text" id="prompt-2">I have an agent built as a linear prompt → tool-call chain: it summarizes a support ticket, calls a knowledge-base API, then calls a CRM API to update the ticket. It breaks in production when either API call fails. Convert it to an explicit state machine: name each state, add a tool_failed failure state with retry/fallback/escalate transitions, put the retry budget in the state schema (not a bare while loop), checkpoint the state after every transition, and add terminal states for done and gave_up with a full evidence trail. Show the code in plain Python first, then note how it maps to LangGraph StateGraph concepts.</p>
+      </div>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>PROMPT 3 &middot; AUDIT AN EXISTING AGENT</strong><button class="copy-btn" data-copy="prompt-3">Copy</button></div>
+        <p class="prompt-text" id="prompt-3">Audit my LangGraph agent's state machine for the five failure modes: (1) overstuffed state — which keys bloat the shared state and could be summarized or re-fetched on demand, (2) understuffed state — which nodes lack the decision inputs they need, (3) retries hidden in bare loops instead of graph transitions with budgets in state, (4) missing honest give-up terminal state, (5) non-idempotent tool nodes that are unsafe to re-run after a checkpoint resume. For each mode found, give the concrete fix: what to add, remove, or change in the state schema and graph topology. Here is my StateGraph definition and node code: [paste]</p>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">09</span> Check your understanding</h2>
+      <p class="sub">Five questions on the ideas, not the trivia. Answers check immediately.</p>
+      <div class="quiz-q" data-answer="2">
+        <p class="qq">1. Your agent retries a failing tool in a bare <code>while</code> loop and burns tokens for twenty minutes at 2 a.m. What did the state machine buy you instead?</p>
+        <div class="qopts">
+          <button class="qopt" data-i="0">A better prompt that makes the tool succeed.</button>
+          <button class="qopt" data-i="1">Faster tool calls.</button>
+          <button class="qopt" data-i="2">Retry becomes a named transition on a <code>tool_failed</code> state with the attempt budget in state &mdash; so "still trying," "exhausted," and the audit trail are all visible and resumable.</button>
+          <button class="qopt" data-i="3">Automatic success on the third attempt.</button>
+        </div>
+        <p class="qexp" hidden></p>
+      </div>
+      <div class="quiz-q" data-answer="1">
+        <p class="qq">2. In the state-machine pattern, what is the model allowed to decide?</p>
+        <div class="qopts">
+          <button class="qopt" data-i="0">Any next step it wants, including inventing new states.</button>
+          <button class="qopt" data-i="1">Which declared outgoing transition to take from the current state &mdash; it picks an edge, never an arbitrary destination.</button>
+          <button class="qopt" data-i="2">Whether to skip the human-approval state when it seems unnecessary.</button>
+          <button class="qopt" data-i="3">The full state schema, rewritten each step.</button>
+        </div>
+        <p class="qexp" hidden></p>
+      </div>
+      <div class="quiz-q" data-answer="3">
+        <p class="qq">3. A repair node keeps failing because it never sees the retry count or the last error. Which failure mode is this?</p>
+        <div class="qopts">
+          <button class="qopt" data-i="0">Overstuffed state.</button>
+          <button class="qopt" data-i="1">Non-idempotent tool nodes.</button>
+          <button class="qopt" data-i="2">Retry in a bare loop.</button>
+          <button class="qopt" data-i="3">Understuffed state &mdash; the schema omitted fields a node needs to decide correctly, so the router guesses.</button>
+        </div>
+        <p class="qexp" hidden></p>
+      </div>
+      <div class="quiz-q" data-answer="0">
+        <p class="qq">4. Why do you need an explicit <code>gave_up</code> terminal state?</p>
+        <div class="qopts">
+          <button class="qopt" data-i="0">Without one, an agent that can't finish either hangs forever or hallucinates a fake success; a graceful give-up with the evidence trail is more trustworthy than either.</button>
+          <button class="qopt" data-i="1">Frameworks require exactly two terminal states to compile.</button>
+          <button class="qopt" data-i="2">It makes the SVG diagram symmetrical.</button>
+          <button class="qopt" data-i="3">Terminal states are what makes retries run faster.</button>
+        </div>
+        <p class="qexp" hidden></p>
+      </div>
+      <div class="quiz-q" data-answer="2">
+        <p class="qq">5. You resume from a checkpoint and "book the flight" runs again &mdash; booking it twice. What was missing?</p>
+        <div class="qopts">
+          <button class="qopt" data-i="0">A larger retry budget.</button>
+          <button class="qopt" data-i="1">A longer checkpoint interval.</button>
+          <button class="qopt" data-i="2">Idempotent tool nodes: every tool node must be safe to re-run after a resume, via check-then-act, idempotency keys, or dry-run.</button>
+          <button class="qopt" data-i="3">More states in the machine.</button>
+        </div>
+        <p class="qexp" hidden></p>
+      </div>
+      <div id="quiz-score"></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">10</span> Flashcards</h2>
+      <p class="sub">Click or press Enter/Space to flip. Ten terms worth owning.</p>
+      <div class="fgrid">
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Finite state machine</div>
+          <div class="fface back">A fixed set of named states with declared transitions between them. At any moment the system is in exactly one state; it can only move along an existing edge.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Terminal state</div>
+          <div class="fface back">A state with no outgoing transitions. Reaching it ends the run. Design both a success and a give-up terminal — the honest exit beats a hang or a faked success.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Conditional edge</div>
+          <div class="fface back">A transition whose destination is chosen at runtime by a router function (code or LLM) reading the current state — "retry if errors, else done."</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">State schema first</div>
+          <div class="fface back">Design the shape of the shared state (messages, results, retry counters, error info) before the graph topology — nodes need data to decide, edges carry it.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">LLM-routed transition</div>
+          <div class="fface back">The model sees the current state plus the list of valid outgoing edges and picks one. It names a transition, never an arbitrary destination — it cannot invent states.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Checkpoint</div>
+          <div class="fface back">A persisted snapshot of state after each transition. It turns "the graph knows its state" into pause, resume, and time-travel — including across restarts.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Directed cyclic graph</div>
+          <div class="fface back">A graph that allows edges looping back to earlier nodes. Revise-critique-revise is a cycle, not a line — DAGs can't model real agent work.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Overstuffed state</div>
+          <div class="fface back">Dumping every raw tool response into shared state until nodes can't see what's relevant and token costs balloon. Fix: store summaries, re-fetch detail on demand.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Idempotent tool node</div>
+          <div class="fface back">A node safe to re-run after a checkpoint resume — check-then-act or idempotency keys — so resuming never double-books, double-charges, or double-sends.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Human-in-the-loop node</div>
+          <div class="fface back">A state that pauses execution, persists its state, and waits for a person to approve, reject, or edit. Turns "agent got stuck" into a routine, expected branch.</div>
+        </div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">11</span> Reach for this when&hellip;</h2>
+      <div class="triggers">
+        <div class="trigger"><strong>An agent's failures have no name.</strong> When debugging means reading a wall of prompt/response text, give each phase a state and each failure a node &mdash; then the transition log is the trace.</div>
+        <div class="trigger"><strong>A run must survive interruption.</strong> Human approval, crashes, long runs: persist state after every transition so resuming starts from the last good state, never from the beginning.</div>
+        <div class="trigger"><strong>Retries are hiding in a bare loop.</strong> Move the retry into the graph, track the budget in state, and let "still trying" and "exhausted, escalate" be two different, visible edges.</div>
+      </div>
+    </section>
+
+    <a class="back-link" href="../index.html#daily-topics">&larr; Back to the daily topics</a>
+  </div>
+
+  <div id="live-status" class="sr-only" role="status" aria-live="polite"></div>
+  <script>
+    // copy buttons
+    const status = document.getElementById('live-status');
+    document.querySelectorAll('.copy-btn').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const target = document.getElementById(button.dataset.copy);
+        const text = target.innerText;
+        try {
+          await navigator.clipboard.writeText(text);
+          const original = button.textContent;
+          button.textContent = 'Copied';
+          status.textContent = 'Prompt copied to clipboard.';
+          setTimeout(() => button.textContent = original, 1600);
+        } catch {
+          const range = document.createRange();
+          range.selectNodeContents(target);
+          const selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+          status.textContent = 'Prompt selected. Copy it with your device copy command.';
+        }
+      });
+    });
+
+    // quiz
+    const explanations = [
+      ["A better prompt can't fix a structural blind spot. The chain has no concept of where it is or what 'exhausted' means — only the state machine gives retry a name, a budget, and a resumable position.",
+       "Tool calls don't get faster from a state machine. What you gain is visibility and recovery: the run knows where it is and can stop or resume deliberately.",
+       "Right. The failure becomes a node — tool_failed — with declared edges (retry, fallback, escalate), the budget lives in the state, and the transition log shows exactly what happened.",
+       "There is no automatic third attempt; the point is that attempts are counted in state and 'exhausted' is a real transition, not a hope."],
+      ["Inventing states would destroy the whole guarantee: the agent can only walk edges that exist, which is what makes behavior auditable.",
+       "Right. Whether the router is code or an LLM, it selects from the declared outgoing edges of the current state. No teleports, no invented states, no skipped approval gates.",
+       "Skipping the approval gate is exactly what declared transitions prevent: there is no edge that bypasses needs_human, so the agent cannot take one.",
+       "The state schema is designed up front by you — the model reads and writes within it, but it doesn't redefine it each step."],
+      ["Overstuffed state is the opposite problem: too much information drowning the nodes, not missing information.",
+       "Non-idempotent tools are about unsafe re-execution after a resume — a different failure from a router starved of decision inputs.",
+       "A bare-loop retry is about invisible, unbudgeted retry logic, not about what the state schema carries.",
+       "Right. The schema must carry every field a node needs to make its decision — retry counts, last errors, budgets — or the repair node is guessing."],
+      ["Right. A missing give-up state leaves only two exits: hang forever or hallucinate a fake success. The explicit gave_up terminal reports what was tried and keeps the evidence trail.",
+       "No framework mandates a give-up state; it is a design choice — the one that separates a trustworthy agent from a stuck or lying one.",
+       "Diagram symmetry is never the reason. The reason is production behavior at 2 a.m.",
+       "Retries run at whatever speed the tools do. Terminal states are about where the run ends, not how fast it gets there."],
+      ["The budget controls how many retries happen, not whether a re-run is safe. Double-booking is a resume-safety problem.",
+       "Checkpoint frequency doesn't help if re-executing the step has real-world side effects. The problem is the step itself.",
+       "Right. Checkpointing only helps if re-running a step is safe. Tool nodes must be idempotent — check-then-act, idempotency keys, or dry-run first — so resume never double-charges.",
+       "More states don't fix unsafe re-execution; idempotent node design does."]
+    ];
+    const questions = [...document.querySelectorAll('.quiz-q')];
+    let score = 0, answered = 0;
+    questions.forEach((q, qi) => {
+      const correct = parseInt(q.dataset.answer, 10);
+      const exp = q.querySelector('.qexp');
+      q.querySelectorAll('.qopt').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          if (q.dataset.done) return;
+          q.dataset.done = "1";
+          const chosen = parseInt(btn.dataset.i, 10);
+          const ok = chosen === correct;
+          q.querySelectorAll('.qopt').forEach((b) => {
+            b.disabled = true;
+            if (parseInt(b.dataset.i, 10) === correct) b.classList.add('correct');
+          });
+          if (!ok) btn.classList.add('wrong');
+          else score++;
+          answered++;
+          exp.hidden = false;
+          exp.innerHTML = ok
+            ? "<strong class=\"ok\">Correct.</strong> " + explanations[qi][chosen]
+            : "<strong class=\"no\">Not quite.</strong> " + explanations[qi][chosen];
+          if (answered === questions.length) {
+            const box = document.getElementById('quiz-score');
+            box.style.display = "block";
+            box.innerHTML = "You scored <strong>" + score + " / " + questions.length + "</strong>." +
+              (score === questions.length ? " Clean sweep — your agents will know exactly where they are." :
+               score >= 3 ? " Solid — re-read the section you missed." :
+               " Worth a re-read of section 04 before moving on.");
+          }
+        });
+      });
+    });
+
+    // flashcards
+    document.querySelectorAll('.fcard').forEach((card) => {
+      const flip = () => card.classList.toggle('flipped');
+      card.addEventListener('click', flip);
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); }
+      });
+    });
+  </script>
+</body>
+</html>
