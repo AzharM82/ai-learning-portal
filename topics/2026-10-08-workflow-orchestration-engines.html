@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Workflow orchestration engines: durable execution that survives crashes &middot; AI Learning Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+    :root {
+      --ink: #14212b; --muted: #53636f; --paper: #f6f8f7; --white: #ffffff;
+      --line: #cbd5d8; --navy: #163247; --navy-2: #21465e; --teal: #0b8174;
+      --teal-soft: #dff2ee; --orange: #d66332; --orange-soft: #f8e4d8;
+      --gold: #d8a524; --gold-soft: #f7edc8; --blue-soft: #e3eef4;
+      --red: #b3402e; --red-soft: #f9e3de; --green: #1e7a3c; --green-soft: #e2f2e6;
+      --shadow: 0 18px 45px rgba(20, 33, 43, .09); --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; color: var(--ink);
+      background: linear-gradient(rgba(20,33,43,.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(20,33,43,.035) 1px, transparent 1px), var(--paper);
+      background-size: 28px 28px;
+      font-family: "Source Sans 3", sans-serif; font-size: 17px; line-height: 1.58;
+    }
+    .shell { width: min(960px, calc(100% - 40px)); margin: 0 auto; }
+    .portal-nav{position:sticky;top:0;z-index:50;background:rgba(22,50,71,.97);border-bottom:1px solid rgba(255,255,255,.12)}
+    .portal-nav-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;flex-wrap:wrap}
+    .portal-brand{color:#fff;text-decoration:none;font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:15px}
+    .portal-brand span{color:var(--gold);font-weight:400}
+    .portal-links{display:flex;gap:18px;flex-wrap:wrap}
+    .portal-links a{color:#dbe7ee;text-decoration:none;font-size:14.5px}
+    .portal-links a:hover{color:#fff;text-decoration:underline}
+    .hero { padding: 56px 0 36px; }
+    .chapter-mark { display:inline-flex;align-items:center;gap:10px;color:var(--navy);
+      font:600 12px/1.2 "IBM Plex Mono",monospace;letter-spacing:.09em;text-transform:uppercase;margin-bottom:18px; }
+    .chapter-mark::before { content:"";width:42px;height:3px;background:var(--orange); }
+    h1 { font-size: clamp(36px, 5vw, 58px); line-height: 1.02; letter-spacing:-.03em; margin:0 0 14px; }
+    .lede { color: var(--muted); font-size: clamp(18px,2vw,22px); max-width: 64ch; margin:0 0 8px; }
+    .date-line { font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--muted); }
+    section.block { margin: 44px 0; }
+    h2 { font-size: 26px; letter-spacing:-.02em; margin:0 0 6px; display:flex;align-items:center;gap:12px; }
+    h2 .num { font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:600;color:var(--white);
+      background:var(--navy);border-radius:999px;min-width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center; }
+    .sub { color:var(--muted); margin:0 0 18px; max-width: 68ch; }
+    .card { background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+      padding:24px;box-shadow:var(--shadow); }
+    .skill-card { background:var(--navy);color:#eaf2f7;border-radius:var(--radius);padding:22px 24px;
+      font-family:"IBM Plex Mono",monospace;font-size:14.5px;overflow-x:auto;box-shadow:var(--shadow); }
+    .skill-card .k { color:var(--gold); }
+    .idea { font-size:21px;line-height:1.5;border-left:4px solid var(--teal);padding:6px 0 6px 20px;max-width:62ch; }
+    .idea strong { color:var(--navy); }
+    .mechanics { display:grid;gap:14px; }
+    .mech { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:18px 20px;
+      display:grid;grid-template-columns:44px 1fr;gap:14px;align-items:start; }
+    .mech .mnum { font-family:"IBM Plex Mono",monospace;font-weight:600;color:var(--teal);
+      background:var(--teal-soft);border-radius:10px;width:44px;height:44px;display:flex;align-items:center;justify-content:center; }
+    .mech h3 { margin:0 0 6px;font-size:18px; }
+    .mech p { margin:0;color:var(--muted);font-size:15.5px; }
+    .mech code, .inline-code { font-family:"IBM Plex Mono",monospace;font-size:.88em;background:var(--blue-soft);
+      padding:2px 7px;border-radius:6px;color:var(--navy); }
+    pre.code { background:#0f2233;color:#e8f1f5;border-radius:14px;padding:20px 22px;overflow-x:auto;
+      font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.6;margin:0; }
+    pre.code .c { color:#8ba3b0; } pre.code .s { color:#ffd479; } pre.code .k { color:#7fd6c2; }
+    .fail { border-left:4px solid var(--orange); }
+    .fail h3 .fix { display:block;margin-top:8px;font-size:15px;font-weight:500;color:var(--green); }
+    .ref-list { display:grid;gap:12px; }
+    .ref { display:flex;gap:14px;align-items:flex-start;background:var(--white);border:1px solid var(--line);
+      border-radius:14px;padding:16px 18px;text-decoration:none;color:inherit; }
+    .ref:hover { border-color:var(--teal); }
+    .ref .badge { flex:none;font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;letter-spacing:.06em;
+      padding:5px 10px;border-radius:999px;text-transform:uppercase; }
+    .badge.doc { background:var(--blue-soft);color:var(--navy); }
+    .badge.vid { background:var(--orange-soft);color:var(--orange); }
+    .ref h3 { margin:0 0 4px;font-size:17px; }
+    .ref p { margin:0;color:var(--muted);font-size:14.5px; }
+    .prompt-block { background:#0f2233;border-radius:var(--radius);overflow:hidden;margin-bottom:18px;box-shadow:var(--shadow); }
+    .prompt-top { display:flex;justify-content:space-between;align-items:center;gap:12px;
+      padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.12); }
+    .prompt-top strong { color:#fff;font-size:13px;letter-spacing:.06em;font-family:"IBM Plex Mono",monospace; }
+    .copy-btn { border:1px solid #6c8796;background:transparent;color:#fff;border-radius:6px;padding:7px 11px;
+      cursor:pointer;font-weight:700;font-size:14px; }
+    .copy-btn:hover { background:rgba(255,255,255,.1); }
+    .copy-btn:focus-visible { outline:2px solid var(--gold);outline-offset:2px; }
+    .prompt-text { color:#e8f1f5;font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.65;
+      padding:18px;white-space:pre-wrap;margin:0; }
+    .sr-only { position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0); }
+    .quiz-q { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px; }
+    .quiz-q .qq { font-weight:700;margin:0 0 12px;font-size:18px; }
+    .qopts { display:grid;gap:8px; }
+    .qopt { text-align:left;background:var(--paper);border:1px solid var(--line);border-radius:10px;
+      padding:12px 14px;cursor:pointer;font-size:15.5px;color:var(--ink); }
+    .qopt:hover:not(:disabled) { border-color:var(--navy); }
+    .qopt:disabled { cursor:default;opacity:.85; }
+    .qopt.correct { background:var(--green-soft);border-color:var(--green); }
+    .qopt.wrong { background:var(--red-soft);border-color:var(--red); }
+    .qexp { margin:12px 0 0;font-size:15px;color:var(--muted); }
+    .qexp strong.ok { color:var(--green); } .qexp strong.no { color:var(--red); }
+    #quiz-score { display:none;margin-top:8px;background:var(--navy);color:#fff;border-radius:14px;
+      padding:20px 24px;font-size:19px; }
+    #quiz-score strong { color:var(--gold); }
+    .fgrid { display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px; }
+    .fcard { perspective:900px;cursor:pointer;min-height:170px; }
+    .fcard-inner { position:relative;width:100%;height:100%;min-height:170px;transform-style:preserve-3d;transition:transform .45s; }
+    .fcard.flipped .fcard-inner { transform:rotateY(180deg); }
+    .fface { position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+      border-radius:14px;padding:18px;display:flex;align-items:center;justify-content:center;text-align:center;
+      border:1px solid var(--line);background:var(--white);box-shadow:var(--shadow);font-size:15.5px; }
+    .fface.front { font-weight:700;color:var(--navy); }
+    .fface.back { transform:rotateY(180deg);background:var(--teal-soft);color:var(--ink);font-size:14.5px; }
+    .fcard:focus-visible { outline:2px solid var(--teal);outline-offset:3px;border-radius:14px; }
+    .triggers { display:grid;gap:10px; }
+    .trigger { background:var(--gold-soft);border-radius:12px;padding:14px 18px;font-size:16px; }
+    .trigger strong { color:var(--navy); }
+    .back-link { display:inline-block;margin:8px 0 60px;font-weight:600;color:var(--teal);text-decoration:none;font-size:17px; }
+    .back-link:hover { text-decoration:underline; }
+    .fig { background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+      padding:12px;box-shadow:var(--shadow);overflow-x:auto; }
+    .fig svg { display:block;width:100%;height:auto; }
+    .flow-anim { stroke-dasharray: 8 6; animation: dashmove 1.2s linear infinite; }
+    @keyframes dashmove { to { stroke-dashoffset: -14; } }
+    .pulse { animation: pulse 2.2s ease-in-out infinite; }
+    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.45; } }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior:auto; } .fcard-inner{transition:none;} .flow-anim{animation:none;} .pulse{animation:none;} }
+  </style>
+</head>
+<body>
+<nav class="portal-nav">
+    <div class="shell portal-nav-inner">
+      <a class="portal-brand" href="../index.html">AI Engineering <span>&middot; Learning Portal</span></a>
+      <div class="portal-links">
+        <a href="../index.html#daily-topics">Daily topics</a>
+        <a href="../index.html#loop">Loop</a>
+        <a href="../index.html#graph">Graph</a>
+        <a href="../index.html#harness">Harness</a>
+      </div>
+    </div>
+  </nav>
+  <div class="shell">
+
+    <header class="hero">
+      <div class="chapter-mark">Daily topic &middot; The trio's adjacents</div>
+      <h1>Workflow orchestration engines: durable execution that survives crashes</h1>
+      <p class="lede">A multi-step agent that dies at step 7 loses everything &mdash; the only thing that knew which step it was on was a stack frame that no longer exists. Durable execution hands failure management to the platform: every step&rsquo;s result is recorded in an event history, and when the process crashes, a fresh worker replays that history to rebuild the state and resumes exactly where it stopped. <strong>Write the happy path; let the engine own the recovery.</strong></p>
+      <p class="date-line">2026-10-08 &middot; Topic 025</p>
+    </header>
+
+    <section class="block">
+      <h2><span class="num">01</span> The skill card</h2>
+      <p class="sub">Every topic on this portal is designed like a Codex skill: a name, a trigger, and concrete steps.</p>
+      <div class="skill-card"><pre style="margin:0">---
+<span class="k">name:</span> durable-execution-workflows
+<span class="k">description:</span> Reach for this when a multi-step process must run to completion
+  despite crashes, deploys, and timeouts: put orchestration in a deterministic
+  Workflow, side effects in retriable Activities, and let the engine's event
+  history record every step so any Worker can replay and resume from the point
+  of failure.
+---</pre></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">02</span> The one-idea version</h2>
+      <p class="idea">Durable execution is the guarantee that <strong>your code runs to completion even though the machine running it will not</strong>. The platform never snapshots memory; it records the result of every step as an ordered event history. Recovery means a new process re-runs your code from the top, and every already-completed step returns its recorded result instantly instead of doing real work again &mdash; until execution arrives at the step that never finished, with your local variables exactly where they were. <strong>If your agent can't crash and continue, it's not orchestrated; it's hopeful.</strong></p>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">03</span> Crash at step 3, resume at step 3</h2>
+      <p class="sub">One order pipeline. Steps 1 and 2 are recorded; the worker dies before step 3 finishes. Nothing is re-done &mdash; the recovery worker fast-forwards through the recorded history and resumes at the unfinished step.</p>
+      <div class="fig">
+        <svg viewBox="0 0 960 400" role="img" aria-label="Event history: steps 1 and 2 recorded, worker crashes before step 3, a new worker replays steps 1 and 2 instantly and resumes at step 3">
+          <defs>
+            <marker id="arr2" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+              <path d="M0,0 L8,3 L0,6 Z" fill="#163247"></path>
+            </marker>
+            <marker id="arrg" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+              <path d="M0,0 L8,3 L0,6 Z" fill="#1e7a3c"></path>
+            </marker>
+          </defs>
+          <g font-family="IBM Plex Mono, monospace" font-size="13.5">
+            <!-- event history ledger -->
+            <rect x="30" y="30" width="330" height="340" rx="14" fill="#0f2233"/>
+            <text x="48" y="62" fill="#d8a524" font-weight="600" font-size="14">EVENT HISTORY (durable)</text>
+            <g font-size="12.5">
+              <rect x="48" y="80" width="294" height="44" rx="8" fill="#1b3a52"/>
+              <text x="62" y="108" fill="#7fd6c2">step 1 validate_order</text>
+              <text x="300" y="108" fill="#8ba3b0" text-anchor="end">ok</text>
+              <rect x="48" y="132" width="294" height="44" rx="8" fill="#1b3a52"/>
+              <text x="62" y="160" fill="#7fd6c2">step 2 charge_card</text>
+              <text x="300" y="160" fill="#8ba3b0" text-anchor="end">ok</text>
+              <rect x="48" y="184" width="294" height="44" rx="8" fill="#1b3a52"/>
+              <text x="62" y="212" fill="#8ba3b0">step 3 ship_package</text>
+              <text x="300" y="212" fill="#d66332" text-anchor="end">started</text>
+              <rect x="48" y="236" width="294" height="44" rx="8" fill="#1b3a52"/>
+              <text x="62" y="264" fill="#53636f">step 4 confirm_delivery</text>
+              <text x="300" y="264" fill="#8ba3b0" text-anchor="end">pending</text>
+              <text x="48" y="316" fill="#8ba3b0">the only thing that</text>
+              <text x="48" y="336" fill="#8ba3b0">survives a crash</text>
+            </g>
+            <!-- worker A dies -->
+            <text x="470" y="62" fill="#53636f" font-size="13">WORKER A</text>
+            <rect x="430" y="74" width="170" height="90" rx="12" fill="#fff" stroke="#b3402e" stroke-width="2.5"/>
+            <text x="515" y="110" fill="#b3402e" text-anchor="middle" font-weight="600">runs steps 1-3</text>
+            <text x="515" y="132" fill="#b3402e" text-anchor="middle" font-size="11.5">&#9760; dies here</text>
+            <line x1="515" y1="164" x2="515" y2="220" stroke="#b3402e" stroke-width="2.5" stroke-dasharray="6 5" class="flow-anim"/>
+            <!-- replay arrow -->
+            <line x1="360" y1="156" x2="430" y2="156" stroke="#163247" stroke-width="2" marker-end="url(#arr2)"/>
+            <text x="395" y="142" fill="#53636f" font-size="11" text-anchor="middle">reads</text>
+            <!-- worker B replays -->
+            <text x="700" y="62" fill="#53636f" font-size="13">WORKER B</text>
+            <rect x="630" y="74" width="260" height="90" rx="12" fill="#e2f2e6" stroke="#1e7a3c" stroke-width="2.5"/>
+            <text x="760" y="104" fill="#1e7a3c" text-anchor="middle" font-weight="600">replays 1 &amp; 2 <span class="pulse">&#9889;</span></text>
+            <text x="760" y="126" fill="#53636f" text-anchor="middle" font-size="11.5">recorded results, no real work</text>
+            <text x="760" y="146" fill="#53636f" text-anchor="middle" font-size="11.5">state rebuilt, locals intact</text>
+            <line x1="360" y1="208" x2="630" y2="208" stroke="#1e7a3c" stroke-width="2.5" marker-end="url(#arrg)"/>
+            <text x="495" y="194" fill="#1e7a3c" font-size="11" text-anchor="middle">replay + continue</text>
+            <!-- resume step 3 -->
+            <line x1="760" y1="164" x2="760" y2="250" stroke="#1e7a3c" stroke-width="2.5" class="flow-anim" marker-end="url(#arrg)"/>
+            <rect x="650" y="250" width="220" height="64" rx="12" fill="#163247"/>
+            <text x="760" y="278" fill="#fff" text-anchor="middle" font-weight="600">step 3 ship_package</text>
+            <text x="760" y="300" fill="#8ba3b0" text-anchor="middle" font-size="11.5">resumes here, then 4</text>
+          </g>
+          <text x="30" y="392" font-family="IBM Plex Mono, monospace" font-size="11.5" fill="#53636f">Crash recovery without checkpoints in your code: the log is the checkpoint.</text>
+        </svg>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">04</span> How it works</h2>
+      <p class="sub">Seven mechanics. The engine changes (Temporal, AWS Step Functions, Azure Durable Functions, DBOS) &mdash; the model doesn't.</p>
+      <div class="mechanics">
+        <div class="mech"><div class="mnum">1</div><div>
+          <h3>Split orchestration from side effects</h3>
+          <p>A <strong>Workflow</strong> is control flow only: loops, conditionals, and calls, deciding what happens in what order. An <strong>Activity</strong> is one unit of real work that touches the outside world: an API call, a DB write, an email, a card charge. The split exists so replay stays safe &mdash; control flow re-runs for free, side effects never re-run for free.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">2</div><div>
+          <h3>The event history is the state</h3>
+          <p>Every step's result is recorded as an ordered event log on the service &mdash; not in your process's memory. The log is the durable record of what happened: which activities completed, what they returned, which timers fired. Debugging starts from evidence instead of reconstruction.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">3</div><div>
+          <h3>Recovery is replay, not restore</h3>
+          <p>Nothing snapshots the stack. A new worker fetches the event history and re-runs the workflow code from the top; each already-completed activity returns its recorded result instantly, with no real work performed. When execution reaches the unfinished step, local variables are exactly what they were. The function "never crashed" &mdash; it was seamlessly blocked.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">4</div><div>
+          <h3>Workflow code must be deterministic</h3>
+          <p>Because replay re-runs the workflow, it must produce the same commands every time: no <code>random()</code>, no wall-clock reads, no direct HTTP calls, no thread timing in workflow code. Anything non-deterministic moves into an activity, whose recorded result replays identically.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">5</div><div>
+          <h3>Retries live in configuration, not in code</h3>
+          <p>Each activity declares a retry policy &mdash; max attempts, backoff, timeouts &mdash; instead of a hand-written retry loop at the call site. A failed activity retries with backoff automatically; an activity whose worker dies is rescheduled. You stop writing recovery code that has nothing to do with your problem.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">6</div><div>
+          <h3>Workers poll; nothing is pushed</h3>
+          <p>A worker is the process that actually runs your code. Workers poll named <strong>task queues</strong> and pull work; the service never pushes. A worker that is down or saturated stops polling and its tasks wait. Horizontal scale-out is adding more pollers &mdash; no load balancer heroics.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">7</div><div>
+          <h3>Long waits are first-class</h3>
+          <p>A workflow can sleep on a durable timer for minutes or months with no process holding the thread &mdash; "wait 30 days, then confirm delivery" is one line, not a cron job plus a state table plus a reconciliation sweep. <strong>Signals</strong> push data into a running workflow mid-flight (human approval!); <strong>queries</strong> read its state without mutating it.</p>
+        </div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">05</span> Code sketch</h2>
+      <p class="sub">An order pipeline in the durable-execution shape (Temporal-style Python SDK idiom). Look at what&rsquo;s missing: no retry loops, no checkpoint columns, no state table &mdash; just the happy path.</p>
+      <pre class="code"><span class="k">@</span><span class="k">workflow</span>.defn
+<span class="k">class</span> <span class="k">OrderPipeline</span>:
+    <span class="k">@</span><span class="k">workflow</span>.run
+    <span class="k">async def</span> <span class="k">run</span>(self, order_id):
+        <span class="k">await</span> <span class="k">workflow</span>.execute_activity(validate_order, order_id,
+            start_to_close_timeout=<span class="k">timedelta</span>(minutes=<span class="s">2</span>),
+            retry_policy=<span class="k">RetryPolicy</span>(maximum_attempts=<span class="s">5</span>))  <span class="c"># config, not code</span>
+        <span class="k">await</span> <span class="k">workflow</span>.execute_activity(charge_card, order_id,
+            retry_policy=<span class="k">RetryPolicy</span>(maximum_attempts=<span class="s">1</span>))      <span class="c"># charge once, ever</span>
+        shipment = <span class="k">await</span> <span class="k">workflow</span>.execute_activity(ship_package, order_id)
+        <span class="k">await</span> <span class="k">workflow</span>.sleep(<span class="k">timedelta</span>(days=<span class="s">30</span>))             <span class="c"># waits 30 days, no process</span>
+        <span class="k">await</span> <span class="k">workflow</span>.execute_activity(confirm_delivery, shipment)
+
+<span class="c"># If the worker dies during ship_package, another worker replays the</span>
+<span class="c"># recorded results of validate_order and charge_card, rebuilds locals,</span>
+<span class="c"># and resumes at ship_package. charge_card is never called twice.</span></pre>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">06</span> Failure modes</h2>
+      <p class="sub">Five ways durable execution bites &mdash; and the fix for each.</p>
+      <div class="mechanics">
+        <div class="mech fail"><div class="mnum">1</div><div>
+          <h3>Side effects inside the workflow<span class="fix">Fix: workflows orchestrate; activities act. Anything touching the outside world moves into an activity, whose recorded result replays identically.</span></h3>
+          <p>A direct API call in workflow code runs again on every replay. Charge the card, send the email, write the row &mdash; once per recovery instead of once ever. The double-charge is invisible until the invoice arrives.</p>
+        </div></div>
+        <div class="mech fail"><div class="mnum">2</div><div>
+          <h3>Non-deterministic workflow code<span class="fix">Fix: no random(), no wall-clock reads, no iteration order dependence in workflow code &mdash; use the engine's deterministic timer and random APIs, or push it into an activity.</span></h3>
+          <p>Replay must produce the exact same commands as the original run. A <code>random()</code> branch or a <code>time.now()</code> condition makes the replay diverge from the recorded history &mdash; and the engine fails the workflow instead of recovering it.</p>
+        </div></div>
+        <div class="mech fail"><div class="mnum">3</div><div>
+          <h3>Unbounded history growth<span class="fix">Fix: use Continue-As-New to restart the workflow with the same ID and a fresh history; chunk looping work into child workflows.</span></h3>
+          <p>A workflow that loops for months accumulates thousands of events, and every recovery replays all of them. Replay stays linear, but a million-event history still makes recovery slow and debugging painful.</p>
+        </div></div>
+        <div class="mech fail"><div class="mnum">4</div><div>
+          <h3>Giant payloads between steps<span class="fix">Fix: store large blobs in object storage or a database and pass a reference through the workflow; keep the history small and queryable.</span></h3>
+          <p>Every activity result is recorded in the event history &mdash; including that 50&nbsp;MB embedding dump you passed "just for convenience." History bloats, replay slows, and you hit payload size limits mid-run.</p>
+        </div></div>
+        <div class="mech fail"><div class="mnum">5</div><div>
+          <h3>Deploying new code under running workflows<span class="fix">Fix: version your workers (or workflows): running executions finish on the code they started with; only new executions take the new version. Never assume replay semantics are identical across versions.</span></h3>
+          <p>Recovery replays against the history the original run recorded. If the deployed code changed the workflow's shape mid-flight, replay can diverge &mdash; your deploy just became a data-corruption vector for long-running executions.</p>
+        </div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">07</span> Go deeper</h2>
+      <p class="sub">Curated and verified &mdash; every link opened and checked before publishing.</p>
+      <div class="ref-list">
+        <a class="ref" href="https://github.com/temporalio/documentation/blob/HEAD/docs/evaluate/understanding-temporal.mdx" target="_blank" rel="noopener">
+          <span class="badge doc">doc</span>
+          <div><h3>Understanding Temporal (official docs source)</h3>
+          <p>The canonical vocabulary: Workflow, Activity, Worker, Task Queue, Event History &mdash; and the best single statement of how replay-based recovery actually works, straight from the maintainers' docs.</p></div>
+        </a>
+        <a class="ref" href="https://pickuma.com/for-dev/temporal-cloud-serverless-durable-execution/" target="_blank" rel="noopener">
+          <span class="badge doc">article</span>
+          <div><h3>What Durable Execution Actually Means (Pickuma)</h3>
+          <p>A crisp plain-English explanation of the event-log mechanism, plus the serverless-workers trade-offs &mdash; including the 15-minute activity ceiling that bites ML and video pipelines. Honest about where the abstraction doesn't fit.</p></div>
+        </a>
+        <a class="ref" href="https://www.youtube.com/watch?v=-WF-jmIRcq8" target="_blank" rel="noopener">
+          <span class="badge vid">video</span>
+          <div><h3>Temporal with Go from scratch: durable execution, replay, and the 3 determinism rules</h3>
+          <p>From nothing to a workflow that survives the process dying. The core argument &mdash; replay is the whole mechanism, and the determinism rules follow from it &mdash; in about ten minutes with timestamps for each concept.</p></div>
+        </a>
+        <a class="ref" href="https://www.youtube.com/watch?v=iM5TwTHMu5U" target="_blank" rel="noopener">
+          <span class="badge vid">video</span>
+          <div><h3>Simplifying Distributed Systems Development with Temporal's Durable Execution (Stripe Developers)</h3>
+          <p>Watch a six-line reimbursement function quadruple in size once retries, saga rollbacks, and timeouts are added by hand &mdash; the &ldquo;before&rdquo; picture that makes durable execution click &mdash; plus a live scooter-rental demo with Stripe billing.</p></div>
+        </a>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">08</span> Sample prompts</h2>
+      <p class="sub">Copy, adapt, and ask your coding assistant. Each one applies today's skill card.</p>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>PROMPT 1 &middot; FIND THE DURABILITY GAPS</strong><button class="copy-btn" data-copy="prompt-1">Copy</button></div>
+        <p class="prompt-text" id="prompt-1">Audit this multi-step Python script for durability gaps: [paste code]. For each gap, tell me: (1) what happens if the process dies at that step, (2) whether the step belongs in a Workflow (orchestration) or an Activity (side effect) under durable-execution semantics, (3) what retry/timeout policy it should declare instead of the hand-written retry logic it currently has. Then sketch the refactored shape: which functions become activities, what the workflow's control flow looks like, and where determinism could break on replay. No framework code yet — I want the boundary analysis first.</p>
+      </div>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>PROMPT 2 &middot; DESIGN AN AGENT PIPELINE</strong><button class="copy-btn" data-copy="prompt-2">Copy</button></div>
+        <p class="prompt-text" id="prompt-2">Design a durable-execution pipeline for a research agent that: searches the web, summarizes findings, asks a human for approval via a durable wait, then writes a report to a database. Specify the Workflow vs Activity boundary for each step, the retry policy for the flaky search activity, the timeout for the human-approval signal, the state the workflow keeps between steps, and what the event history records at each point. Include how a worker crash during the report-write step recovers without re-sending the approval request.</p>
+      </div>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>PROMPT 3 &middot; DETERMINISM REVIEW</strong><button class="copy-btn" data-copy="prompt-3">Copy</button></div>
+        <p class="prompt-text" id="prompt-3">Review this workflow function for replay determinism violations: [paste]. Flag every call that would produce different results on replay — wall-clock reads, random values, direct network/DB/file access, dictionary ordering assumptions — and for each one, say whether it belongs in an activity or should use a deterministic engine primitive (durable timer, engine random). Then estimate the event history growth per run and suggest where Continue-As-New or payload-offloading would keep replay fast.</p>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">09</span> Check your understanding</h2>
+      <p class="sub">Five questions on the ideas, not the trivia. Answers check immediately.</p>
+      <div class="quiz-q" data-answer="2">
+        <p class="qq">1. Your worker dies halfway through <code>ship_package</code>. How does the workflow recover?</p>
+        <div class="qopts">
+          <button class="qopt" data-i="0">It restarts the whole workflow from step 1, re-charging the card.</button>
+          <button class="qopt" data-i="1">It restores a memory snapshot of the crashed process.</button>
+          <button class="qopt" data-i="2">A new worker fetches the event history, replays the workflow so completed steps return their recorded results instantly, and resumes at <code>ship_package</code> &mdash; <code>charge_card</code> is never re-executed.</button>
+          <button class="qopt" data-i="3">The engine rolls back completed steps and starts over with a compensation handler.</button>
+        </div>
+        <p class="qexp" hidden></p>
+      </div>
+      <div class="quiz-q" data-answer="0">
+        <p class="qq">2. Why must workflow code be deterministic?</p>
+        <div class="qopts">
+          <button class="qopt" data-i="0">Because replay re-runs the workflow to rebuild state &mdash; non-determinism (random, wall-clock, direct I/O) makes the replay diverge from the recorded history.</button>
+          <button class="qopt" data-i="1">Because the engine compiles workflows to SQL.</button>
+          <button class="qopt" data-i="2">Because deterministic code runs faster on task queues.</button>
+          <button class="qopt" data-i="3">Because activities are the only code allowed to use loops.</button>
+        </div>
+        <p class="qexp" hidden></p>
+      </div>
+      <div class="quiz-q" data-answer="3">
+        <p class="qq">3. A colleague puts the email-send API call directly in the workflow function. What's wrong?</p>
+        <div class="qopts">
+          <button class="qopt" data-i="0">Nothing &mdash; workflows are the place for side effects.</button>
+          <button class="qopt" data-i="1">It will be slower than putting it in an activity.</button>
+          <button class="qopt" data-i="2">The engine forbids string literals in workflow code.</button>
+          <button class="qopt" data-i="3">Every replay re-executes the call &mdash; the email goes out once per recovery instead of once ever. Side effects belong in activities, whose recorded results replay identically.</button>
+        </div>
+        <p class="qexp" hidden></p>
+      </div>
+      <div class="quiz-q" data-answer="1">
+        <p class="qq">4. The flaky search API needs 5 retries with backoff. Where does that logic live?</p>
+        <div class="qopts">
+          <button class="qopt" data-i="0">In a <code>for</code> loop around the call inside the workflow.</button>
+          <button class="qopt" data-i="1">In the activity's retry-policy configuration &mdash; max attempts, backoff, and timeouts declared, not hand-written at the call site.</button>
+          <button class="qopt" data-i="2">In the worker's polling interval.</button>
+          <button class="qopt" data-i="3">In the event history, which retries activities by default.</button>
+        </div>
+        <p class="qexp" hidden></p>
+      </div>
+      <div class="quiz-q" data-answer="2">
+        <p class="qq">5. Your agent workflow must wait 30 days, then confirm delivery. How?</p>
+        <div class="qopts">
+          <button class="qopt" data-i="0">A cron job plus a database row plus a reconciliation script that finds overdue orders.</button>
+          <button class="qopt" data-i="1">Keep the process alive with a 30-day <code>sleep()</code>.</button>
+          <button class="qopt" data-i="2">A durable timer inside the workflow &mdash; the engine records the wait in the event history, no process holds the thread, and recovery simply re-registers the timer.</button>
+          <button class="qopt" data-i="3">Store the deadline in the state machine and poll it daily.</button>
+        </div>
+        <p class="qexp" hidden></p>
+      </div>
+      <div id="quiz-score"></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">10</span> Flashcards</h2>
+      <p class="sub">Click or press Enter/Space to flip. Ten terms worth owning.</p>
+      <div class="fgrid">
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Durable execution</div>
+          <div class="fface back">The guarantee that code runs to completion despite crashes, restarts, and network partitions. The platform preserves execution state so a process failure is a pause, not a loss.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Workflow</div>
+          <div class="fface back">Deterministic orchestration code: loops, conditionals, and calls that decide what happens in what order. Never performs side effects directly — it is replayed on recovery.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Activity</div>
+          <div class="fface back">One unit of side-effectful work — API call, DB write, email. Plain function, individually retried with a declared policy, and its recorded result replays identically.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Event history</div>
+          <div class="fface back">The ordered, durable log of everything that happened in a workflow execution: completed activities and their results, timers, signals. The only state that survives a crash.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Replay</div>
+          <div class="fface back">Recovery mechanism: a new worker re-runs the workflow from the top against the event history. Completed steps return recorded results instantly with no real work, rebuilding state to the failure point.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Determinism rule</div>
+          <div class="fface back">Workflow code must produce the same commands on every run: no random(), no wall-clock reads, no direct I/O. Non-determinism belongs in activities or engine primitives.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Retry policy</div>
+          <div class="fface back">Declared per-activity: max attempts, backoff coefficients, timeouts. Recovery configuration instead of hand-written retry loops — the engine, not your code, owns the retry.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Task queue</div>
+          <div class="fface back">A named queue the service fills and workers poll. Nothing is pushed — workers ask for work, so a dead or saturated worker simply stops polling and its tasks wait.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Worker</div>
+          <div class="fface back">The process that actually runs workflow and activity code — on your infrastructure. The service schedules work and records history; workers execute. Scales horizontally by adding pollers.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Continue-as-new</div>
+          <div class="fface back">Restarting a workflow with the same ID and a fresh event history. The escape valve for unbounded history growth in long-running or looping executions.</div>
+        </div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">11</span> Reach for this when&hellip;</h2>
+      <div class="triggers">
+        <div class="trigger"><strong>A multi-step process dies and loses everything.</strong> When "which step was I on?" lives only in a dead stack frame, the event history turns recovery into replay-and-resume instead of restart-and-pray.</div>
+        <div class="trigger"><strong>Your code is mostly recovery plumbing.</strong> Retry loops, checkpoint columns, state tables, reconciliation jobs: if the business logic is a footnote in its own file, move the durability layer into the platform.</div>
+        <div class="trigger"><strong>A workflow must wait on the real world.</strong> Thirty-day timers, human-approval signals, month-long agent runs: durable waits and mid-flight messaging beat cron jobs plus polling plus a state table, every time.</div>
+      </div>
+    </section>
+
+    <a class="back-link" href="../index.html#daily-topics">&larr; Back to the daily topics</a>
+  </div>
+
+  <div id="live-status" class="sr-only" role="status" aria-live="polite"></div>
+  <script>
+    // copy buttons
+    const status = document.getElementById('live-status');
+    document.querySelectorAll('.copy-btn').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const target = document.getElementById(button.dataset.copy);
+        const text = target.innerText;
+        try {
+          await navigator.clipboard.writeText(text);
+          const original = button.textContent;
+          button.textContent = 'Copied';
+          status.textContent = 'Prompt copied to clipboard.';
+          setTimeout(() => button.textContent = original, 1600);
+        } catch {
+          const range = document.createRange();
+          range.selectNodeContents(target);
+          const selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+          status.textContent = 'Prompt selected. Copy it with your device copy command.';
+        }
+      });
+    });
+
+    // quiz
+    const explanations = [
+      ["Restarting from step 1 would re-charge the card — the classic double-charge. No memory is snapshotted either. Replay fast-forwards through recorded results and resumes at the unfinished step.",
+       "Nothing snapshots the stack. The durable artifact is the event history, and recovery re-runs code against it — that is what makes local variables land exactly where they were.",
+       "Right. The replayed steps return their recorded results instantly with no real work, charge_card is never re-executed, and execution continues from ship_package with locals intact.",
+       "Saga compensation is a different pattern (undoing partial work). Durable execution doesn't undo completed steps — it skips re-doing them."],
+      ["Right. The engine rebuilds state by re-running the workflow, so the same inputs must produce the same commands. Non-determinism breaks that contract and the recovery fails.",
+       "No compilation to SQL is involved — the requirement comes purely from replay semantics.",
+       "Speed has nothing to do with it; a non-deterministic workflow that happens to be fast still fails recovery.",
+       "Loops are fine in workflows — it's side effects and non-determinism that are forbidden, not control flow."],
+      ["Exactly the mistake. Workflows are replayed, so everything in them runs again on recovery. The boundary is: workflows orchestrate, activities act.",
+       "It's not about speed — it's about safety. A re-executed email on every recovery is a correctness bug, not a performance one.",
+       "There is no such restriction on string literals.",
+       "Right. The email belongs in an activity: it executes once, its result is recorded, and replay returns the recorded result without re-sending."],
+      ["A hand-written loop in the workflow re-runs its logic on every replay and hides the policy in code. That is the plumbing durable execution exists to remove.",
+       "Right. max_attempts, backoff, timeouts — declared on the activity, owned by the engine. Your workflow keeps only the business logic.",
+       "The polling interval controls how fast workers pick up tasks, not retry behavior.",
+       "The event history records what happened; retry behavior comes from the policy you declare, not from the log itself."],
+      ["That is three failure modes wearing a trench coat: cron misses runs, the DB row drifts, and the reconciler is a second implementation of the same logic.",
+       "A 30-day sleep holds a thread, a connection, and your nerve through every deploy. One restart and the wait is gone.",
+       "Right. workflow.sleep is a durable timer recorded in the event history. No process is held; a crash just re-registers the timer on replay and the wait continues.",
+       "Polling a stored deadline is the hand-rolled version of what the engine gives you natively — with the added failure mode of missed polls."]
+    ];
+    const questions = [...document.querySelectorAll('.quiz-q')];
+    let score = 0, answered = 0;
+    questions.forEach((q, qi) => {
+      const correct = parseInt(q.dataset.answer, 10);
+      const exp = q.querySelector('.qexp');
+      q.querySelectorAll('.qopt').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          if (q.dataset.done) return;
+          q.dataset.done = "1";
+          const chosen = parseInt(btn.dataset.i, 10);
+          const ok = chosen === correct;
+          q.querySelectorAll('.qopt').forEach((b) => {
+            b.disabled = true;
+            if (parseInt(b.dataset.i, 10) === correct) b.classList.add('correct');
+          });
+          if (!ok) btn.classList.add('wrong');
+          else score++;
+          answered++;
+          exp.hidden = false;
+          exp.innerHTML = ok
+            ? "<strong class=\"ok\">Correct.</strong> " + explanations[qi][chosen]
+            : "<strong class=\"no\">Not quite.</strong> " + explanations[qi][chosen];
+          if (answered === questions.length) {
+            const box = document.getElementById('quiz-score');
+            box.style.display = "block";
+            box.innerHTML = "You scored <strong>" + score + " / " + questions.length + "</strong>." +
+              (score === questions.length ? " Clean sweep — your workflows will survive anything." :
+               score >= 3 ? " Solid — re-read the section you missed." :
+               " Worth a re-read of section 04 before moving on.");
+          }
+        });
+      });
+    });
+
+    // flashcards
+    document.querySelectorAll('.fcard').forEach((card) => {
+      const flip = () => card.classList.toggle('flipped');
+      card.addEventListener('click', flip);
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); }
+      });
+    });
+  </script>
+</body>
+</html>

@@ -166,5 +166,12 @@
     "date": "2026-10-07",
     "summary": "A prompt-then-tool-call chain has no concept of where it is or what to do when a step fails. Name every state, declare the allowed transitions, make failure a first-class node, and persist state at each transition \u2014 resumable, auditable agents.",
     "skill": "state-machines-for-agents"
+  },
+  {
+    "slug": "2026-10-08-workflow-orchestration-engines",
+    "title": "Workflow orchestration engines: durable execution that survives crashes",
+    "date": "2026-10-08",
+    "summary": "A multi-step agent that dies at step 7 loses everything. Durable execution records every step's result in an event history, so a fresh worker replays that history and resumes exactly where the crash stopped \u2014 retries declared in config, not in code.",
+    "skill": "durable-execution-workflows"
   }
 ]
