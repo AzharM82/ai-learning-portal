@@ -173,5 +173,12 @@
     "date": "2026-10-08",
     "summary": "A multi-step agent that dies at step 7 loses everything. Durable execution records every step's result in an event history, so a fresh worker replays that history and resumes exactly where the crash stopped \u2014 retries declared in config, not in code.",
     "skill": "durable-execution-workflows"
+  },
+  {
+    "slug": "2026-10-09-human-in-the-loop-patterns",
+    "title": "Human-in-the-loop patterns: approvals, edits, takeovers",
+    "date": "2026-10-09",
+    "summary": "The agent does the work; you keep the authority. Four oversight modes per action (act-and-log, act-and-notify, approve-before, never) placed by reversibility and blast radius, the interrupt-approve/edit/reject-resume mechanism, and how to design approvals humans actually review.",
+    "skill": "human-in-the-loop-patterns"
   }
 ]

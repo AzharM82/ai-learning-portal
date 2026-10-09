@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Human-in-the-loop patterns: approvals, edits, takeovers &middot; AI Learning Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+    :root {
+      --ink: #14212b; --muted: #53636f; --paper: #f6f8f7; --white: #ffffff;
+      --line: #cbd5d8; --navy: #163247; --navy-2: #21465e; --teal: #0b8174;
+      --teal-soft: #dff2ee; --orange: #d66332; --orange-soft: #f8e4d8;
+      --gold: #d8a524; --gold-soft: #f7edc8; --blue-soft: #e3eef4;
+      --red: #b3402e; --red-soft: #f9e3de; --green: #1e7a3c; --green-soft: #e2f2e6;
+      --shadow: 0 18px 45px rgba(20, 33, 43, .09); --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; color: var(--ink);
+      background: linear-gradient(rgba(20,33,43,.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(20,33,43,.035) 1px, transparent 1px), var(--paper);
+      background-size: 28px 28px;
+      font-family: "Source Sans 3", sans-serif; font-size: 17px; line-height: 1.58;
+    }
+    .shell { width: min(960px, calc(100% - 40px)); margin: 0 auto; }
+    .portal-nav{position:sticky;top:0;z-index:50;background:rgba(22,50,71,.97);border-bottom:1px solid rgba(255,255,255,.12)}
+    .portal-nav-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;flex-wrap:wrap}
+    .portal-brand{color:#fff;text-decoration:none;font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:15px}
+    .portal-brand span{color:var(--gold);font-weight:400}
+    .portal-links{display:flex;gap:18px;flex-wrap:wrap}
+    .portal-links a{color:#dbe7ee;text-decoration:none;font-size:14.5px}
+    .portal-links a:hover{color:#fff;text-decoration:underline}
+    .hero { padding: 56px 0 36px; }
+    .chapter-mark { display:inline-flex;align-items:center;gap:10px;color:var(--navy);
+      font:600 12px/1.2 "IBM Plex Mono",monospace;letter-spacing:.09em;text-transform:uppercase;margin-bottom:18px; }
+    .chapter-mark::before { content:"";width:42px;height:3px;background:var(--orange); }
+    h1 { font-size: clamp(36px, 5vw, 58px); line-height: 1.02; letter-spacing:-.03em; margin:0 0 14px; }
+    .lede { color: var(--muted); font-size: clamp(18px,2vw,22px); max-width: 64ch; margin:0 0 8px; }
+    .date-line { font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--muted); }
+    section.block { margin: 44px 0; }
+    h2 { font-size: 26px; letter-spacing:-.02em; margin:0 0 6px; display:flex;align-items:center;gap:12px; }
+    h2 .num { font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:600;color:var(--white);
+      background:var(--navy);border-radius:999px;min-width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center; }
+    .sub { color:var(--muted); margin:0 0 18px; max-width: 68ch; }
+    .card { background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+      padding:24px;box-shadow:var(--shadow); }
+    .skill-card { background:var(--navy);color:#eaf2f7;border-radius:var(--radius);padding:22px 24px;
+      font-family:"IBM Plex Mono",monospace;font-size:14.5px;overflow-x:auto;box-shadow:var(--shadow); }
+    .skill-card .k { color:var(--gold); }
+    .idea { font-size:21px;line-height:1.5;border-left:4px solid var(--teal);padding:6px 0 6px 20px;max-width:62ch; }
+    .idea strong { color:var(--navy); }
+    .mechanics { display:grid;gap:14px; }
+    .mech { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:18px 20px;
+      display:grid;grid-template-columns:44px 1fr;gap:14px;align-items:start; }
+    .mech .mnum { font-family:"IBM Plex Mono",monospace;font-weight:600;color:var(--teal);
+      background:var(--teal-soft);border-radius:10px;width:44px;height:44px;display:flex;align-items:center;justify-content:center; }
+    .mech h3 { margin:0 0 6px;font-size:18px; }
+    .mech p { margin:0;color:var(--muted);font-size:15.5px; }
+    .mech code, .inline-code { font-family:"IBM Plex Mono",monospace;font-size:.88em;background:var(--blue-soft);
+      padding:2px 7px;border-radius:6px;color:var(--navy); }
+    pre.code { background:#0f2233;color:#e8f1f5;border-radius:14px;padding:20px 22px;overflow-x:auto;
+      font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.6;margin:0; }
+    pre.code .c { color:#8ba3b0; } pre.code .s { color:#ffd479; } pre.code .k { color:#7fd6c2; }
+    .fail { border-left:4px solid var(--orange); }
+    .fail h3 .fix { display:block;margin-top:8px;font-size:15px;font-weight:500;color:var(--green); }
+    .ref-list { display:grid;gap:12px; }
+    .ref { display:flex;gap:14px;align-items:flex-start;background:var(--white);border:1px solid var(--line);
+      border-radius:14px;padding:16px 18px;text-decoration:none;color:inherit; }
+    .ref:hover { border-color:var(--teal); }
+    .ref .badge { flex:none;font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;letter-spacing:.06em;
+      padding:5px 10px;border-radius:999px;text-transform:uppercase; }
+    .badge.doc { background:var(--blue-soft);color:var(--navy); }
+    .badge.vid { background:var(--orange-soft);color:var(--orange); }
+    .ref h3 { margin:0 0 4px;font-size:17px; }
+    .ref p { margin:0;color:var(--muted);font-size:14.5px; }
+    .prompt-block { background:#0f2233;border-radius:var(--radius);overflow:hidden;margin-bottom:18px;box-shadow:var(--shadow); }
+    .prompt-top { display:flex;justify-content:space-between;align-items:center;gap:12px;
+      padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.12); }
+    .prompt-top strong { color:#fff;font-size:13px;letter-spacing:.06em;font-family:"IBM Plex Mono",monospace; }
+    .copy-btn { border:1px solid #6c8796;background:transparent;color:#fff;border-radius:6px;padding:7px 11px;
+      cursor:pointer;font-weight:700;font-size:14px; }
+    .copy-btn:hover { background:rgba(255,255,255,.1); }
+    .copy-btn:focus-visible { outline:2px solid var(--gold);outline-offset:2px; }
+    .prompt-text { color:#e8f1f5;font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.65;
+      padding:18px;white-space:pre-wrap;margin:0; }
+    .sr-only { position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0); }
+    .quiz-q { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px; }
+    .quiz-q .qq { font-weight:700;margin:0 0 12px;font-size:18px; }
+    .qopts { display:grid;gap:8px; }
+    .qopt { text-align:left;background:var(--paper);border:1px solid var(--line);border-radius:10px;
+      padding:12px 14px;cursor:pointer;font-size:15.5px;color:var(--ink); }
+    .qopt:hover:not(:disabled) { border-color:var(--navy); }
+    .qopt:disabled { cursor:default;opacity:.85; }
+    .qopt.correct { background:var(--green-soft);border-color:var(--green); }
+    .qopt.wrong { background:var(--red-soft);border-color:var(--red); }
+    .qexp { margin:12px 0 0;font-size:15px;color:var(--muted); }
+    .qexp strong.ok { color:var(--green); } .qexp strong.no { color:var(--red); }
+    #quiz-score { display:none;margin-top:8px;background:var(--navy);color:#fff;border-radius:14px;
+      padding:20px 24px;font-size:19px; }
+    #quiz-score strong { color:var(--gold); }
+    .fgrid { display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px; }
+    .fcard { perspective:900px;cursor:pointer;min-height:170px; }
+    .fcard-inner { position:relative;width:100%;height:100%;min-height:170px;transform-style:preserve-3d;transition:transform .45s; }
+    .fcard.flipped .fcard-inner { transform:rotateY(180deg); }
+    .fface { position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+      border-radius:14px;padding:18px;display:flex;align-items:center;justify-content:center;text-align:center;
+      border:1px solid var(--line);background:var(--white);box-shadow:var(--shadow);font-size:15.5px; }
+    .fface.front { font-weight:700;color:var(--navy); }
+    .fface.back { transform:rotateY(180deg);background:var(--teal-soft);color:var(--ink);font-size:14.5px; }
+    .fcard:focus-visible { outline:2px solid var(--teal);outline-offset:3px;border-radius:14px; }
+    .triggers { display:grid;gap:10px; }
+    .trigger { background:var(--gold-soft);border-radius:12px;padding:14px 18px;font-size:16px; }
+    .trigger strong { color:var(--navy); }
+    .back-link { display:inline-block;margin:8px 0 60px;font-weight:600;color:var(--teal);text-decoration:none;font-size:17px; }
+    .back-link:hover { text-decoration:underline; }
+    .fig { background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+      padding:12px;box-shadow:var(--shadow);overflow-x:auto; }
+    .fig svg { display:block;width:100%;height:auto; }
+    .flow-anim { stroke-dasharray: 8 6; animation: dashmove 1.2s linear infinite; }
+    @keyframes dashmove { to { stroke-dashoffset: -14; } }
+    .pulse { animation: pulse 2.2s ease-in-out infinite; }
+    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.45; } }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior:auto; } .fcard-inner{transition:none;} .flow-anim{animation:none;} .pulse{animation:none;} }
+  </style>
+</head>
+<body>
+<nav class="portal-nav">
+    <div class="shell portal-nav-inner">
+      <a class="portal-brand" href="../index.html">AI Engineering <span>&middot; Learning Portal</span></a>
+      <div class="portal-links">
+        <a href="../index.html#daily-topics">Daily topics</a>
+        <a href="../index.html#loop">Loop</a>
+        <a href="../index.html#graph">Graph</a>
+        <a href="../index.html#harness">Harness</a>
+      </div>
+    </div>
+  </nav>
+  <div class="shell">
+
+    <header class="hero">
+      <div class="chapter-mark">Daily topic &middot; The trio's adjacents</div>
+      <h1>Human-in-the-loop patterns: approvals, edits, takeovers</h1>
+      <p class="lede">The model proposes; a person disposes. Human-in-the-loop is not &ldquo;a human watches everything&rdquo; &mdash; it&rsquo;s a decision made <strong>per action</strong> about which oversight mode it gets: run and log it, run and announce it, stop and ask, or never let the agent do it at all. The pause-and-resume machinery (interrupt &rarr; approve/edit/reject &rarr; resume) is easy; <strong>placing the gates &mdash; and designing the review so a human actually reviews &mdash; is the craft.</strong></p>
+      <p class="date-line">2026-10-09 &middot; Topic 026</p>
+    </header>
+
+    <section class="block">
+      <h2><span class="num">01</span> The skill card</h2>
+      <p class="sub">Every topic on this portal is designed like a Codex skill: a name, a trigger, and concrete steps.</p>
+      <div class="skill-card"><pre style="margin:0">---
+<span class="k">name:</span> human-in-the-loop-patterns
+<span class="k">description:</span> Reach for this when an agent takes real-world actions:
+  place each action in one of four oversight modes (act-and-log, act-and-notify,
+  approve-before, never) by its reversibility and blast radius; pause the run
+  with an interrupt before gated actions; present the proposal with evidence and
+  approve/edit/reject options; and design every approval with a named approver,
+  a channel, a deadline, and a fail-closed default.
+---</pre></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">02</span> The one-idea version</h2>
+      <p class="idea">An agent&rsquo;s actions carry wildly different risk, so oversight must be decided <strong>per action, not per agent</strong>: cheap reversible work runs freely and gets sampled later, while irreversible or customer-facing work stops for a named person&rsquo;s yes. The mechanism is a pause (interrupt), a human decision (approve, edit, or reject), and a resume from persisted state &mdash; <strong>but the machinery only works if the review stays real</strong>, which means short approval queues, fail-closed deadlines, and graduated autonomy earned on evidence.</p>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">03</span> Four modes, one gate</h2>
+      <p class="sub">Every action passes through the same placement question &mdash; <em>can it be undone, and who does it reach?</em> &mdash; and lands in exactly one mode.</p>
+      <div class="fig">
+        <svg viewBox="0 0 960 430" role="img" aria-label="Each agent action is placed by reversibility and blast radius into act-and-log, act-and-notify, approve-before, or never">
+          <defs>
+            <marker id="arrn" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+              <path d="M0,0 L8,3 L0,6 Z" fill="#163247"></path>
+            </marker>
+            <marker id="arrt" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+              <path d="M0,0 L8,3 L0,6 Z" fill="#0b8174"></path>
+            </marker>
+          </defs>
+          <g font-family="IBM Plex Mono, monospace" font-size="13">
+            <!-- actions column -->
+            <rect x="20" y="20" width="220" height="380" rx="14" fill="#0f2233"/>
+            <text x="38" y="52" fill="#d8a524" font-weight="600" font-size="13">AGENT ACTIONS</text>
+            <g font-size="12">
+              <rect x="38" y="66" width="184" height="58" rx="8" fill="#1b3a52"/>
+              <text x="52" y="90" fill="#7fd6c2">relabel_email</text>
+              <text x="52" y="110" fill="#8ba3b0" font-size="10.5">internal, reversible</text>
+              <rect x="38" y="132" width="184" height="58" rx="8" fill="#1b3a52"/>
+              <text x="52" y="156" fill="#7fd6c2">post_status_update</text>
+              <text x="52" y="176" fill="#8ba3b0" font-size="10.5">reversible, someone should know</text>
+              <rect x="38" y="198" width="184" height="58" rx="8" fill="#1b3a52"/>
+              <text x="52" y="222" fill="#7fd6c2">send_customer_email</text>
+              <text x="52" y="242" fill="#8ba3b0" font-size="10.5">external, cannot unsend</text>
+              <rect x="38" y="264" width="184" height="58" rx="8" fill="#1b3a52"/>
+              <text x="52" y="288" fill="#7fd6c2">issue_refund</text>
+              <text x="52" y="308" fill="#8ba3b0" font-size="10.5">money, irreversible</text>
+              <text x="38" y="352" fill="#8ba3b0" font-size="10.5">different risk,</text>
+              <text x="38" y="370" fill="#8ba3b0" font-size="10.5">different oversight</text>
+            </g>
+            <!-- gate diamond -->
+            <polygon points="400,120 480,215 400,310 320,215" fill="#f7edc8" stroke="#d8a524" stroke-width="2.5"/>
+            <text x="400" y="200" fill="#163247" text-anchor="middle" font-weight="600" font-size="13">reversible?</text>
+            <text x="400" y="220" fill="#163247" text-anchor="middle" font-weight="600" font-size="13">blast radius?</text>
+            <text x="400" y="240" fill="#53636f" text-anchor="middle" font-size="10.5">one mode per action</text>
+            <!-- arrows actions -> diamond -->
+            <line x1="240" y1="95" x2="330" y2="190" stroke="#163247" stroke-width="2" class="flow-anim" marker-end="url(#arrn)"/>
+            <line x1="240" y1="161" x2="330" y2="200" stroke="#163247" stroke-width="2" class="flow-anim" marker-end="url(#arrn)"/>
+            <line x1="240" y1="227" x2="330" y2="220" stroke="#163247" stroke-width="2" class="flow-anim" marker-end="url(#arrn)"/>
+            <line x1="240" y1="293" x2="330" y2="245" stroke="#163247" stroke-width="2" class="flow-anim" marker-end="url(#arrn)"/>
+            <!-- lane 1: act and log -->
+            <rect x="520" y="20" width="420" height="84" rx="12" fill="#dff2ee" stroke="#0b8174" stroke-width="2"/>
+            <text x="540" y="50" fill="#0b8174" font-weight="600" font-size="13">ACT + LOG</text>
+            <text x="540" y="72" fill="#53636f" font-size="11.5">relabel_email runs on its own</text>
+            <text x="540" y="90" fill="#53636f" font-size="11.5">a person samples the log weekly</text>
+            <text x="920" y="62" fill="#0b8174" text-anchor="end" font-size="16" font-weight="600">&#10003; auto</text>
+            <!-- lane 2: act and notify -->
+            <rect x="520" y="120" width="420" height="84" rx="12" fill="#e3eef4" stroke="#163247" stroke-width="2"/>
+            <text x="540" y="150" fill="#163247" font-weight="600" font-size="13">ACT + NOTIFY</text>
+            <text x="540" y="172" fill="#53636f" font-size="11.5">status posted, a named person told</text>
+            <text x="540" y="190" fill="#53636f" font-size="11.5">reversible inside a short window</text>
+            <text x="920" y="162" fill="#163247" text-anchor="end" font-size="14">&#128276; notified</text>
+            <!-- lane 3: approve before -->
+            <rect x="520" y="220" width="420" height="84" rx="12" fill="#f8e4d8" stroke="#d66332" stroke-width="2.5"/>
+            <text x="540" y="250" fill="#d66332" font-weight="600" font-size="13">APPROVE BEFORE</text>
+            <text x="540" y="272" fill="#53636f" font-size="11.5">run pauses; the proposal waits with evidence</text>
+            <g font-size="10.5">
+              <rect x="830" y="232" width="28" height="24" rx="5" fill="#1e7a3c" class="pulse"/>
+              <text x="844" y="248" fill="#fff" text-anchor="middle" font-size="10">&#10003;</text>
+              <rect x="862" y="232" width="34" height="24" rx="5" fill="#d8a524"/>
+              <text x="879" y="248" fill="#fff" text-anchor="middle" font-size="10">edit</text>
+              <rect x="900" y="232" width="26" height="24" rx="5" fill="#b3402e"/>
+              <text x="913" y="248" fill="#fff" text-anchor="middle" font-size="10">&#10005;</text>
+            </g>
+            <text x="540" y="292" fill="#53636f" font-size="11.5">named approver, channel, deadline, fail-closed</text>
+            <!-- lane 4: never -->
+            <rect x="520" y="320" width="420" height="84" rx="12" fill="#f9e3de" stroke="#b3402e" stroke-width="2"/>
+            <text x="540" y="350" fill="#b3402e" font-weight="600" font-size="13">NEVER</text>
+            <text x="540" y="372" fill="#53636f" font-size="11.5">refund: agent prepares the case,</text>
+            <text x="540" y="390" fill="#53636f" font-size="11.5">a person commits it</text>
+            <text x="920" y="362" fill="#b3402e" text-anchor="end" font-size="16" font-weight="600">&#10005; gated</text>
+            <!-- arrows diamond -> lanes -->
+            <line x1="470" y1="180" x2="520" y2="62" stroke="#163247" stroke-width="2" class="flow-anim" marker-end="url(#arrn)"/>
+            <line x1="470" y1="200" x2="520" y2="162" stroke="#163247" stroke-width="2" class="flow-anim" marker-end="url(#arrn)"/>
+            <line x1="470" y1="225" x2="520" y2="262" stroke="#d66332" stroke-width="2.5" class="flow-anim" marker-end="url(#arrt)"/>
+            <line x1="470" y1="250" x2="520" y2="362" stroke="#163247" stroke-width="2" class="flow-anim" marker-end="url(#arrn)"/>
+          </g>
+          <text x="20" y="424" font-family="IBM Plex Mono, monospace" font-size="11.5" fill="#53636f">The gate is per action: cheap reversible work flows freely, the rest pauses for a person.</text>
+        </svg>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">04</span> How it works</h2>
+      <p class="sub">Seven mechanics. Frameworks (LangGraph, OpenAI Agents SDK, Claude Agent SDK) differ in syntax &mdash; the model doesn&rsquo;t.</p>
+      <div class="mechanics">
+        <div class="mech"><div class="mnum">1</div><div>
+          <h3>Choose the oversight mode per action, not per agent</h3>
+          <p>One agent takes many actions with different risk. Every action gets one of four modes: <strong>act + log</strong> (reversible, internal, high volume), <strong>act + notify</strong> (reversible, but someone should know), <strong>approve before</strong> (hard to undo, or reaches customers, money, access, people), <strong>never</strong> (the permission isn&rsquo;t granted; a person does it with the agent&rsquo;s preparation). Most of the value lives in the first two modes.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">2</div><div>
+          <h3>Place each action with two questions</h3>
+          <p><strong>Reversibility:</strong> can the action be undone &mdash; by whom, at what cost, inside what window? <strong>Blast radius:</strong> who and what does it reach? Undone-in-seconds plus internal means act + log; cannot-be-undone plus customers/money/access/employment means never at launch. The two answers fit in a meeting, no model expertise required.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">3</div><div>
+          <h3>Pause the run; never block a process</h3>
+          <p>The mechanism is <code>interrupt()</code>: the run halts mid-step, its state is persisted (checkpoint, thread id, or serialized state), and a human answers later &mdash; minutes or days. Resume with the human&rsquo;s decision on the same run, not a new one. A human pause is a durable wait, not a blocked thread.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">4</div><div>
+          <h3>Ship the proposal as a package</h3>
+          <p>An approval request that only says &ldquo;OK?&rdquo; trains reflex approvals. Every request carries four things: the proposed action, the evidence the agent used, the reasoning in one or two lines, and the options &mdash; approve, edit, or reject. It arrives in the channel the approver already works in, or it will be approved without checking.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">5</div><div>
+          <h3>Treat editing as a first-class decision</h3>
+          <p>Approve-with-changes is its own outcome, not a reject-and-restart. The human amends the draft, the tool call, or the parameters, and the run resumes with the edited values. Most approvals are really corrections: a tone tweak, a different amount, a safer target. An edit path keeps them cheap.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">6</div><div>
+          <h3>Give every gate a name, a deadline, and a default</h3>
+          <p>&ldquo;Operations approves&rdquo; is not a design &mdash; name the approver and a backup. Every approve-before action gets a response window, and the safe default when the window closes is <strong>do nothing and escalate to the backup</strong>. A default of &ldquo;proceed if nobody objects&rdquo; turns the approval gate into a timer, which provides no oversight at all. Fail closed.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">7</div><div>
+          <h3>Enforce at the tool boundary, not in the prompt</h3>
+          <p>&ldquo;Never send an email without approval&rdquo; in the system prompt is a request, not enforcement. The integration must hold the gate whatever the model was told: the tool declares <code>needsApproval</code>, the run pauses, and the side effect cannot execute without a recorded human decision. The model never gets to authorize itself.</p>
+        </div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">05</span> Code sketch</h2>
+      <p class="sub">An approve-before gate in the LangGraph shape. The interrupt carries the full proposal package; resume carries the human&rsquo;s decision &mdash; including an edit.</p>
+      <pre class="code"><span class="k">from</span> <span class="k">langgraph.types</span> <span class="k">import</span> interrupt, Command
+
+<span class="k">def</span> <span class="k">approval_gate</span>(state):
+    decision = interrupt({                     <span class="c"># pause; state persisted</span>
+        <span class="s">"proposed"</span>: state[<span class="s">"draft_email"</span>],     <span class="c"># the action</span>
+        <span class="s">"evidence"</span>: state[<span class="s">"order_record"</span>],    <span class="c"># why the agent thinks so</span>
+        <span class="s">"question"</span>: <span class="s">"Send this customer email?"</span>,
+    })                                          <span class="c"># returns the human's answer</span>
+    <span class="k">if</span> decision.startswith(<span class="s">"edit:"</span>):
+        <span class="k">return</span> {<span class="s">"draft_email"</span>: decision[<span class="s">5</span>:]}  <span class="c"># approve-with-changes</span>
+    <span class="k">return</span> {<span class="s">"gate"</span>: decision}              <span class="c"># "approved" or "reject"</span>
+
+graph = builder.compile(checkpointer=memory)   <span class="c"># a pause needs persisted state</span>
+graph.invoke({<span class="s">"draft_email"</span>: draft}, config)  <span class="c"># stops at interrupt()</span>
+graph.invoke(Command(resume=<span class="s">"approve"</span>), config)  <span class="c"># human said yes; same run</span></pre>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">06</span> Failure modes</h2>
+      <p class="sub">Five ways human-in-the-loop quietly stops working &mdash; and the fix for each.</p>
+      <div class="mechanics">
+        <div class="mech fail"><div class="mnum">1</div><div>
+          <h3>Review overload breeds reflex approvals<span class="fix">Fix: gate by reversibility and blast radius; keep the approve-before list short. Put reversible, internal, high-volume work in act-and-log, and treat the daily approval count as a design number you check every week.</span></h3>
+          <p>Route hundreds of low-stakes approvals a day to one busy person and you get hundreds of clicks and almost no real reviews. Automation complacency isn&rsquo;t cured by a more diligent approver &mdash; only by a shorter gate list.</p>
+        </div></div>
+        <div class="mech fail"><div class="mnum">2</div><div>
+          <h3>The gate lives only in the prompt<span class="fix">Fix: declare approval at the tool boundary (e.g. <code>needsApproval</code>), so the pause is enforced by the integration, not requested from the model.</span></h3>
+          <p>&ldquo;Never send without approval&rdquo; in the instructions is just a request. Prompt injections, jailbreaks, or a confident model can route around it. The tool that performs the side effect &mdash; or the system it calls &mdash; must enforce the authorization itself.</p>
+        </div></div>
+        <div class="mech fail"><div class="mnum">3</div><div>
+          <h3>Approvals with no deadline or a &ldquo;proceed&rdquo; default<span class="fix">Fix: name the approver and a backup, set a response window, and default to do-nothing-and-escalate. The item must never auto-execute on silence.</span></h3>
+          <p>A gate that waits forever is a queue that quietly fills; a gate that defaults to &ldquo;proceed if nobody objects&rdquo; is a timer wearing an approval costume. Both silently downgrade approve-before to nobody-ever-looked.</p>
+        </div></div>
+        <div class="mech fail"><div class="mnum">4</div><div>
+          <h3>Pausing a run that can&rsquo;t resume<span class="fix">Fix: persist state before the interrupt (checkpointer, thread id, serialized state) and keep all code before the interrupt side-effect-free &mdash; the node restarts from the top on resume, and anything before the pause runs twice.</span></h3>
+          <p>An interrupt without durable state is a cliff: the human approves and there&rsquo;s nothing to resume. Worse, side effects placed before the pause &mdash; logging the charge, sending a partial email &mdash; execute again when the node restarts on resume.</p>
+        </div></div>
+        <div class="mech fail"><div class="mnum">5</div><div>
+          <h3>Gates that never graduate or never come back<span class="fix">Fix: sample the autonomous tier weekly and record the miss rate; track the approver&rsquo;s edit/reject rate on gated actions. Move actions between modes on evidence, in both directions, with a named person signing off.</span></h3>
+          <p>Approve-before is a starting position, not a permanent one &mdash; but it fossilizes without a rule for moving. After a month of no approver edits on a narrow action class, graduation to act-and-notify is the honest move; when the edit rate climbs, the action goes back a step.</p>
+        </div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">07</span> Go deeper</h2>
+      <p class="sub">Curated and verified &mdash; every link opened and checked before publishing.</p>
+      <div class="ref-list">
+        <a class="ref" href="https://developers.openai.com/api/docs/guides/agents/guardrails-approvals" target="_blank" rel="noopener">
+          <span class="badge doc">doc</span>
+          <div><h3>Guardrails and human review (OpenAI Agents SDK docs)</h3>
+          <p>The canonical interruption pattern: a tool declares <code>needsApproval</code>, the run records an approval interruption instead of executing, and you resume the <em>same run</em> from persisted state. The cybersecurity section is also the sharpest statement anywhere of "fail closed if review times out."</p></div>
+        </a>
+        <a class="ref" href="https://www.anthropic.com/engineering/building-effective-agents" target="_blank" rel="noopener">
+          <span class="badge doc">doc</span>
+          <div><h3>Building effective agents (Anthropic)</h3>
+          <p>The canonical agent-building guidance: agents should pause for human feedback at checkpoints or when encountering blockers, and stopping conditions keep autonomy bounded. Sets the vocabulary (workflows vs. agents) that every HITL design assumes.</p></div>
+        </a>
+        <a class="ref" href="http://dev.to/forrestzhang/human-in-the-loop-for-ai-agents-which-actions-need-approval-and-which-dont-547l" target="_blank" rel="noopener">
+          <span class="badge doc">article</span>
+          <div><h3>Human in the loop for AI agents: which actions need approval and which don't (dev.to)</h3>
+          <p>The four modes with teeth: act-and-log, act-and-notify, approve-before, never, plus the reversibility &times; blast-radius placement matrix and the review-design rules &mdash; named approver, deadline, fail-closed default, and graduating actions on evidence.</p></div>
+        </a>
+        <a class="ref" href="https://www.youtube.com/watch?v=xxqZzVZ4gE0" target="_blank" rel="noopener">
+          <span class="badge vid">video</span>
+          <div><h3>Human in the loop (HITL) using LangGraph | CampusX</h3>
+          <p>A dedicated HITL walkthrough: why autonomy alone is risky, the common patterns (action approval, output review and editing, ambiguity clarification, escalation), then the LangGraph implementation &mdash; interrupt, checkpoints, and resume &mdash; with chapters you can jump to.</p></div>
+        </a>
+        <a class="ref" href="https://www.youtube.com/watch?v=vBHUJqH2MII" target="_blank" rel="noopener">
+          <span class="badge vid">video</span>
+          <div><h3>LangGraph in 45 Minutes: Everything You Need to Ship Production Agents</h3>
+          <p>Jump to the human-in-the-loop chapter for <code>interrupt()</code> / <code>Command(resume=...)</code>, and don't miss the production insight most tutorials skip: an interrupted node re-runs from the top on resume, so pre-interrupt code must be side-effect-free.</p></div>
+        </a>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">08</span> Sample prompts</h2>
+      <p class="sub">Copy, adapt, and ask your coding assistant. Each one applies today's skill card.</p>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>PROMPT 1 &middot; PLACE THE GATES</strong><button class="copy-btn" data-copy="prompt-1">Copy</button></div>
+        <p class="prompt-text" id="prompt-1">Here is a description of an agent workflow: [paste]. List every action the agent takes, and place each one in exactly one human-in-the-loop mode: act-and-log, act-and-notify, approve-before, or never. For each action, state (1) its reversibility (undoable in seconds / undoable with effort / cannot be undone), (2) its blast radius (internal / team / customer, money, access, legal), and (3) why the mode fits. Flag any action where I have not given you enough information to place it, and say what you'd need to ask. Push back on any action that looks like it belongs in "never" at launch.</p>
+      </div>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>PROMPT 2 &middot; DESIGN THE REVIEW</strong><button class="copy-btn" data-copy="prompt-2">Copy</button></div>
+        <p class="prompt-text" id="prompt-2">This agent action is in approve-before mode: [describe the action, e.g. "send a customer reply"]. Design the review so a real human actually reviews it. Specify: the named approver and a backup; the channel the request arrives in and the four things it must contain (proposed action, evidence, one-or-two-line reasoning, approve/edit/reject options); the response window and the exact fail-closed default when the window closes with no response; what gets logged for every decision; and the evidence rule that would let this action graduate to act-and-notify. Also give a weekly "design number" review: what count do we watch to know the gate list is the right length?</p>
+      </div>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>PROMPT 3 &middot; AUDIT THE PAUSE MECHANISM</strong><button class="copy-btn" data-copy="prompt-3">Copy</button></div>
+        <p class="prompt-text" id="prompt-3">Review this agent code for human-in-the-loop durability: [paste]. Check: (1) is the interrupt/pause declared at the tool boundary, or only as a prompt instruction? (2) is run state persisted before the pause, and can the run resume days later on the same execution? (3) does any code before the interrupt have side effects that would run twice on resume? (4) is there a timeout on the approval with a stated fail-closed default, or can the gate wait forever? (5) is the decision path limited to approve/reject, or can the human edit the proposed action? List every gap with its consequence and the fix.</p>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">09</span> Check your understanding</h2>
+      <p class="sub">Five questions on the ideas, not the trivia. Answers check immediately.</p>
+      <div class="quiz-q" data-answer="2">
+        <p class="qq">1. Which of these actions most needs an approve-before gate?</p>
+        <div class="qopts">
+          <button class="qopt" data-i="0">Relabeling an internal email.</button>
+          <button class="qopt" data-i="1">Posting a status summary to an internal channel.</button>
+          <button class="qopt" data-i="2">Sending a reply to a customer.</button>
+          <button class="qopt" data-i="3">Reading new messages in the inbox.</button>
+        </div>
+        <p class="qexp" hidden></p>
+      </div>
+      <div class="quiz-q" data-answer="0">
+        <p class="qq">2. In LangGraph, a run paused at <code>interrupt()</code> is resumed with <code>Command(resume=...)</code>. What happens to the code placed <em>before</em> the interrupt line?</p>
+        <div class="qopts">
+          <button class="qopt" data-i="0">The node restarts from the top, so that code runs a second time &mdash; it must be side-effect-free.</button>
+          <button class="qopt" data-i="1">It is skipped; execution continues at the exact line where it paused.</button>
+          <button class="qopt" data-i="2">It is cached and never re-executes.</button>
+          <button class="qopt" data-i="3">The node is discarded and rebuilt without that code.</button>
+        </div>
+        <p class="qexp" hidden></p>
+      </div>
+      <div class="quiz-q" data-answer="1">
+        <p class="qq">3. An agent&rsquo;s system prompt says &ldquo;never send an email without human approval.&rdquo; Why is that not enough?</p>
+        <div class="qopts">
+          <button class="qopt" data-i="0">It is enough &mdash; instructions in the system prompt are always followed.</button>
+          <button class="qopt" data-i="1">It is a request, not enforcement. The gate must be declared at the tool boundary (e.g. <code>needsApproval</code>) so the integration holds it no matter what the model was told &mdash; the model must never authorize itself.</button>
+          <button class="qopt" data-i="2">System prompts are too long for the model to read.</button>
+          <button class="qopt" data-i="3">Prompts cannot mention emails at all.</button>
+        </div>
+        <p class="qexp" hidden></p>
+      </div>
+      <div class="quiz-q" data-answer="2">
+        <p class="qq">4. An approval gate has no response deadline, and its default is &ldquo;proceed if nobody objects.&rdquo; What&rsquo;s wrong?</p>
+        <div class="qopts">
+          <button class="qopt" data-i="0">Nothing &mdash; most production gates work this way.</button>
+          <button class="qopt" data-i="1">It is too slow; approvals should never wait more than a minute.</button>
+          <button class="qopt" data-i="2">The default turns the gate into a timer that provides no oversight. Name the approver and a backup, set a response window, and fail closed: do nothing and escalate when the window closes with no answer.</button>
+          <button class="qopt" data-i="3">It needs more approvers voting at once.</button>
+        </div>
+        <p class="qexp" hidden></p>
+      </div>
+      <div class="quiz-q" data-answer="1">
+        <p class="qq">5. An approver is rubber-stamping 300 low-stakes approvals a day. What&rsquo;s the real problem, and the fix?</p>
+        <div class="qopts">
+          <button class="qopt" data-i="0">The approver needs more training on careful review.</button>
+          <button class="qopt" data-i="1">The wrong actions are gated. Move reversible, internal, high-volume work to act-and-log / act-and-notify, keep the approve-before list short, and treat the daily approval count as a design number &mdash; review overload produces reflex approvals no amount of diligence fixes.</button>
+          <button class="qopt" data-i="2">There are too few approvals; add a second gate after the first.</button>
+          <button class="qopt" data-i="3">Remove the human entirely &mdash; automation is always safer.</button>
+        </div>
+        <p class="qexp" hidden></p>
+      </div>
+      <div id="quiz-score"></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">10</span> Flashcards</h2>
+      <p class="sub">Click or press Enter/Space to flip. Ten terms worth owning.</p>
+      <div class="fgrid">
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Human-in-the-loop</div>
+          <div class="fface back">A person approves, reviews, or is notified about specific agent actions &mdash; decided per action, not per agent. The design question is where the gates sit, not whether a human exists somewhere in the diagram.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Approve-before</div>
+          <div class="fface back">The agent prepares the action with its evidence and stops. A named person approves, edits, or rejects &mdash; usually one click. For actions that are hard to undo or reach customers, money, access, or people.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Act-and-log</div>
+          <div class="fface back">The agent completes the action and records what it did and why; a person reviews a sample on a schedule. For reversible, internal, high-volume work &mdash; where most of the agent's value lives.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Act-and-notify</div>
+          <div class="fface back">The agent completes the action and tells a named person, who can reverse it inside a short window. For reversible actions someone should know about &mdash; not just the log.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">The "never" tier</div>
+          <div class="fface back">The agent cannot perform the action &mdash; the permission is not granted. The agent prepares the case; a person does it. For irreversible, consequential actions at launch, and whatever sits outside the agent's job.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Interrupt</div>
+          <div class="fface back">The pause mechanism: the run halts mid-step and its state persists (checkpoint, thread id, serialized state). The human answers minutes or days later and the same run resumes &mdash; no blocked process, no lost work.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Approval payload</div>
+          <div class="fface back">The request package that keeps reviews real: the proposed action, the evidence the agent used, the reasoning in one or two lines, and the options (approve / edit / reject) &mdash; delivered in the channel the approver already uses.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Edit-in-the-loop</div>
+          <div class="fface back">Approve-with-changes as a first-class decision: the human amends the draft, tool call, or parameters and the run resumes with the edited values &mdash; instead of rejecting and restarting the whole proposal.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Escalation</div>
+          <div class="fface back">Every gate names an approver and a backup, with a response window and a fail-closed default: on timeout, do nothing and escalate. An approval that auto-executes on silence is a timer, not a gate.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Graduation</div>
+          <div class="fface back">Moving an action between modes on evidence: after sustained low edit/reject and sampled-miss rates, approve-before graduates toward act-and-notify. When the edit rate climbs, it goes back a step &mdash; a named person signs off.</div>
+        </div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">11</span> Reach for this when&hellip;</h2>
+      <div class="triggers">
+        <div class="trigger"><strong>An agent is about to take irreversible or external actions.</strong> Money moves, access changes, customer-facing messages, record deletes: every such action gets a placement decision &mdash; and the irreversible ones start behind a human gate.</div>
+        <div class="trigger"><strong>Your &ldquo;oversight&rdquo; is a prompt line like &ldquo;always ask before sending.&rdquo;</strong> That&rsquo;s a request, not a gate. Move the authorization to the tool boundary so the pause holds no matter what the model was told &mdash; the model never authorizes itself.</div>
+        <div class="trigger"><strong>Approvals pile up unread or get rubber-stamped in seconds.</strong> The review design is broken, not the people: shorten the approve-before list, ship proposals as evidence packages, set fail-closed deadlines, and treat the daily approval count as a design number.</div>
+      </div>
+    </section>
+
+    <a class="back-link" href="../index.html#daily-topics">&larr; Back to the daily topics</a>
+  </div>
+
+  <div id="live-status" class="sr-only" role="status" aria-live="polite"></div>
+  <script>
+    // copy buttons
+    const status = document.getElementById('live-status');
+    document.querySelectorAll('.copy-btn').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const target = document.getElementById(button.dataset.copy);
+        const text = target.innerText;
+        try {
+          await navigator.clipboard.writeText(text);
+          const original = button.textContent;
+          button.textContent = 'Copied';
+          status.textContent = 'Prompt copied to clipboard.';
+          setTimeout(() => button.textContent = original, 1600);
+        } catch {
+          const range = document.createRange();
+          range.selectNodeContents(target);
+          const selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+          status.textContent = 'Prompt selected. Copy it with your device copy command.';
+        }
+      });
+    });
+
+    // quiz
+    const explanations = [
+      ["Relabeling is reversible in seconds and internal &mdash; textbook act-and-log, not approve-before.",
+       "An internal status post is reversible and someone should know &mdash; act-and-notify fits.",
+       "Right. The send reaches a customer and cannot be unsent: hard to undo, external blast radius &mdash; approve-before.",
+       "Reading changes nothing at all; a draft needs no gate because only the send is the action."],
+      ["Right. The runtime restarts the node from the top; it does not resume at the interrupt line. Anything before the pause runs twice, so keep it side-effect-free.",
+       "That is the natural assumption, and it is wrong &mdash; the node re-runs from the beginning, which is why pre-interrupt side effects are the classic bug.",
+       "No caching happens; the re-execution is the mechanism that rebuilds the node's local state from the persisted checkpoint.",
+       "The node is not discarded; it is re-entered with the human's answer as the interrupt's return value."],
+      ["That is exactly the mistake. The model decides whether to honor an instruction &mdash; including via prompt injection or overconfidence.",
+       "Right. Put the gate where the side effect happens: the tool declares approval is required, the run pauses, and no decision of the model can execute it.",
+       "Length has nothing to do with it; even a one-line instruction is still only a request.",
+       "There is no such restriction &mdash; the problem is enforcement, not vocabulary."],
+      ["That is the pattern that fails quietly: the queue fills, nobody looks, and actions execute on silence.",
+       "Speed isn't the issue &mdash; a one-hour window with a fail-closed default is fine. The problem is what happens when nobody answers.",
+       "Right. A &lsquo;proceed on silence&rsquo; default turns oversight into a timer. Fail closed: do nothing, escalate to the backup, keep a record.",
+       "More approvers don't fix a bad default; they just split the non-review across more inboxes."],
+      ["Training cannot beat review overload &mdash; automation complacency shows up in experts and novices alike and is not cured by diligence.",
+       "Right. Gate the wrong actions and you get a suggestion engine feeding a queue nobody clears. Move cheap reversible work to act-and-log/notify and keep approve-before short.",
+       "A second gate doubles the queue and halves the attention each one gets &mdash; the opposite of the fix.",
+       "Removing the human removes the only check on the highest-risk actions; the answer is better-placed gates, not none."]
+    ];
+    const questions = [...document.querySelectorAll('.quiz-q')];
+    let score = 0, answered = 0;
+    questions.forEach((q, qi) => {
+      const correct = parseInt(q.dataset.answer, 10);
+      const exp = q.querySelector('.qexp');
+      q.querySelectorAll('.qopt').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          if (q.dataset.done) return;
+          q.dataset.done = "1";
+          const chosen = parseInt(btn.dataset.i, 10);
+          const ok = chosen === correct;
+          q.querySelectorAll('.qopt').forEach((b) => {
+            b.disabled = true;
+            if (parseInt(b.dataset.i, 10) === correct) b.classList.add('correct');
+          });
+          if (!ok) btn.classList.add('wrong');
+          else score++;
+          answered++;
+          exp.hidden = false;
+          exp.innerHTML = ok
+            ? "<strong class=\"ok\">Correct.</strong> " + explanations[qi][chosen]
+            : "<strong class=\"no\">Not quite.</strong> " + explanations[qi][chosen];
+          if (answered === questions.length) {
+            const box = document.getElementById('quiz-score');
+            box.style.display = "block";
+            box.innerHTML = "You scored <strong>" + score + " / " + questions.length + "</strong>." +
+              (score === questions.length ? " Clean sweep &mdash; your gates will hold when it matters." :
+               score >= 3 ? " Solid &mdash; re-read the section you missed." :
+               " Worth a re-read of section 04 before moving on.");
+          }
+        });
+      });
+    });
+
+    // flashcards
+    document.querySelectorAll('.fcard').forEach((card) => {
+      const flip = () => card.classList.toggle('flipped');
+      card.addEventListener('click', flip);
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); }
+      });
+    });
+  </script>
+</body>
+</html>
