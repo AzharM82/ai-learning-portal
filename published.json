@@ -180,5 +180,12 @@
     "date": "2026-10-09",
     "summary": "The agent does the work; you keep the authority. Four oversight modes per action (act-and-log, act-and-notify, approve-before, never) placed by reversibility and blast radius, the interrupt-approve/edit/reject-resume mechanism, and how to design approvals humans actually review.",
     "skill": "human-in-the-loop-patterns"
+  },
+  {
+    "slug": "2026-10-10-sandboxing-least-privilege-tools",
+    "title": "Sandboxing and least-privilege tool permissions",
+    "date": "2026-10-10",
+    "summary": "An agent's power is its tools, not its model. Sandbox execution in an ephemeral container with an allowlist-only tool surface, per-task scoped credentials with minute-scale TTLs, read-only-by-default data, egress denied except to named hosts \u2014 so a capability the agent lacks can't be prompt-injected into use.",
+    "skill": "sandboxing-least-privilege-tools"
   }
 ]

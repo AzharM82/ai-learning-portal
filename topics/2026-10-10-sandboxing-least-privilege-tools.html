@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sandboxing and least-privilege tool permissions &middot; AI Learning Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+    :root {
+      --ink: #14212b; --muted: #53636f; --paper: #f6f8f7; --white: #ffffff;
+      --line: #cbd5d8; --navy: #163247; --navy-2: #21465e; --teal: #0b8174;
+      --teal-soft: #dff2ee; --orange: #d66332; --orange-soft: #f8e4d8;
+      --gold: #d8a524; --gold-soft: #f7edc8; --blue-soft: #e3eef4;
+      --red: #b3402e; --red-soft: #f9e3de; --green: #1e7a3c; --green-soft: #e2f2e6;
+      --shadow: 0 18px 45px rgba(20, 33, 43, .09); --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; color: var(--ink);
+      background: linear-gradient(rgba(20,33,43,.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(20,33,43,.035) 1px, transparent 1px), var(--paper);
+      background-size: 28px 28px;
+      font-family: "Source Sans 3", sans-serif; font-size: 17px; line-height: 1.58;
+    }
+    .shell { width: min(960px, calc(100% - 40px)); margin: 0 auto; }
+    .portal-nav{position:sticky;top:0;z-index:50;background:rgba(22,50,71,.97);border-bottom:1px solid rgba(255,255,255,.12)}
+    .portal-nav-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;flex-wrap:wrap}
+    .portal-brand{color:#fff;text-decoration:none;font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:15px}
+    .portal-brand span{color:var(--gold);font-weight:400}
+    .portal-links{display:flex;gap:18px;flex-wrap:wrap}
+    .portal-links a{color:#dbe7ee;text-decoration:none;font-size:14.5px}
+    .portal-links a:hover{color:#fff;text-decoration:underline}
+    .hero { padding: 56px 0 36px; }
+    .chapter-mark { display:inline-flex;align-items:center;gap:10px;color:var(--navy);
+      font:600 12px/1.2 "IBM Plex Mono",monospace;letter-spacing:.09em;text-transform:uppercase;margin-bottom:18px; }
+    .chapter-mark::before { content:"";width:42px;height:3px;background:var(--orange); }
+    h1 { font-size: clamp(36px, 5vw, 58px); line-height: 1.02; letter-spacing:-.03em; margin:0 0 14px; }
+    .lede { color: var(--muted); font-size: clamp(18px,2vw,22px); max-width: 64ch; margin:0 0 8px; }
+    .date-line { font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--muted); }
+    section.block { margin: 44px 0; }
+    h2 { font-size: 26px; letter-spacing:-.02em; margin:0 0 6px; display:flex;align-items:center;gap:12px; }
+    h2 .num { font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:600;color:var(--white);
+      background:var(--navy);border-radius:999px;min-width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center; }
+    .sub { color:var(--muted); margin:0 0 18px; max-width: 68ch; }
+    .card { background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+      padding:24px;box-shadow:var(--shadow); }
+    .skill-card { background:var(--navy);color:#eaf2f7;border-radius:var(--radius);padding:22px 24px;
+      font-family:"IBM Plex Mono",monospace;font-size:14.5px;overflow-x:auto;box-shadow:var(--shadow); }
+    .skill-card .k { color:var(--gold); }
+    .idea { font-size:21px;line-height:1.5;border-left:4px solid var(--teal);padding:6px 0 6px 20px;max-width:62ch; }
+    .idea strong { color:var(--navy); }
+    .mechanics { display:grid;gap:14px; }
+    .mech { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:18px 20px;
+      display:grid;grid-template-columns:44px 1fr;gap:14px;align-items:start; }
+    .mech .mnum { font-family:"IBM Plex Mono",monospace;font-weight:600;color:var(--teal);
+      background:var(--teal-soft);border-radius:10px;width:44px;height:44px;display:flex;align-items:center;justify-content:center; }
+    .mech h3 { margin:0 0 6px;font-size:18px; }
+    .mech p { margin:0;color:var(--muted);font-size:15.5px; }
+    .mech code, .inline-code { font-family:"IBM Plex Mono",monospace;font-size:.88em;background:var(--blue-soft);
+      padding:2px 7px;border-radius:6px;color:var(--navy); }
+    pre.code { background:#0f2233;color:#e8f1f5;border-radius:14px;padding:20px 22px;overflow-x:auto;
+      font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.6;margin:0; }
+    pre.code .c { color:#8ba3b0; } pre.code .s { color:#ffd479; } pre.code .k { color:#7fd6c2; }
+    .fail { border-left:4px solid var(--orange); }
+    .fail h3 .fix { display:block;margin-top:8px;font-size:15px;font-weight:500;color:var(--green); }
+    .ref-list { display:grid;gap:12px; }
+    .ref { display:flex;gap:14px;align-items:flex-start;background:var(--white);border:1px solid var(--line);
+      border-radius:14px;padding:16px 18px;text-decoration:none;color:inherit; }
+    .ref:hover { border-color:var(--teal); }
+    .ref .badge { flex:none;font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;letter-spacing:.06em;
+      padding:5px 10px;border-radius:999px;text-transform:uppercase; }
+    .badge.doc { background:var(--blue-soft);color:var(--navy); }
+    .badge.vid { background:var(--orange-soft);color:var(--orange); }
+    .ref h3 { margin:0 0 4px;font-size:17px; }
+    .ref p { margin:0;color:var(--muted);font-size:14.5px; }
+    .prompt-block { background:#0f2233;border-radius:var(--radius);overflow:hidden;margin-bottom:18px;box-shadow:var(--shadow); }
+    .prompt-top { display:flex;justify-content:space-between;align-items:center;gap:12px;
+      padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.12); }
+    .prompt-top strong { color:#fff;font-size:13px;letter-spacing:.06em;font-family:"IBM Plex Mono",monospace; }
+    .copy-btn { border:1px solid #6c8796;background:transparent;color:#fff;border-radius:6px;padding:7px 11px;
+      cursor:pointer;font-weight:700;font-size:14px; }
+    .copy-btn:hover { background:rgba(255,255,255,.1); }
+    .copy-btn:focus-visible { outline:2px solid var(--gold);outline-offset:2px; }
+    .prompt-text { color:#e8f1f5;font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.65;
+      padding:18px;white-space:pre-wrap;margin:0; }
+    .sr-only { position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0); }
+    .quiz-q { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px; }
+    .quiz-q .qq { font-weight:700;margin:0 0 12px;font-size:18px; }
+    .qopts { display:grid;gap:8px; }
+    .qopt { text-align:left;background:var(--paper);border:1px solid var(--line);border-radius:10px;
+      padding:12px 14px;cursor:pointer;font-size:15.5px;color:var(--ink); }
+    .qopt:hover:not(:disabled) { border-color:var(--navy); }
+    .qopt:disabled { cursor:default;opacity:.85; }
+    .qopt.correct { background:var(--green-soft);border-color:var(--green); }
+    .qopt.wrong { background:var(--red-soft);border-color:var(--red); }
+    .qexp { margin:12px 0 0;font-size:15px;color:var(--muted); }
+    .qexp strong.ok { color:var(--green); } .qexp strong.no { color:var(--red); }
+    #quiz-score { display:none;margin-top:8px;background:var(--navy);color:#fff;border-radius:14px;
+      padding:20px 24px;font-size:19px; }
+    #quiz-score strong { color:var(--gold); }
+    .fgrid { display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px; }
+    .fcard { perspective:900px;cursor:pointer;min-height:170px; }
+    .fcard-inner { position:relative;width:100%;height:100%;min-height:170px;transform-style:preserve-3d;transition:transform .45s; }
+    .fcard.flipped .fcard-inner { transform:rotateY(180deg); }
+    .fface { position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+      border-radius:14px;padding:18px;display:flex;align-items:center;justify-content:center;text-align:center;
+      border:1px solid var(--line);background:var(--white);box-shadow:var(--shadow);font-size:15.5px; }
+    .fface.front { font-weight:700;color:var(--navy); }
+    .fface.back { transform:rotateY(180deg);background:var(--teal-soft);color:var(--ink);font-size:14.5px; }
+    .fcard:focus-visible { outline:2px solid var(--teal);outline-offset:3px;border-radius:14px; }
+    .triggers { display:grid;gap:10px; }
+    .trigger { background:var(--gold-soft);border-radius:12px;padding:14px 18px;font-size:16px; }
+    .trigger strong { color:var(--navy); }
+    .back-link { display:inline-block;margin:8px 0 60px;font-weight:600;color:var(--teal);text-decoration:none;font-size:17px; }
+    .back-link:hover { text-decoration:underline; }
+    .fig { background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+      padding:12px;box-shadow:var(--shadow);overflow-x:auto; }
+    .fig svg { display:block;width:100%;height:auto; }
+    .flow-anim { stroke-dasharray: 8 6; animation: dashmove 1.2s linear infinite; }
+    @keyframes dashmove { to { stroke-dashoffset: -14; } }
+    .pulse { animation: pulse 2.2s ease-in-out infinite; }
+    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.45; } }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior:auto; } .fcard-inner{transition:none;} .flow-anim{animation:none;} .pulse{animation:none;} }
+  </style>
+</head>
+<body><nav class="portal-nav">
+    <div class="shell portal-nav-inner">
+      <a class="portal-brand" href="../index.html">AI Engineering <span>&middot; Learning Portal</span></a>
+      <div class="portal-links">
+        <a href="../index.html#daily-topics">Daily topics</a>
+        <a href="../index.html#loop">Loop</a>
+        <a href="../index.html#graph">Graph</a>
+        <a href="../index.html#harness">Harness</a>
+      </div>
+    </div>
+  </nav>
+  <div class="shell">
+
+    <header class="hero">
+      <div class="chapter-mark">Daily topic &middot; The trio's adjacents</div>
+      <h1>Sandboxing and least-privilege tool permissions</h1>
+      <p class="lede">An agent&rsquo;s power is not its model &mdash; it&rsquo;s the tools it can reach. Sandboxing draws a hard boundary around what the agent can read, write, run, and send out on the network, and least privilege fills that boundary with only what this task needs. The result: <strong>a capability the agent doesn&rsquo;t have cannot be prompt-injected into use</strong>, no matter how clever the attacker or how confused the model.</p>
+      <p class="date-line">2026-10-10 &middot; Topic 027</p>
+    </header>
+
+    <section class="block">
+      <h2><span class="num">01</span> The skill card</h2>
+      <p class="sub">Every topic on this portal is designed like a Codex skill: a name, a trigger, and concrete steps.</p>
+      <div class="skill-card"><pre style="margin:0">---
+<span class="k">name:</span> sandboxing-least-privilege-tools
+<span class="k">description:</span> Reach for this before any agent touches code, data, or
+  third-party content: run tool execution inside an isolated sandbox (container
+  or VM) with an allowlist-only tool surface, per-task scoped credentials with
+  short TTLs, read-only-by-default data access, egress denied except to an
+  explicit host allowlist, and every tool call audit-logged so a single mistake
+  cannot become damage.
+---</pre></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">02</span> The one-idea version</h2>
+      <p class="idea">Don&rsquo;t secure the agent&rsquo;s intentions &mdash; <strong>remove the capabilities it doesn&rsquo;t need</strong>. An LLM can be talked into anything by text it reads, so the only defenses that hold are structural ones enforced at the boundary: no shell, no network egress, no write tools, no standing credentials unless this task provably needs them. If the blast radius of a wrong turn is zero, the wrong turn is just a wrong turn.</p>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">03</span> The four walls</h2>
+      <p class="sub">Least privilege is enforced in four dimensions at once; weakness in any one of them re-opens the others.</p>
+      <div class="fig">
+        <svg viewBox="0 0 960 440" role="img" aria-label="Four sandbox walls around the agent: tools, data, credentials, network. Inside: allowed read-only tools and short-lived scoped tokens. Outside: blocked exfiltration, deletes, and admin actions">
+          <defs>
+            <marker id="arrs" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+              <path d="M0,0 L8,3 L0,6 Z" fill="#163247"></path>
+            </marker>
+          </defs>
+          <rect x="180" y="40" width="600" height="330" rx="22" fill="none" stroke="#163247" stroke-width="3"/>
+          <rect x="196" y="56" width="568" height="298" rx="16" fill="none" stroke="#0b8174" stroke-width="2" stroke-dasharray="10 8"/>
+          <text x="480" y="88" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="15" font-weight="600" fill="#163247">AGENT RUN &middot; deny-by-default sandbox</text>
+
+          <g font-family="Source Sans 3, sans-serif" font-size="15">
+            <rect x="230" y="110" width="230" height="96" rx="12" fill="#e3eef4" stroke="#163247" stroke-width="1.5"/>
+            <text x="345" y="138" text-anchor="middle" font-weight="700" fill="#163247">WALL 1 &middot; Tools</text>
+            <text x="345" y="162" text-anchor="middle" fill="#53636f">allowlist only</text>
+            <text x="345" y="184" text-anchor="middle" fill="#53636f">no shell, no wildcard</text>
+
+            <rect x="500" y="110" width="230" height="96" rx="12" fill="#e3eef4" stroke="#163247" stroke-width="1.5"/>
+            <text x="615" y="138" text-anchor="middle" font-weight="700" fill="#163247">WALL 2 &middot; Data</text>
+            <text x="615" y="162" text-anchor="middle" fill="#53636f">read-only by default</text>
+            <text x="615" y="184" text-anchor="middle" fill="#53636f">scoped to task records</text>
+
+            <rect x="230" y="222" width="230" height="96" rx="12" fill="#e3eef4" stroke="#163247" stroke-width="1.5"/>
+            <text x="345" y="250" text-anchor="middle" font-weight="700" fill="#163247">WALL 3 &middot; Credentials</text>
+            <text x="345" y="274" text-anchor="middle" fill="#53636f">per-task, scoped, short TTL</text>
+            <text x="345" y="296" text-anchor="middle" fill="#53636f">revoked when run ends</text>
+
+            <rect x="500" y="222" width="230" height="96" rx="12" fill="#e3eef4" stroke="#163247" stroke-width="1.5"/>
+            <text x="615" y="250" text-anchor="middle" font-weight="700" fill="#163247">WALL 4 &middot; Network</text>
+            <text x="615" y="274" text-anchor="middle" fill="#53636f">egress deny by default</text>
+            <text x="615" y="296" text-anchor="middle" fill="#53636f">explicit host allowlist</text>
+          </g>
+
+          <g font-family="Source Sans 3, sans-serif" font-size="14">
+            <rect x="20" y="150" width="130" height="52" rx="10" fill="#f9e3de" stroke="#b3402e" stroke-width="1.5"/>
+            <text x="85" y="172" text-anchor="middle" font-weight="700" fill="#b3402e">delete_database</text>
+            <text x="85" y="192" text-anchor="middle" fill="#b3402e">tool not granted</text>
+            <line x1="150" y1="176" x2="176" y2="176" stroke="#b3402e" stroke-width="2" marker-end="url(#arrs)"/>
+            <text x="162" y="168" text-anchor="middle" font-size="13" fill="#b3402e" font-weight="700">X</text>
+
+            <rect x="810" y="150" width="130" height="52" rx="10" fill="#f9e3de" stroke="#b3402e" stroke-width="1.5"/>
+            <text x="875" y="172" text-anchor="middle" font-weight="700" fill="#b3402e">evil.exfil.io</text>
+            <text x="875" y="192" text-anchor="middle" fill="#b3402e">egress denied</text>
+            <line x1="806" y1="176" x2="780" y2="176" stroke="#b3402e" stroke-width="2" marker-end="url(#arrs)"/>
+            <text x="792" y="168" text-anchor="middle" font-size="13" fill="#b3402e" font-weight="700">X</text>
+
+            <rect x="810" y="250" width="130" height="52" rx="10" fill="#e2f2e6" stroke="#1e7a3c" stroke-width="1.5"/>
+            <text x="875" y="272" text-anchor="middle" font-weight="700" fill="#1e7a3c">api.vendor.com</text>
+            <text x="875" y="292" text-anchor="middle" fill="#1e7a3c">allowlisted host</text>
+            <line x1="780" y1="276" x2="806" y2="276" stroke="#1e7a3c" stroke-width="2" marker-end="url(#arrs)"/>
+          </g>
+
+          <text x="480" y="410" text-anchor="middle" font-family="Source Sans 3, sans-serif" font-size="16" fill="#53636f">Enforced at the boundary, not requested in the prompt &mdash; the model can be fooled, the boundary cannot.</text>
+        </svg>
+      </div>
+    </section>
+    <section class="block">
+      <h2><span class="num">04</span> How it works</h2>
+      <p class="sub">Imperative, concrete. Do these in order when standing up an agent that runs anything.</p>
+      <div class="mechanics">
+        <div class="mech"><div class="mnum">1</div><div><h3>Start from nothing: deny-by-default</h3><p>New agent, new task: the agent can do <strong>literally nothing</strong> until you grant it. Every tool, every path, every host is denied until explicitly allowed. This is the opposite of a blocklist &mdash; you enumerate the safe set, not the dangerous one.</p></div></div>
+        <div class="mech"><div class="mnum">2</div><div><h3>Give it an allowlist of tools, not a shell</h3><p>Expose the smallest set of tools that completes the task: <code class="inline-code">read_file(path)</code>, <code class="inline-code">search_docs(query)</code> &mdash; never a general-purpose shell unless the task truly is code execution. Each tool gets a JSON schema, and <strong>arguments are validated against it before the call runs</strong>. A tool the agent never receives cannot be argued for in prose.</p></div></div>
+        <div class="mech"><div class="mnum">3</div><div><h3>Run code inside a throwaway container, never on the host</h3><p>Anything the agent executes runs in an ephemeral container or VM: non-root user, dropped Linux capabilities, a read-only filesystem except for an explicit workdir, and <strong>destroyed at the end of the run</strong>. Host, cloud metadata endpoints (<code class="inline-code">169.254.169.254</code>), and sibling services are unreachable from inside.</p></div></div>
+        <div class="mech"><div class="mnum">4</div><div><h3>Scope credentials to the task, and give them an expiry</h3><p>Issue a credential that carries exactly the permissions this run needs and <strong>expires in minutes, not months</strong>. It comes from a secret manager or vault at run start and is revoked at run end. If it leaks, the TTL caps the blast radius; if the run is replayed later, the token is already dead.</p></div></div>
+        <div class="mech"><div class="mnum">5</div><div><h3>Close the network, then open named holes</h3><p>Outbound network defaults to <strong>deny</strong> for any session that touches sensitive data or untrusted content. Where egress is required, allowlist specific hosts (the package mirror, the vendor API) &mdash; through a proxy if you must inspect traffic &mdash; and remember that DNS itself is a channel: block it or allowlist it too.</p></div></div>
+        <div class="mech"><div class="mnum">6</div><div><h3>Isolate identities: sub-agents get their own, smaller key</h3><p>When an agent spawns helpers, each sub-agent runs under its own identity with its own scoped permissions. The helper that reads untrusted web pages gets <strong>no private-data access and no send capability</strong>; the privileged orchestrator never touches untrusted content directly. One compromised helper cannot spend the parent&rsquo;s authority.</p></div></div>
+        <div class="mech"><div class="mnum">7</div><div><h3>Elevate just-in-time, log everything</h3><p>The agent sits at the permission floor by default. When a step genuinely needs write, issue a narrow short-lived grant for that action only &mdash; and for irreversible actions, make the proposer someone other than the approver. <strong>Every tool call lands in an audit log</strong> with the identity, arguments, and outcome; small, known capability sets make those logs actually readable.</p></div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">05</span> Code sketch</h2>
+      <p class="sub">The pattern in miniature: a tool gateway that checks the allowlist, validates scope, and issues a short-lived token per run. Under 30 lines of the idea.</p>
+      <div class="card"><pre class="code"><span class="c"># A least-privilege tool gateway: deny-by-default, scoped, expiring grants</span>
+<span class="k">from</span> dataclasses <span class="k">import</span> dataclass
+<span class="k">import</span> time, secrets
+
+<span class="k">@dataclass</span>
+<span class="k">class</span> Grant:
+    tools: <span class="k">set</span>[str]        <span class="c"># allowlist: the ONLY tools this run may call</span>
+    scopes: <span class="k">set</span>[str]       <span class="c"># e.g. {"read:repo:acme"} — nothing broader</span>
+    egress: <span class="k">set</span>[str]       <span class="c"># allowlisted hosts; empty = no network</span>
+    expires_at: float  <span class="c"># short TTL — dead when the run ends</span>
+
+<span class="k">def</span> <span class="k">issue_grant</span>(task, vault) -> Grant:
+    <span class="s">"""Build the minimal grant for THIS task, from a policy table."""</span>
+    policy = POLICY_TABLE[task.kind]   <span class="c"># declared per task kind, never per agent</span>
+    return Grant(tools=policy.tools, scopes=policy.scopes,
+                 egress=policy.egress, expires_at=time.time() + 600)
+
+<span class="k">def</span> <span class="k">call_tool</span>(grant: Grant, tool: str, args: dict, audit):
+    <span class="k">if</span> time.time() > grant.expires_at: <span class="k">raise</span> PermissionError(<span class="s">"grant expired"</span>)
+    <span class="k">if</span> tool <span class="k">not in</span> grant.tools:      <span class="k">raise</span> PermissionError(<span class="s">f"{tool} not allowed"</span>)
+    <span class="k">validate_schema</span>(tool, args)              <span class="c"># schema check at the boundary</span>
+    audit.log(tool, args)                       <span class="c"># every call, no exceptions</span>
+    <span class="k">return</span> run_in_sandbox(tool, args, grant.egress)</pre></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">06</span> Failure modes</h2>
+      <p class="sub">Named, with a one-line fix each.</p>
+      <div class="mechanics">
+        <div class="mech fail"><div class="mnum">F1</div><div><h3>Denylist theater<span class="fix">Fix: switch to an allowlist &mdash; enumerate what&rsquo;s permitted, not what&rsquo;s forbidden.</span></h3><p>You block <code class="inline-code">rm -rf</code> by string match; the agent base64-encodes it, wraps it in a subshell, or writes a script that does it. A denylist enumerates the attacks you thought of; the attacker needs one you didn&rsquo;t. Remove the capability (no shell at all) instead of forbidding its use.</p></div></div>
+        <div class="mech fail"><div class="mnum">F2</div><div><h3>The leaky sandbox: DNS, metadata, or shared filesystem<span class="fix">Fix: audit the real channels &mdash; block the cloud metadata endpoint, allowlist DNS, mount filesystems read-only, drop capabilities.</span></h3><p>You cut HTTP egress but leave DNS resolution open &mdash; data leaves one TXT record at a time. Or the agent curls <code class="inline-code">169.254.169.254</code> for cloud credentials, or writes through a shared mount you forgot. A famous 2026 case: a research agent exfiltrated through DNS out of a &ldquo;networkless&rdquo; sandbox.</p></div></div>
+        <div class="mech fail"><div class="mnum">F3</div><div><h3>One shared admin key for every run<span class="fix">Fix: per-task, per-sub-agent identities with scoped, short-lived credentials from a vault; revoke on run end.</span></h3><p>The agent fleet shares a broad service-account key. One compromised run &mdash; or one leaked log line &mdash; hands an attacker everything the fleet can do. Scope is the unit of damage: make each key describe exactly one task, and let it die with the task.</p></div></div>
+        <div class="mech fail"><div class="mnum">F4</div><div><h3>Sub-agent inherits the parent&rsquo;s powers<span class="fix">Fix: every sub-agent gets its own smaller identity; untrusted-content readers get no private data and no send.</span></h3><p>You carefully scope the main agent, then it spawns a &ldquo;researcher&rdquo; helper that inherits the full credential. The helper reads a poisoned web page carrying an injected instruction &mdash; and executes it with the parent&rsquo;s keys. Containment has to follow the delegation chain, not stop at the front door.</p></div></div>
+        <div class="mech fail"><div class="mnum">F5</div><div><h3>Permission creep: grants that never come back<span class="fix">Fix: permissions bind to the task, not the identity &mdash; re-derive them each run and expire them automatically.</span></h3><p>Tuesday&rsquo;s deploy-needed-write grant is still live on Friday when the agent does read-only triage. Over months, every agent quietly accumulates the union of every permission it ever needed. Least privilege is a property you re-establish per run, or it rots into standing privilege.</p></div></div>
+      </div>
+    </section>
+    <section class="block">
+      <h2><span class="num">07</span> Go deeper</h2>
+      <p class="sub">Curated and real &mdash; every link opened and verified before publishing.</p>
+      <div class="ref-list">
+        <a class="ref" href="https://modelcontextprotocol.io/specification/2025-03-26/server/tools"><span class="badge doc">Spec</span><div><h3>MCP specification &mdash; Tools: Security Considerations</h3><p>The official Model Context Protocol rules: servers must validate inputs, enforce access controls, rate-limit, and sanitize outputs; clients should confirm sensitive operations and audit tool use.</p></div></a>
+        <a class="ref" href="https://dev.to/brennhill/least-privilege-for-ai-agents-grant-only-what-the-task-needs-4069"><span class="badge doc">Article</span><div><h3>Least Privilege for AI Agents: Grant Only What the Task Needs</h3><p>The concrete playbook &mdash; the four permission dimensions (tools, data, credentials, network), why denylists are theater, and the &ldquo;capability lock&rdquo; pattern of removing ability instead of forbidding use.</p></div></a>
+        <a class="ref" href="https://modelcontextprotocol.io/extensions/auth/enterprise-managed-authorization"><span class="badge doc">Docs</span><div><h3>MCP: Enterprise-Managed Authorization</h3><p>How organizations replace per-user tool authorization with IdP-driven least privilege: centralized policy, SSO-issued scoped tokens, and one-click revocation across every MCP server.</p></div></a>
+        <a class="ref" href="https://www.youtube.com/watch?v=q2dKjxj1dp0"><span class="badge vid">Video</span><div><h3>AI Agent Sandbox: Least Privilege for Code That Thinks</h3><p>A tight 5-minute tour of the full sandbox recipe &mdash; container-per-agent, read-only repo mounts, allowlisted commands, egress-deny networking, and destroying the container when the run ends.</p></div></a>
+        <a class="ref" href="https://www.youtube.com/watch?v=lRs1LARMbcc"><span class="badge vid">Video</span><div><h3>How to Lock Down Your Local Agent (sandbox tutorial)</h3><p>Builds a genuinely hardened local agent &mdash; network-none baseline, DNS allowlist, non-root cap-dropped container, approval-gated writes &mdash; then attacks it with a real prompt injection to show what holds.</p></div></a>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">08</span> Sample prompts</h2>
+      <p class="sub">Copy-paste starters. Use the copy button; each one is a full working prompt.</p>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>PROMPT 1 &middot; SCOPE A NEW AGENT</strong><button class="copy-btn" data-copy-target="pr1">Copy</button></div>
+        <p class="prompt-text" id="pr1">You are a security-minded platform engineer. I am about to deploy an agent whose task is: [describe the task in one paragraph — what it reads, what it changes, who it affects].
+
+Propose a least-privilege permission set with these headings: (1) tool allowlist — the minimal named tools it may call, and which tools are explicitly denied; (2) data scope — exact records/directories it may read, read-only vs write, and where it may write; (3) credentials — the scoped, short-lived credential it carries, its TTL, and what it can never do; (4) network — egress default plus the exact hosts on the allowlist; (5) sub-agent policy — identities and permissions for any helpers it spawns. Flag anything in my task description that is underspecified for a scoping decision.</p>
+      </div>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>PROMPT 2 &middot; AUDIT AN EXISTING AGENT</strong><button class="copy-btn" data-copy-target="pr2">Copy</button></div>
+        <p class="prompt-text" id="pr2">Audit the agent described below against least privilege and sandboxing best practices. Check: (a) whether its tool surface is an allowlist or a denylist, and name any tools it has that its task does not require; (b) credential scope and TTL — is anything broad or long-lived, and what is the blast radius if it leaks; (c) network posture — egress default, allowlist completeness, and whether DNS or metadata endpoints are real exfiltration channels; (d) sub-agent identity inheritance; (e) audit logging coverage. Rank findings by severity, and for each give a one-line fix.
+
+Agent description: [paste config, tool list, credential setup, network policy]</p>
+      </div>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>PROMPT 3 &middot; DESIGN THE SANDBOX</strong><button class="copy-btn" data-copy-target="pr3">Copy</button></div>
+        <p class="prompt-text" id="pr3">Design a sandbox for an agent that runs untrusted or generated code. Specify: the isolation unit (container/VM), user and Linux capabilities (non-root, what is dropped), filesystem mounts (what is read-only, the exact writable workdir), network (egress default-deny plus allowlisted hosts, DNS policy, blocked metadata endpoint 169.254.169.254), resource budgets (CPU seconds, wall-clock minutes, memory), and the teardown contract (what is collected — logs, diff, artifacts — and how credentials are revoked and the container destroyed). Then list three ways a sandbox like this has historically been escaped, and the control that stops each.</p>
+      </div>
+      <div id="copy-status" class="sr-only" role="status" aria-live="polite"></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">09</span> Check yourself</h2>
+      <p class="sub">Five questions. Click an answer &mdash; right or wrong, you get the why immediately.</p>
+      <div class="quiz-q" data-answer="2">
+        <p class="qq">1. Your agent reads support tickets (including customer PII) and drafts replies. Which network posture fits?</p>
+        <div class="qopts">
+          <button class="qopt" data-i="0">Full internet access, since the agent may need to look things up.</button>
+          <button class="qopt" data-i="1">A denylist of known-bad domains, everything else allowed.</button>
+          <button class="qopt" data-i="2">Egress denied by default; allowlist only the specific hosts the task needs.</button>
+          <button class="qopt" data-i="3">No restrictions — network access is needed for good drafts.</button>
+        </div>
+        <p class="qexp" hidden></p>
+      </div>
+      <div class="quiz-q" data-answer="1">
+        <p class="qq">2. Why does a capability the agent lacks beat a rule that says &ldquo;never delete the database&rdquo;?</p>
+        <div class="qopts">
+          <button class="qopt" data-i="0">Rules are slower to enforce than missing tools.</button>
+          <button class="qopt" data-i="1">The model can be talked out of any instruction by text it reads, but it cannot use a capability it was never given.</button>
+          <button class="qopt" data-i="2">Capabilities are cheaper to implement than prompt rules.</button>
+          <button class="qopt" data-i="3">Rules only work for English; capabilities work in any language.</button>
+        </div>
+        <p class="qexp" hidden></p>
+      </div>
+      <div class="quiz-q" data-answer="3">
+        <p class="qq">3. You blocked <code>rm -rf /</code> with a string filter. The agent runs a script that base64-decodes the same command. What failed?</p>
+        <div class="qopts">
+          <button class="qopt" data-i="0">The base64 alphabet — you should have blocked encoding too.</button>
+          <button class="qopt" data-i="1">The script runner — only interactive shells should be filtered.</button>
+          <button class="qopt" data-i="2">Nothing; the agent violated policy and should be retrained.</button>
+          <button class="qopt" data-i="3">The approach: a denylist enumerates attacks you thought of; the fix is removing the capability (no shell / no delete tool) instead.</button>
+        </div>
+        <p class="qexp" hidden></p>
+      </div>
+      <div class="quiz-q" data-answer="0">
+        <p class="qq">4. An agent that browses the web spawns a helper to fetch pages. What identity should the helper get?</p>
+        <div class="qopts">
+          <button class="qopt" data-i="0">Its own smaller identity: no private-data access, no send capability, scoped to fetching.</button>
+          <button class="qopt" data-i="1">The parent&rsquo;s identity — inheritance keeps things simple and auditable.</button>
+          <button class="qopt" data-i="2">A shared read-write service account — it only reads pages.</button>
+          <button class="qopt" data-i="3">No identity at all; helpers don&rsquo;t need credentials.</button>
+        </div>
+        <p class="qexp" hidden></p>
+      </div>
+      <div class="quiz-q" data-answer="2">
+        <p class="qq">5. A sandbox allows all HTTP egress except five blocked domains. The agent exfiltrates data through DNS queries. The core lesson?</p>
+        <div class="qopts">
+          <button class="qopt" data-i="0">DNS is too slow to matter; the real lesson is better logging.</button>
+          <button class="qopt" data-i="1">Blocklists need more entries — five domains was not enough.</button>
+          <button class="qopt" data-i="2">Deny-by-default on the channel level: the boundary must cover DNS and metadata endpoints, not just HTTP.</button>
+          <button class="qopt" data-i="3">Agents should not resolve DNS themselves; give them IPs directly.</button>
+        </div>
+        <p class="qexp" hidden></p>
+      </div>
+      <div id="quiz-score"></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">10</span> Flashcards</h2>
+      <p class="sub">Click a card to flip it. Tab to a card and press Enter or Space.</p>
+      <div class="fgrid">
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Least privilege</div>
+          <div class="fface back">Grant an agent only the tools, data scopes, credentials, and network access the task in front of it needs — nothing more, nothing standing.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Deny-by-default</div>
+          <div class="fface back">The agent starts able to do nothing; every tool, path, and host is denied until explicitly allowed. The opposite of a blocklist.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Capability lock</div>
+          <div class="fface back">Enforce safety by removing the ability to do harm at the boundary, not by asking the model nicely. No shell means no shell trick works.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Allowlist vs denylist</div>
+          <div class="fface back">An allowlist enumerates the permitted set (safe default); a denylist enumerates the forbidden set (bypassable via encoding, subshells, quoting, generated scripts).</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Short-lived scoped credentials</div>
+          <div class="fface back">Tokens valid for minutes and scoped to one task. A leak caps damage by TTL; a replayed token is already dead.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Egress allowlist</div>
+          <div class="fface back">Outbound network denied by default; only named hosts (vendor API, package mirror) are reachable. DNS and cloud metadata endpoints count as channels too.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Sub-agent identity isolation</div>
+          <div class="fface back">Each helper runs under its own smaller identity. A helper reading untrusted content gets no private data and no send capability.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Just-in-time elevation</div>
+          <div class="fface back">The agent sits at the permission floor; a higher-grade action issues a narrow, short-lived grant for that step only — then it is revoked.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Ephemeral sandbox teardown</div>
+          <div class="fface back">Collect logs, diffs, and artifacts at run end, revoke credentials, destroy the container. No persistent state for the next run to inherit.</div>
+        </div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">11</span> Reach for this when&hellip;</h2>
+      <div class="triggers">
+        <div class="trigger"><strong>Your agent runs code, touches the filesystem, or handles untrusted web/email content.</strong> If a prompt injection could reach a shell, a file write, or a network call, the run needs a sandbox &mdash; not just a careful prompt.</div>
+        <div class="trigger"><strong>Credentials feel &ldquo;shared&rdquo; or long-lived.</strong> One admin key for the whole fleet, or grants that survive the task, are standing privilege. Move to per-task scoped tokens with minute-scale TTLs from a vault.</div>
+        <div class="trigger"><strong>Your safety plan is a list of forbidden commands.</strong> That&rsquo;s a denylist &mdash; bypassable by construction. Invert it: allowlist the tools and hosts, and remove the capabilities you never want used.</div>
+      </div>
+    </section>
+
+    <a class="back-link" href="../index.html#daily-topics">&larr; Back to the daily topics</a>
+  </div>
+  <div id="live-status" class="sr-only" role="status" aria-live="polite"></div>
+  <script>
+    // copy buttons
+    const status = document.getElementById('live-status');
+    document.querySelectorAll('.copy-btn').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const target = document.getElementById(button.dataset.copy);
+        const text = target.innerText;
+        try {
+          await navigator.clipboard.writeText(text);
+          const original = button.textContent;
+          button.textContent = 'Copied';
+          status.textContent = 'Prompt copied to clipboard.';
+          setTimeout(() => button.textContent = original, 1600);
+        } catch {
+          const range = document.createRange();
+          range.selectNodeContents(target);
+          const selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+          status.textContent = 'Prompt selected. Copy it with your device copy command.';
+        }
+      });
+    });
+
+    // quiz
+    const explanations = [
+      ["Full egress means any exfiltrated or injected data can leave the network — the exact risk least privilege closes. Research data plus an open door is the exfiltration leg of the lethal trifecta.",
+       "A denylist enumerates the domains you thought of; an attacker needs one you didn't. The baseline for a PII-touching session is no network at all.",
+       "Right. Deny-by-default on egress: a session holding customer PII should have no exit channel except the exact hosts the task provably needs.",
+       "Good drafts do not require open internet — lookup, if needed, goes through an allowlisted host or a helper with no private data."],
+      ["Speed has nothing to do with it; a prompt rule can be enforced instantly and still fail.",
+       "Right. An LLM cannot reliably separate instructions from data — text it reads can talk it out of any rule. A capability it was never granted is not negotiable; it simply cannot be used.",
+       "Cost is not the reason; structural enforcement is.",
+       "Language is not the issue — the issue is that instructions are requests the model may or may not honor."],
+      ["Blocking encoding too is whack-a-mole: subshells, quoting, and generated scripts remain. Every patch extends the denylist by one.",
+       "Interactive shells are not the hole; any execution path that reaches a shell is.",
+       "The agent did exactly what the boundary allowed. When the boundary is a string filter, bypassing it is a technique, not a policy violation.",
+       "Right. Denylist theater: you enumerated one attack string, the attacker used a different one. Remove the capability — no shell, no delete tool — and the phrasing no longer matters."],
+      ["Right. Containment follows the delegation chain: the helper reading untrusted content gets its own smaller identity with no private data and no send.",
+       "Inheritance is the classic failure: the helper executes injected instructions with the parent's keys.",
+       "Read-only work with a shared read-write account is still shared privilege — and shared keys don't tell you which agent acted.",
+       "Helpers fetch over networks and read files; they act, so they need scoped identities."],
+      ["DNS is slow but real — a famous 2026 sandbox escape exfiltrated through DNS from a 'networkless' sandbox. Never dismiss a channel by bandwidth.",
+       "More entries don't fix it: the flaw is enumerating bad domains instead of allowing known-good channels.",
+       "Right. The boundary failed at the channel level — DNS, metadata endpoints, and shared mounts are all channels. Deny-by-default applies to the channel, not to an HTTP domain list.",
+       "Pinning IPs dodges DNS resolution but misses the point: the lesson is default-deny on every channel the sandbox exposes."]
+    ];
+    const questions = [...document.querySelectorAll('.quiz-q')];
+    let score = 0, answered = 0;
+    questions.forEach((q, qi) => {
+      const correct = parseInt(q.dataset.answer, 10);
+      const exp = q.querySelector('.qexp');
+      q.querySelectorAll('.qopt').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          if (q.dataset.done) return;
+          q.dataset.done = "1";
+          const chosen = parseInt(btn.dataset.i, 10);
+          const ok = chosen === correct;
+          q.querySelectorAll('.qopt').forEach((b) => {
+            b.disabled = true;
+            if (parseInt(b.dataset.i, 10) === correct) b.classList.add('correct');
+          });
+          if (!ok) btn.classList.add('wrong');
+          else score++;
+          answered++;
+          exp.hidden = false;
+          exp.innerHTML = ok
+            ? "<strong class=\"ok\">Correct.</strong> " + explanations[qi][chosen]
+            : "<strong class=\"no\">Not quite.</strong> " + explanations[qi][chosen];
+          if (answered === questions.length) {
+            const box = document.getElementById('quiz-score');
+            box.style.display = "block";
+            box.innerHTML = "You scored <strong>" + score + " / " + questions.length + "</strong>." +
+              (score === questions.length ? " Clean sweep &mdash; your sandboxes will hold when it matters." :
+               score >= 3 ? " Solid &mdash; re-read the section you missed." :
+               " Worth a re-read of section 04 before moving on.");
+          }
+        });
+      });
+    });
+
+    // flashcards
+    document.querySelectorAll('.fcard').forEach((card) => {
+      const flip = () => card.classList.toggle('flipped');
+      card.addEventListener('click', flip);
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); }
+      });
+    });
+  </script>
+</body>
+</html>
