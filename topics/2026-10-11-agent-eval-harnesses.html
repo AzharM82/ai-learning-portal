@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent eval harnesses: tasks, graders, scoring loops &middot; AI Learning Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+    :root {
+      --ink: #14212b; --muted: #53636f; --paper: #f6f8f7; --white: #ffffff;
+      --line: #cbd5d8; --navy: #163247; --navy-2: #21465e; --teal: #0b8174;
+      --teal-soft: #dff2ee; --orange: #d66332; --orange-soft: #f8e4d8;
+      --gold: #d8a524; --gold-soft: #f7edc8; --blue-soft: #e3eef4;
+      --red: #b3402e; --red-soft: #f9e3de; --green: #1e7a3c; --green-soft: #e2f2e6;
+      --shadow: 0 18px 45px rgba(20, 33, 43, .09); --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; color: var(--ink);
+      background: linear-gradient(rgba(20,33,43,.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(20,33,43,.035) 1px, transparent 1px), var(--paper);
+      background-size: 28px 28px;
+      font-family: "Source Sans 3", sans-serif; font-size: 17px; line-height: 1.58;
+    }
+    .shell { width: min(960px, calc(100% - 40px)); margin: 0 auto; }
+    .portal-nav{position:sticky;top:0;z-index:50;background:rgba(22,50,71,.97);border-bottom:1px solid rgba(255,255,255,.12)}
+    .portal-nav-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;flex-wrap:wrap}
+    .portal-brand{color:#fff;text-decoration:none;font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:15px}
+    .portal-brand span{color:var(--gold);font-weight:400}
+    .portal-links{display:flex;gap:18px;flex-wrap:wrap}
+    .portal-links a{color:#dbe7ee;text-decoration:none;font-size:14.5px}
+    .portal-links a:hover{color:#fff;text-decoration:underline}
+    .hero { padding: 56px 0 36px; }
+    .chapter-mark { display:inline-flex;align-items:center;gap:10px;color:var(--navy);
+      font:600 12px/1.2 "IBM Plex Mono",monospace;letter-spacing:.09em;text-transform:uppercase;margin-bottom:18px; }
+    .chapter-mark::before { content:"";width:42px;height:3px;background:var(--orange); }
+    h1 { font-size: clamp(36px, 5vw, 58px); line-height: 1.02; letter-spacing:-.03em; margin:0 0 14px; }
+    .lede { color: var(--muted); font-size: clamp(18px,2vw,22px); max-width: 64ch; margin:0 0 8px; }
+    .date-line { font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--muted); }
+    section.block { margin: 44px 0; }
+    h2 { font-size: 26px; letter-spacing:-.02em; margin:0 0 6px; display:flex;align-items:center;gap:12px; }
+    h2 .num { font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:600;color:var(--white);
+      background:var(--navy);border-radius:999px;min-width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center; }
+    .sub { color:var(--muted); margin:0 0 18px; max-width: 68ch; }
+    .card { background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+      padding:24px;box-shadow:var(--shadow); }
+    .skill-card { background:var(--navy);color:#eaf2f7;border-radius:var(--radius);padding:22px 24px;
+      font-family:"IBM Plex Mono",monospace;font-size:14.5px;overflow-x:auto;box-shadow:var(--shadow); }
+    .skill-card .k { color:var(--gold); }
+    .idea { font-size:21px;line-height:1.5;border-left:4px solid var(--teal);padding:6px 0 6px 20px;max-width:62ch; }
+    .idea strong { color:var(--navy); }
+    .mechanics { display:grid;gap:14px; }
+    .mech { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:18px 20px;
+      display:grid;grid-template-columns:44px 1fr;gap:14px;align-items:start; }
+    .mech .mnum { font-family:"IBM Plex Mono",monospace;font-weight:600;color:var(--teal);
+      background:var(--teal-soft);border-radius:10px;width:44px;height:44px;display:flex;align-items:center;justify-content:center; }
+    .mech h3 { margin:0 0 6px;font-size:18px; }
+    .mech p { margin:0;color:var(--muted);font-size:15.5px; }
+    .mech code, .inline-code { font-family:"IBM Plex Mono",monospace;font-size:.88em;background:var(--blue-soft);
+      padding:2px 7px;border-radius:6px;color:var(--navy); }
+    pre.code { background:#0f2233;color:#e8f1f5;border-radius:14px;padding:20px 22px;overflow-x:auto;
+      font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.6;margin:0; }
+    pre.code .c { color:#8ba3b0; } pre.code .s { color:#ffd479; } pre.code .k { color:#7fd6c2; }
+    .fail { border-left:4px solid var(--orange); }
+    .fail h3 .fix { display:block;margin-top:8px;font-size:15px;font-weight:500;color:var(--green); }
+    .ref-list { display:grid;gap:12px; }
+    .ref { display:flex;gap:14px;align-items:flex-start;background:var(--white);border:1px solid var(--line);
+      border-radius:14px;padding:16px 18px;text-decoration:none;color:inherit; }
+    .ref:hover { border-color:var(--teal); }
+    .ref .badge { flex:none;font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;letter-spacing:.06em;
+      padding:5px 10px;border-radius:999px;text-transform:uppercase; }
+    .badge.doc { background:var(--blue-soft);color:var(--navy); }
+    .badge.vid { background:var(--orange-soft);color:var(--orange); }
+    .ref h3 { margin:0 0 4px;font-size:17px; }
+    .ref p { margin:0;color:var(--muted);font-size:14.5px; }
+    .prompt-block { background:#0f2233;border-radius:var(--radius);overflow:hidden;margin-bottom:18px;box-shadow:var(--shadow); }
+    .prompt-top { display:flex;justify-content:space-between;align-items:center;gap:12px;
+      padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.12); }
+    .prompt-top strong { color:#fff;font-size:13px;letter-spacing:.06em;font-family:"IBM Plex Mono",monospace; }
+    .copy-btn { border:1px solid #6c8796;background:transparent;color:#fff;border-radius:6px;padding:7px 11px;
+      cursor:pointer;font-weight:700;font-size:14px; }
+    .copy-btn:hover { background:rgba(255,255,255,.1); }
+    .copy-btn:focus-visible { outline:2px solid var(--gold);outline-offset:2px; }
+    .prompt-text { color:#e8f1f5;font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.65;
+      padding:18px;white-space:pre-wrap;margin:0; }
+    .sr-only { position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0); }
+    .quiz-q { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px; }
+    .quiz-q .qq { font-weight:700;margin:0 0 12px;font-size:18px; }
+    .qopts { display:grid;gap:8px; }
+    .qopt { text-align:left;background:var(--paper);border:1px solid var(--line);border-radius:10px;
+      padding:12px 14px;cursor:pointer;font-size:15.5px;color:var(--ink); }
+    .qopt:hover:not(:disabled) { border-color:var(--navy); }
+    .qopt:disabled { cursor:default;opacity:.85; }
+    .qopt.correct { background:var(--green-soft);border-color:var(--green); }
+    .qopt.wrong { background:var(--red-soft);border-color:var(--red); }
+    .qexp { margin:12px 0 0;font-size:15px;color:var(--muted); }
+    .qexp strong.ok { color:var(--green); } .qexp strong.no { color:var(--red); }
+    #quiz-score { display:none;margin-top:8px;background:var(--navy);color:#fff;border-radius:14px;
+      padding:20px 24px;font-size:19px; }
+    #quiz-score strong { color:var(--gold); }
+    .fgrid { display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px; }
+    .fcard { perspective:900px;cursor:pointer;min-height:170px; }
+    .fcard-inner { position:relative;width:100%;height:100%;min-height:170px;transform-style:preserve-3d;transition:transform .45s; }
+    .fcard.flipped .fcard-inner { transform:rotateY(180deg); }
+    .fface { position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+      border-radius:14px;padding:18px;display:flex;align-items:center;justify-content:center;text-align:center;
+      border:1px solid var(--line);background:var(--white);box-shadow:var(--shadow);font-size:15.5px; }
+    .fface.front { font-weight:700;color:var(--navy); }
+    .fface.back { transform:rotateY(180deg);background:var(--teal-soft);color:var(--ink);font-size:14.5px; }
+    .fcard:focus-visible { outline:2px solid var(--teal);outline-offset:3px;border-radius:14px; }
+    .triggers { display:grid;gap:10px; }
+    .trigger { background:var(--gold-soft);border-radius:12px;padding:14px 18px;font-size:16px; }
+    .trigger strong { color:var(--navy); }
+    .back-link { display:inline-block;margin:8px 0 60px;font-weight:600;color:var(--teal);text-decoration:none;font-size:17px; }
+    .back-link:hover { text-decoration:underline; }
+    .fig { background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+      padding:12px;box-shadow:var(--shadow);overflow-x:auto; }
+    .fig svg { display:block;width:100%;height:auto; }
+    .flow-anim { stroke-dasharray: 8 6; animation: dashmove 1.2s linear infinite; }
+    @keyframes dashmove { to { stroke-dashoffset: -14; } }
+    .pulse { animation: pulse 2.2s ease-in-out infinite; }
+    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.45; } }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior:auto; } .fcard-inner{transition:none;} .flow-anim{animation:none;} .pulse{animation:none;} }
+  </style>
+</head>
+<body><nav class="portal-nav">
+    <div class="shell portal-nav-inner">
+      <a class="portal-brand" href="../index.html">AI Engineering <span>&middot; Learning Portal</span></a>
+      <div class="portal-links">
+        <a href="../index.html#daily-topics">Daily topics</a>
+        <a href="../index.html#loop">Loop</a>
+        <a href="../index.html#graph">Graph</a>
+        <a href="../index.html#harness">Harness</a>
+      </div>
+    </div>
+  </nav>
+  <div class="shell">
+
+    <header class="hero">
+      <div class="chapter-mark">Daily topic &middot; The trio's adjacents</div>
+      <h1>Agent eval harnesses: tasks, graders, scoring loops</h1>
+      <p class="lede">Unit tests check whether code behaves. An eval harness checks whether an agent behaves &mdash; across <strong>tasks</strong> with defined success criteria, <strong>graders</strong> that score outcomes, and a <strong>scoring loop</strong> that turns a single flaky run into a trustworthy pass rate. The uncomfortable finding that makes this mandatory: when agents fail, <strong>most failures look like successes from the outside</strong> &mdash; the transcript reads fine while the world state is wrong. A harness is how you catch them before your users do.</p>
+      <p class="date-line">2026-10-11 &middot; Topic 028</p>
+    </header>
+
+    <section class="block">
+      <h2><span class="num">01</span> The skill card</h2>
+      <p class="sub">Every topic on this portal is designed like a Codex skill: a name, a trigger, and concrete steps.</p>
+      <div class="skill-card"><pre style="margin:0">---
+<span class="k">name:</span> agent-eval-harnesses
+<span class="k">description:</span> Reach for this when you build or maintain an AI agent:
+  define 20-50 tasks with objective success criteria, run each through several
+  trials in a clean isolated environment, grade outcomes (not words) with
+  code-based, model-based, and human graders, aggregate with pass@k / pass^k,
+  and gate every change on the suite so regressions die in CI, not in prod.
+---</pre></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">02</span> The one-idea version</h2>
+      <p class="idea">An eval is a <strong>task</strong> plus a <strong>grader</strong>; a harness is the machinery that runs tasks in isolation, grades every trial, and aggregates the results into a score you can trust. Start small with <strong>20&ndash;50 tasks drawn from real failures</strong>, grade the outcome in the environment (not the agent&rsquo;s words), run enough trials to measure reliability not luck, and <strong>wire the loop shut</strong>: every failure becomes a new task, and every change runs the suite.</p>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">03</span> The loop, visually</h2>
+      <p class="sub">The harness is a closed loop, not a one-shot score. Failures flow back in as new tasks; scoreboards flow out to CI gates.</p>
+      <div class="fig">
+        <svg viewBox="0 0 960 420" role="img" aria-label="Eval harness loop: task suite feeds trials in isolated environments, the agent loop runs, graders score outcome and transcript, scores aggregate into capability and regression dashboards, failures return as new tasks, and a CI gate blocks regressions">
+          <defs>
+            <marker id="arre" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+              <path d="M0,0 L8,3 L0,6 Z" fill="#163247"></path>
+            </marker>
+          </defs>
+          <g font-family="Source Sans 3, sans-serif" font-size="15">
+            <rect x="30" y="120" width="160" height="150" rx="12" fill="#e3eef4" stroke="#163247" stroke-width="1.5"/>
+            <text x="110" y="150" text-anchor="middle" font-weight="700" fill="#163247">TASK SUITE</text>
+            <text x="110" y="176" text-anchor="middle" fill="#53636f">20&ndash;50 tasks</text>
+            <text x="110" y="198" text-anchor="middle" fill="#53636f">from real failures</text>
+            <text x="110" y="220" text-anchor="middle" fill="#53636f">defined success criteria</text>
+            <text x="110" y="248" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#0b8174">capability + regression</text>
+
+            <rect x="230" y="120" width="180" height="150" rx="12" fill="#ffffff" stroke="#163247" stroke-width="1.5"/>
+            <text x="320" y="150" text-anchor="middle" font-weight="700" fill="#163247">TRIALS</text>
+            <text x="320" y="176" text-anchor="middle" fill="#53636f">clean isolated env</text>
+            <text x="320" y="198" text-anchor="middle" fill="#53636f">seeded fixtures</text>
+            <text x="320" y="220" text-anchor="middle" fill="#53636f">N runs per task</text>
+            <text x="320" y="248" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#0b8174">reset every trial</text>
+
+            <rect x="450" y="120" width="180" height="150" rx="12" fill="#dff2ee" stroke="#163247" stroke-width="1.5"/>
+            <text x="540" y="150" text-anchor="middle" font-weight="700" fill="#163247">AGENT LOOP</text>
+            <text x="540" y="176" text-anchor="middle" fill="#53636f">tools &middot; state &middot; adapts</text>
+            <text x="540" y="198" text-anchor="middle" fill="#53636f">records full transcript</text>
+            <text x="540" y="220" text-anchor="middle" fill="#53636f">mutates the environment</text>
+            <text x="540" y="248" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#d66332" class="pulse">non-deterministic!</text>
+
+            <rect x="670" y="120" width="260" height="150" rx="12" fill="#e3eef4" stroke="#163247" stroke-width="1.5"/>
+            <text x="800" y="150" text-anchor="middle" font-weight="700" fill="#163247">GRADERS</text>
+            <text x="800" y="176" text-anchor="middle" fill="#53636f">code-based: outcome / state / tools</text>
+            <text x="800" y="198" text-anchor="middle" fill="#53636f">model-based: rubric LLM judge</text>
+            <text x="800" y="220" text-anchor="middle" fill="#53636f">human: spot-checks, calibration</text>
+            <text x="800" y="248" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#0b8174">grade outcome, not words</text>
+          </g>
+
+          <g stroke="#163247" stroke-width="2" fill="none">
+            <line x1="190" y1="195" x2="226" y2="195" class="flow-anim" marker-end="url(#arre)"/>
+            <line x1="410" y1="195" x2="446" y2="195" class="flow-anim" marker-end="url(#arre)"/>
+            <line x1="630" y1="195" x2="666" y2="195" class="flow-anim" marker-end="url(#arre)"/>
+          </g>
+
+          <rect x="230" y="310" width="700" height="72" rx="12" fill="#f7edc8" stroke="#d8a524" stroke-width="1.5"/>
+          <g font-family="IBM Plex Mono, monospace" font-size="14">
+            <text x="250" y="338" fill="#163247">scoreboard &rarr; pass@k &middot; pass^k &middot; cost/task &middot; latency</text>
+            <text x="250" y="362" fill="#163247">CI gate: regression suite &asymp; 100% &mdash; block merges on drift</text>
+          </g>
+          <line x1="800" y1="270" x2="800" y2="306" stroke="#163247" stroke-width="2" class="flow-anim" marker-end="url(#arre)"/>
+
+          <g font-family="Source Sans 3, sans-serif" font-size="14">
+            <path d="M 110 270 C 110 340, 110 380, 110 392" stroke="#d66332" stroke-width="2" stroke-dasharray="6 5" fill="none" marker-end="url(#arre)"/>
+            <text x="120" y="360" fill="#d66332" font-weight="700">failures &rarr; new tasks</text>
+          </g>
+        </svg>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">04</span> How it works</h2>
+      <p class="sub">Imperative, concrete. Do these in order when standing up an agent eval program.</p>
+      <div class="mechanics">
+        <div class="mech"><div class="mnum">1</div><div><h3>Start with 20&ndash;50 tasks from real failures</h3><p>Don&rsquo;t wait for a perfect suite. Turn your manual pre-release checks, support tickets, and production incidents into tasks: <strong>defined inputs + objective success criteria</strong>. Two reviewers looking at the same result must reach the same pass/fail. If a capable agent fails a task at 0% over many trials, the task or grader is broken &mdash; fix those first.</p></div></div>
+        <div class="mech"><div class="mnum">2</div><div><h3>Reset a clean, isolated environment for every trial</h3><p>Leftover files, cached data, and shared history corrupt scores &mdash; they cause correlated failures or give the agent an unfair head start. Seed fixture data (a <code class="inline-code">template</code> database you clone per run), then <strong>destroy the trial environment when the run ends</strong>. An eval is only as trustworthy as its isolation.</p></div></div>
+        <div class="mech"><div class="mnum">3</div><div><h3>Run each task several times, not once</h3><p>Agents are non-deterministic: one trial is an anecdote. Run multiple trials and report the metric that matches your stakes: <code class="inline-code">pass@k</code> (at least one success in k attempts &mdash; fine for exploration) vs <code class="inline-code">pass^k</code> (all k succeed &mdash; what a customer-facing agent needs). At 75% per-trial success, pass&sup3; is only about 42%.</p></div></div>
+        <div class="mech"><div class="mnum">4</div><div><h3>Grade the outcome in the environment, not the agent&rsquo;s words</h3><p>A transcript can read perfectly while the world is wrong: the agent says &ldquo;refund processed&rdquo; but never called the refund tool. Assert on <strong>end state</strong> &mdash; database rows, files, tickets &mdash; not on the final message. Also diff for side effects the task didn&rsquo;t ask for: wrong values, missing effects, and unintended extra effects are three different failure kinds.</p></div></div>
+        <div class="mech"><div class="mnum">5</div><div><h3>Combine code-based, model-based, and human graders</h3><p>Match the grader to the layer: deterministic checks for tool selection, arguments, and state; an <strong>LLM judge with an explicit rubric</strong> for open-ended quality; humans for judgment calls and for <strong>calibrating the judge</strong> against real labels. Score outcome and trajectory separately &mdash; a pass with a red trajectory is a different signal than a clean pass.</p></div></div>
+        <div class="mech"><div class="mnum">6</div><div><h3>Keep capability evals and regression evals apart</h3><p><strong>Capability evals</strong> ask &ldquo;what can this do?&rdquo; &mdash; they should start at a low pass rate and be your hill to climb. <strong>Regression evals</strong> ask &ldquo;does it still do what it did?&rdquo; &mdash; they should hold near 100% and <strong>gate every merge</strong>. Hard tasks that saturate &ldquo;graduate&rdquo; into the regression suite; saturated capability tasks get replaced with harder ones.</p></div></div>
+        <div class="mech"><div class="mnum">7</div><div><h3>Read failing transcripts, then close the loop</h3><p>A scoreboard never tells you whether you measured the right thing. Read a sample of failing transcripts to learn <strong>whether the agent failed or the grader did</strong> &mdash; bad graders and ambiguous tasks are endemic &mdash; then convert each real failure into a new task. The loop is test &rarr; measure &rarr; diagnose &rarr; improve, and evals make it automatic.</p></div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">05</span> Code sketch</h2>
+      <p class="sub">The whole harness idea in miniature: clean environment per trial, several trials per task, outcome-graded, aggregated into pass rates.</p>
+      <div class="card"><pre class="code"><span class="c"># A minimal eval harness: tasks x trials x graders</span>
+<span class="k">from</span> dataclasses <span class="k">import</span> dataclass
+
+<span class="k">@dataclass</span>
+<span class="k">class</span> Task:
+    name: str
+    prompt: str              <span class="c"># defined inputs</span>
+    seed_env: callable       <span class="c"># returns a FRESH isolated environment</span>
+    graders: list            <span class="c"># functions: env -&gt; (ok: bool, reason: str)</span>
+
+<span class="k">def</span> <span class="k">run_harness</span>(agent, tasks, trials=5):
+    results = {}
+    <span class="k">for</span> task <span class="k">in</span> tasks:
+        passes = 0
+        <span class="k">for</span> _ <span class="k">in</span> range(trials):            <span class="c"># one trial = one clean env</span>
+            env = task.seed_env()          <span class="c"># isolation: no shared state</span>
+            transcript = agent.run(task.prompt, env)
+            ok = all(g(env, transcript)[0] <span class="k">for</span> g <span class="k">in</span> task.graders)
+            passes += ok                  <span class="c"># grade OUTCOME, not words</span>
+        results[task.name] = passes / trials     <span class="c"># pass^k ≈ (this)^k</span>
+    <span class="k">return</span> results</pre></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">06</span> Failure modes</h2>
+      <p class="sub">Named, with a one-line fix each. Most eval programs die from these, not from bad models.</p>
+      <div class="mechanics">
+        <div class="mech fail"><div class="mnum">F1</div><div><h3>Grading the reply instead of the record<span class="fix">Fix: assert on environment end-state &mdash; database rows, tickets, files &mdash; never on the final message alone.</span></h3><p>The refund agent did nine careful tool calls, documented the timeline, closed the ticket as solved &mdash; and never actually changed the ticket state. A state-check harness measured 67% of failures in one benchmark as &ldquo;clean runs that ended wrong.&rdquo; The agent&rsquo;s words are a claim; the database is the evidence.</p></div></div>
+        <div class="mech fail"><div class="mnum">F2</div><div><h3>Grading the path instead of the outcome<span class="fix">Fix: default to outcome checks; enforce specific steps only when the order is genuinely required.</span></h3><p>You assert the agent must call <code class="inline-code">search</code> then <code class="inline-code">read</code> then <code class="inline-code">update</code>. It finds a valid shortcut and solves the problem &mdash; marked failed. Frontier agents regularly invent better approaches than the task author imagined; rigid trajectory checks punish exactly the capability you hired the agent for.</p></div></div>
+        <div class="mech fail"><div class="mnum">F3</div><div><h3>Single-trial scores as &ldquo;the&rdquo; number<span class="fix">Fix: run multiple trials per task and report pass@k or pass^k matched to your stakes.</span></h3><p>One green run can be luck; one red run can be noise. A model at 75% per attempt fails a 3-invocation workflow more than half the time, but a single trial hides that completely. Report the pass rate with its run count and spread, never a bare percentage.</p></div></div>
+        <div class="mech fail"><div class="mnum">F4</div><div><h3>Leaky trial environments<span class="fix">Fix: every trial starts from a seeded template environment; destroy it at run end.</span></h3><p>The agent reads the git history left by the previous trial and &ldquo;solves&rdquo; the task. Or leftover caches make every run after the first slower, and you conclude your change regressed. Shared state measures your infrastructure&rsquo;s flakiness, not your agent&rsquo;s skill.</p></div></div>
+        <div class="mech fail"><div class="mnum">F5</div><div><h3>The 98% suite nobody learns from<span class="fix">Fix: keep it as a regression guard, and add harder capability tasks for the hill ahead.</span></h3><p>Your scoreboard is green and flat. That suite is doing regression duty, not telling you where to improve &mdash; and every change now &ldquo;passes,&rdquo; which feels like safety but is just silence. A capability eval at 98% should graduate into regression and be replaced with tasks the agent actually fails.</p></div></div>
+        <div class="mech fail"><div class="mnum">F6</div><div><h3>An uncalibrated judge is a vibe check with a spreadsheet<span class="fix">Fix: give the judge an explicit rubric, shuffle answer order, use a different model family, and calibrate against human labels.</span></h3><p>LLM judges have known biases &mdash; toward answers shown first, longer answers, and their own model family&rsquo;s outputs. A judge without calibration will happily certify a broken agent. Read its disagreements with humans; that&rsquo;s where your rubric is wrong.</p></div></div>
+      </div>
+    </section>
+    <section class="block">
+      <h2><span class="num">07</span> Go deeper</h2>
+      <p class="sub">Curated and real &mdash; every link opened and verified before publishing.</p>
+      <div class="ref-list">
+        <a class="ref" href="https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents"><span class="badge doc">Docs</span><div><h3>Anthropic: Demystifying evals for AI agents</h3><p>The canonical vocabulary &mdash; tasks, trials, graders, transcripts, outcomes, harnesses &mdash; plus the three grader families, capability vs regression evals, and field-tested examples from Claude Code and customer agents.</p></div></a>
+        <a class="ref" href="https://www.kdnuggets.com/how-to-build-effective-evals-for-ai-agents"><span class="badge doc">Article</span><div><h3>KDnuggets: How to Build Effective Evals for AI Agents</h3><p>Matching graders to the failure layer (reasoning / action / execution), isolated trial environments, partial credit, pass@k vs pass^k, and why to read failing transcripts before trusting any score.</p></div></a>
+        <a class="ref" href="https://dev.to/abyzgenic/ai-agent-evaluation-grade-the-database-not-the-reply-572h"><span class="badge doc">Article</span><div><h3>AI Agent Evaluation: Grade the Database, Not the Reply</h3><p>A practitioner&rsquo;s walkthrough of a state-check harness you can build this week: seeded Postgres templates, outcome-only assertions, fingerprints for unintended side effects, and the repeat-run gap that luck hides.</p></div></a>
+        <a class="ref" href="https://www.youtube.com/watch?v=jefzKhIN1rk"><span class="badge vid">Video</span><div><h3>AI Agent Evals: How to Test What Matters (Vanishing Gradients)</h3><p>A lightning lesson that builds an eval harness on camera &mdash; from vibes to error analysis to a task set, code checks plus an LLM judge calibrated against humans, and succeeding once vs succeeding consistently.</p></div></a>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">08</span> Sample prompts</h2>
+      <p class="sub">Copy-paste starters. Use the copy button; each one is a full working prompt.</p>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>PROMPT 1 &middot; DESIGN THE TASK SET</strong><button class="copy-btn" data-copy="pr1">Copy</button></div>
+        <p class="prompt-text" id="pr1">You are an evaluation engineer. I am building an agent that does this: [describe the agent's job, its tools, and what success looks like].
+
+Draft 20-30 eval tasks: for each, give the task name, the exact inputs/prompt the agent receives, the fixture setup needed (seeded records, files, API stubs), and objective pass/fail criteria that two reviewers would agree on — assert on end state, not on the agent's words. Include: happy paths, known edge cases, cases where the correct behavior is to escalate/refuse/ask, and at least three "awkward" fixtures (nonexistent record, duplicate records, empty lookup results). Flag any task whose criteria are ambiguous and tighten them before I approve the set.</p>
+      </div>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>PROMPT 2 &middot; WRITE THE JUDGE RUBRIC</strong><button class="copy-btn" data-copy="pr2">Copy</button></div>
+        <p class="prompt-text" id="pr2">Write an LLM-judge rubric for grading this open-ended agent behavior: [describe the behavior and the transcript format].
+
+The rubric must: define PASS and FAIL as explicit, observable criteria (not vibes); give 2-3 few-shot examples per side with short rationales; specify what the judge should do when evidence is insufficient (abstain, don't guess); require the judge to cite the transcript lines supporting its verdict. Then propose a calibration plan: how many human-labeled samples, how we measure judge-human agreement, and the disagreement threshold at which we rewrite the rubric instead of trusting the judge.</p>
+      </div>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>PROMPT 3 &middot; DIAGNOSE A FAILING RUN</strong><button class="copy-btn" data-copy="pr3">Copy</button></div>
+        <p class="prompt-text" id="pr3">Diagnose this failing eval run. First decide whether the failure is (a) a real agent failure, (b) a broken grader (rejecting a valid approach, asserting a brittle step order, checking words instead of state), or (c) a broken task (unsolvable as written, ambiguous criteria, missing fixture). Read the transcript below, name the failure layer — reasoning, action, or overall execution — then recommend the smallest fix: to the agent, the grader, or the task. End with a concrete regression task derived from this failure so it can't recur silently.
+
+Task definition and graders: [paste]. Transcript: [paste].</p>
+      </div>
+      <div id="copy-status" class="sr-only" role="status" aria-live="polite"></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">09</span> Check yourself</h2>
+      <p class="sub">Five questions. Click an answer &mdash; right or wrong, you get the why immediately.</p>
+      <div class="quiz-q" data-answer="2">
+        <p class="qq">1. A support agent says it processed a refund. It searched the policy twice, found the right clause, and wrote a polite sign-off &mdash; but never called the refund tool. What should the grader check?</p>
+        <div class="qopts">
+          <button class="qopt" data-i="0">Whether the transcript mentions the correct policy clause.</button>
+          <button class="qopt" data-i="1">Whether the agent called a plausible sequence of tools.</button>
+          <button class="qopt" data-i="2">The environment's end state: is there a refund record with the right amount?</button>
+          <button class="qopt" data-i="3">Whether the sign-off was polite enough to count as resolution.</button>
+        </div>
+        <p class="qexp" hidden></p>
+      </div>
+      <div class="quiz-q" data-answer="3">
+        <p class="qq">2. Your agent will serve customers, where every invocation must succeed. Which metric reports its reliability?</p>
+        <div class="qopts">
+          <button class="qopt" data-i="0">pass@k: the chance at least one of k attempts succeeds.</button>
+          <button class="qopt" data-i="1">The best single-trial score across all runs.</button>
+          <button class="qopt" data-i="2">Average tokens per task: cheaper means more reliable.</button>
+          <button class="qopt" data-i="3">pass^k: the chance all k attempts succeed.</button>
+        </div>
+        <p class="qexp" hidden></p>
+      </div>
+      <div class="quiz-q" data-answer="1">
+        <p class="qq">3. Why run each eval task multiple times instead of once?</p>
+        <div class="qopts">
+          <button class="qopt" data-i="0">To fill the scoreboard with more data points for nicer charts.</button>
+          <button class="qopt" data-i="1">Agents are non-deterministic: a single trial can't distinguish luck from reliability.</button>
+          <button class="qopt" data-i="2">Because cloud GPUs are billed per hour, so runs should be batched.</button>
+          <button class="qopt" data-i="3">To give the LLM judge more transcripts to average over.</button>
+        </div>
+        <p class="qexp" hidden></p>
+      </div>
+      <div class="quiz-q" data-answer="0">
+        <p class="qq">4. You use an LLM judge to grade open-ended agent outputs. Which practice most reduces judge bias?</p>
+        <div class="qopts">
+          <button class="qopt" data-i="0">An explicit rubric, shuffled answer order, a judge from a different model family, and calibration against human labels.</button>
+          <button class="qopt" data-i="1">Prompting the judge to be "as strict as possible" so it never over-rewards.</button>
+          <button class="qopt" data-i="2">Using the same model family as the agent so the judge understands its style.</button>
+          <button class="qopt" data-i="3">Running the judge once per transcript to keep scores consistent.</button>
+        </div>
+        <p class="qexp" hidden></p>
+      </div>
+      <div class="quiz-q" data-answer="2">
+        <p class="qq">5. Your capability suite has been at ~98% for a month. What is the right move?</p>
+        <div class="qopts">
+          <button class="qopt" data-i="0">Declare the agent done &mdash; 98% is as good as it gets.</button>
+          <button class="qopt" data-i="1">Delete the suite; saturated evals just waste compute.</button>
+          <button class="qopt" data-i="2">Keep it as a regression guard, and add harder tasks the agent actually fails.</button>
+          <button class="qopt" data-i="3">Lower the pass threshold to 95% so new changes pass more easily.</button>
+        </div>
+        <p class="qexp" hidden></p>
+      </div>
+      <div id="quiz-score"></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">10</span> Flashcards</h2>
+      <p class="sub">Click a card to flip it. Tab to a card and press Enter or Space.</p>
+      <div class="fgrid">
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Task</div>
+          <div class="fface back">One test with defined inputs and objective success criteria. A good starting suite is 20&ndash;50 tasks drawn from real failures.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Trial</div>
+          <div class="fface back">One attempt at a task, run in a clean isolated environment. Multiple trials per task measure reliability, not luck.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Grader</div>
+          <div class="fface back">Logic that scores an aspect of performance. Three families: code-based (deterministic), model-based (rubric judge), human (spot checks and calibration).</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Transcript (trajectory)</div>
+          <div class="fface back">The complete record of a trial: outputs, tool calls, reasoning, intermediate results. Read failing ones to learn whether the agent or the grader failed.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Outcome</div>
+          <div class="fface back">The final state of the environment at trial end. Grade this, not the agent's words — the database is the evidence.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Evaluation harness</div>
+          <div class="fface back">The infrastructure that runs evals end-to-end: provides instructions and tools, runs tasks in isolation, grades outputs, aggregates results.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">pass@k vs pass^k</div>
+          <div class="fface back">pass@k: at least one success in k attempts. pass^k: all k attempts succeed — the reliability metric for customer-facing agents. 75%&sup3; &asymp; 42%.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Capability vs regression evals</div>
+          <div class="fface back">Capability: "what can it do?" — starts at low pass rates, your hill to climb. Regression: "does it still?" — holds near 100%, gates every change.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">LLM judge calibration</div>
+          <div class="fface back">Judges have position, length, and self-preference biases. Counter with explicit rubrics, shuffled order, a different model family, and agreement checks against human labels.</div>
+        </div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">11</span> Reach for this when&hellip;</h2>
+      <div class="triggers">
+        <div class="trigger"><strong>Users say the agent &ldquo;got worse&rdquo; after a change and you can&rsquo;t tell why.</strong> Without a baseline suite you are flying blind: a prompt tweak, a tool description edit, or a model version bump can silently regress behavior. Evals turn &ldquo;feels worse&rdquo; into a measured diff you can bisect.</div>
+        <div class="trigger"><strong>Your agent mutates real state &mdash; tickets, records, money.</strong> Then transcript-only review is blindness: assert on end state, fingerprint tables for unintended side effects, and require pass^k across repeated trials before anything ships.</div>
+        <div class="trigger"><strong>You&rsquo;re about to change the model, prompt, or tool surface.</strong> Freeze the current suite as a regression gate first, so the change is graded against the bar your users already enjoy &mdash; and every new production failure becomes a new task in the suite.</div>
+      </div>
+    </section>
+
+    <a class="back-link" href="../index.html#daily-topics">&larr; Back to the daily topics</a>
+  </div>
+  <div id="live-status" class="sr-only" role="status" aria-live="polite"></div>
+  <script>
+    // copy buttons
+    const status = document.getElementById('live-status');
+    document.querySelectorAll('.copy-btn').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const target = document.getElementById(button.dataset.copy);
+        const text = target.innerText;
+        try {
+          await navigator.clipboard.writeText(text);
+          const original = button.textContent;
+          button.textContent = 'Copied';
+          status.textContent = 'Prompt copied to clipboard.';
+          setTimeout(() => button.textContent = original, 1600);
+        } catch {
+          const range = document.createRange();
+          range.selectNodeContents(target);
+          const selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+          status.textContent = 'Prompt selected. Copy it with your device copy command.';
+        }
+      });
+    });
+
+    // quiz
+    const explanations = [
+      ["The transcript can look perfect while the world is wrong — politeness and correct tool names are claims, not evidence.",
+       "A plausible tool sequence can still end with the wrong (or missing) outcome. The nine well-formed calls were the whole problem.",
+       "Right. The outcome is the final state of the environment: the refund record must exist with the right amount. Grade the record, not the reply.",
+       "Politeness is not completion. The customer hasn't received anything."],
+      ["That's the metric for exploration tasks where one success is enough.",
+       "A single best run is the luckiest anecdote, not a reliability metric.",
+       "Cost is tracked separately — it says nothing about whether invocations succeed.",
+       "Right. pass^k is the probability that all k attempts succeed — the number a customer-facing agent lives or dies by."],
+      ["Charts are outputs, not the reason for the method.",
+       "Right. Agents vary run to run, so one trial confounds luck with skill. Multiple trials with a pass rate and spread separate the two.",
+       "Batching is an operational detail, not a statistical reason.",
+       "The judge averages nothing; repeated trials exist before any judge enters the picture."],
+      ["Right. Explicit rubrics kill vagueness, shuffling kills position bias, a different model family kills self-preference, and human calibration tells you whether the judge works at all.",
+       "Strictness is not objectivity — a strict biased judge is still biased.",
+       "Same-family judges score their own outputs higher. That's the bias you need to remove, not embrace.",
+       "One run of a non-deterministic judge is itself noise. And single runs can't calibrate anything."],
+      ["98% means the hill is climbed, not that the mountain is done.",
+       "Deleting green suites destroys your regression protection. Saturated is not useless.",
+       "Right. Graduate the saturated tasks into the regression suite — they're your backsliding alarm — and add harder capability tasks for the next hill.",
+       "Lowering the bar is negotiating with yourself. The suite should stay hard where it matters."]
+    ];
+    const questions = [...document.querySelectorAll('.quiz-q')];
+    let score = 0, answered = 0;
+    questions.forEach((q, qi) => {
+      const correct = parseInt(q.dataset.answer, 10);
+      const exp = q.querySelector('.qexp');
+      q.querySelectorAll('.qopt').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          if (q.dataset.done) return;
+          q.dataset.done = "1";
+          const chosen = parseInt(btn.dataset.i, 10);
+          const ok = chosen === correct;
+          q.querySelectorAll('.qopt').forEach((b) => {
+            b.disabled = true;
+            if (parseInt(b.dataset.i, 10) === correct) b.classList.add('correct');
+          });
+          if (!ok) btn.classList.add('wrong');
+          else score++;
+          answered++;
+          exp.hidden = false;
+          exp.innerHTML = ok
+            ? "<strong class=\"ok\">Correct.</strong> " + explanations[qi][chosen]
+            : "<strong class=\"no\">Not quite.</strong> " + explanations[qi][chosen];
+          if (answered === questions.length) {
+            const box = document.getElementById('quiz-score');
+            box.style.display = "block";
+            box.innerHTML = "You scored <strong>" + score + " / " + questions.length + "</strong>." +
+              (score === questions.length ? " Clean sweep &mdash; your harness will catch what dashboards miss." :
+               score >= 3 ? " Solid &mdash; re-read the section you missed." :
+               " Worth a re-read of section 04 before moving on.");
+          }
+        });
+      });
+    });
+
+    // flashcards
+    document.querySelectorAll('.fcard').forEach((card) => {
+      const flip = () => card.classList.toggle('flipped');
+      card.addEventListener('click', flip);
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); }
+      });
+    });
+  </script>
+</body>
+</html>

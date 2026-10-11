@@ -187,5 +187,12 @@
     "date": "2026-10-10",
     "summary": "An agent's power is its tools, not its model. Sandbox execution in an ephemeral container with an allowlist-only tool surface, per-task scoped credentials with minute-scale TTLs, read-only-by-default data, egress denied except to named hosts \u2014 so a capability the agent lacks can't be prompt-injected into use.",
     "skill": "sandboxing-least-privilege-tools"
+  },
+  {
+    "slug": "2026-10-11-agent-eval-harnesses",
+    "title": "Agent eval harnesses: tasks, graders, scoring loops",
+    "date": "2026-10-11",
+    "summary": "Tasks, graders, and scoring loops for evaluating AI agents: outcome-based grading, pass@k vs pass^k, and capability vs regression suites.",
+    "skill": "Use this skill to build an eval harness for an AI agent: 20-50 tasks with objective success criteria, isolated trials, code/model/human graders, and pass-rate scoring that gates every change."
   }
 ]
