@@ -194,5 +194,12 @@
     "date": "2026-10-11",
     "summary": "Tasks, graders, and scoring loops for evaluating AI agents: outcome-based grading, pass@k vs pass^k, and capability vs regression suites.",
     "skill": "Use this skill to build an eval harness for an AI agent: 20-50 tasks with objective success criteria, isolated trials, code/model/human graders, and pass-rate scoring that gates every change."
+  },
+  {
+    "slug": "2026-10-12-error-recovery-patterns-retries-sagas",
+    "title": "Error recovery patterns: retries, compensation, sagas",
+    "date": "2026-10-12",
+    "summary": "The middle of a multi-step agent run is the worst place to fail: state is half-changed and nothing rolls back by itself. Retry transient faults with bounded backoff + jitter (idempotently), compensate completed steps in reverse when forward progress dies, and coordinate the whole thing as a saga with a pivot point of no return.",
+    "skill": "error-recovery-patterns-retries-sagas"
   }
 ]

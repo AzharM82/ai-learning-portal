@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Error recovery patterns: retries, compensation, sagas &middot; AI Learning Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+    :root {
+      --ink: #14212b; --muted: #53636f; --paper: #f6f8f7; --white: #ffffff;
+      --line: #cbd5d8; --navy: #163247; --navy-2: #21465e; --teal: #0b8174;
+      --teal-soft: #dff2ee; --orange: #d66332; --orange-soft: #f8e4d8;
+      --gold: #d8a524; --gold-soft: #f7edc8; --blue-soft: #e3eef4;
+      --red: #b3402e; --red-soft: #f9e3de; --green: #1e7a3c; --green-soft: #e2f2e6;
+      --shadow: 0 18px 45px rgba(20, 33, 43, .09); --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; color: var(--ink);
+      background: linear-gradient(rgba(20,33,43,.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(20,33,43,.035) 1px, transparent 1px), var(--paper);
+      background-size: 28px 28px;
+      font-family: "Source Sans 3", sans-serif; font-size: 17px; line-height: 1.58;
+    }
+    .shell { width: min(960px, calc(100% - 40px)); margin: 0 auto; }
+    .portal-nav{position:sticky;top:0;z-index:50;background:rgba(22,50,71,.97);border-bottom:1px solid rgba(255,255,255,.12)}
+    .portal-nav-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;flex-wrap:wrap}
+    .portal-brand{color:#fff;text-decoration:none;font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:15px}
+    .portal-brand span{color:var(--gold);font-weight:400}
+    .portal-links{display:flex;gap:18px;flex-wrap:wrap}
+    .portal-links a{color:#dbe7ee;text-decoration:none;font-size:14.5px}
+    .portal-links a:hover{color:#fff;text-decoration:underline}
+    .hero { padding: 56px 0 36px; }
+    .chapter-mark { display:inline-flex;align-items:center;gap:10px;color:var(--navy);
+      font:600 12px/1.2 "IBM Plex Mono",monospace;letter-spacing:.09em;text-transform:uppercase;margin-bottom:18px; }
+    .chapter-mark::before { content:"";width:42px;height:3px;background:var(--orange); }
+    h1 { font-size: clamp(36px, 5vw, 58px); line-height: 1.02; letter-spacing:-.03em; margin:0 0 14px; }
+    .lede { color: var(--muted); font-size: clamp(18px,2vw,22px); max-width: 64ch; margin:0 0 8px; }
+    .date-line { font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--muted); }
+    section.block { margin: 44px 0; }
+    h2 { font-size: 26px; letter-spacing:-.02em; margin:0 0 6px; display:flex;align-items:center;gap:12px; }
+    h2 .num { font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:600;color:var(--white);
+      background:var(--navy);border-radius:999px;min-width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center; }
+    .sub { color:var(--muted); margin:0 0 18px; max-width: 68ch; }
+    .card { background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+      padding:24px;box-shadow:var(--shadow); }
+    .skill-card { background:var(--navy);color:#eaf2f7;border-radius:var(--radius);padding:22px 24px;
+      font-family:"IBM Plex Mono",monospace;font-size:14.5px;overflow-x:auto;box-shadow:var(--shadow); }
+    .skill-card .k { color:var(--gold); }
+    .idea { font-size:21px;line-height:1.5;border-left:4px solid var(--teal);padding:6px 0 6px 20px;max-width:62ch; }
+    .idea strong { color:var(--navy); }
+    .mechanics { display:grid;gap:14px; }
+    .mech { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:18px 20px;
+      display:grid;grid-template-columns:44px 1fr;gap:14px;align-items:start; }
+    .mech .mnum { font-family:"IBM Plex Mono",monospace;font-weight:600;color:var(--teal);
+      background:var(--teal-soft);border-radius:10px;width:44px;height:44px;display:flex;align-items:center;justify-content:center; }
+    .mech h3 { margin:0 0 6px;font-size:18px; }
+    .mech p { margin:0;color:var(--muted);font-size:15.5px; }
+    .mech code, .inline-code { font-family:"IBM Plex Mono",monospace;font-size:.88em;background:var(--blue-soft);
+      padding:2px 7px;border-radius:6px;color:var(--navy); }
+    pre.code { background:#0f2233;color:#e8f1f5;border-radius:14px;padding:20px 22px;overflow-x:auto;
+      font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.6;margin:0; }
+    pre.code .c { color:#8ba3b0; } pre.code .s { color:#ffd479; } pre.code .k { color:#7fd6c2; }
+    .fail { border-left:4px solid var(--orange); }
+    .fail h3 .fix { display:block;margin-top:8px;font-size:15px;font-weight:500;color:var(--green); }
+    .ref-list { display:grid;gap:12px; }
+    .ref { display:flex;gap:14px;align-items:flex-start;background:var(--white);border:1px solid var(--line);
+      border-radius:14px;padding:16px 18px;text-decoration:none;color:inherit; }
+    .ref:hover { border-color:var(--teal); }
+    .ref .badge { flex:none;font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;letter-spacing:.06em;
+      padding:5px 10px;border-radius:999px;text-transform:uppercase; }
+    .badge.doc { background:var(--blue-soft);color:var(--navy); }
+    .badge.vid { background:var(--orange-soft);color:var(--orange); }
+    .ref h3 { margin:0 0 4px;font-size:17px; }
+    .ref p { margin:0;color:var(--muted);font-size:14.5px; }
+    .prompt-block { background:#0f2233;border-radius:var(--radius);overflow:hidden;margin-bottom:18px;box-shadow:var(--shadow); }
+    .prompt-top { display:flex;justify-content:space-between;align-items:center;gap:12px;
+      padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.12); }
+    .prompt-top strong { color:#fff;font-size:13px;letter-spacing:.06em;font-family:"IBM Plex Mono",monospace; }
+    .copy-btn { border:1px solid #6c8796;background:transparent;color:#fff;border-radius:6px;padding:7px 11px;
+      cursor:pointer;font-weight:700;font-size:14px; }
+    .copy-btn:hover { background:rgba(255,255,255,.1); }
+    .copy-btn:focus-visible { outline:2px solid var(--gold);outline-offset:2px; }
+    .prompt-text { color:#e8f1f5;font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.65;
+      padding:18px;white-space:pre-wrap;margin:0; }
+    .sr-only { position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0); }
+    .quiz-q { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px; }
+    .quiz-q .qq { font-weight:700;margin:0 0 12px;font-size:18px; }
+    .qopts { display:grid;gap:8px; }
+    .qopt { text-align:left;background:var(--paper);border:1px solid var(--line);border-radius:10px;
+      padding:12px 14px;cursor:pointer;font-size:15.5px;color:var(--ink); }
+    .qopt:hover:not(:disabled) { border-color:var(--navy); }
+    .qopt:disabled { cursor:default;opacity:.85; }
+    .qopt.correct { background:var(--green-soft);border-color:var(--green); }
+    .qopt.wrong { background:var(--red-soft);border-color:var(--red); }
+    .qexp { margin:12px 0 0;font-size:15px;color:var(--muted); }
+    .qexp strong.ok { color:var(--green); } .qexp strong.no { color:var(--red); }
+    #quiz-score { display:none;margin-top:8px;background:var(--navy);color:#fff;border-radius:14px;
+      padding:20px 24px;font-size:19px; }
+    #quiz-score strong { color:var(--gold); }
+    .fgrid { display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px; }
+    .fcard { perspective:900px;cursor:pointer;min-height:170px; }
+    .fcard-inner { position:relative;width:100%;height:100%;min-height:170px;transform-style:preserve-3d;transition:transform .45s; }
+    .fcard.flipped .fcard-inner { transform:rotateY(180deg); }
+    .fface { position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+      border-radius:14px;padding:18px;display:flex;align-items:center;justify-content:center;text-align:center;
+      border:1px solid var(--line);background:var(--white);box-shadow:var(--shadow);font-size:15.5px; }
+    .fface.front { font-weight:700;color:var(--navy); }
+    .fface.back { transform:rotateY(180deg);background:var(--teal-soft);color:var(--ink);font-size:14.5px; }
+    .fcard:focus-visible { outline:2px solid var(--teal);outline-offset:3px;border-radius:14px; }
+    .triggers { display:grid;gap:10px; }
+    .trigger { background:var(--gold-soft);border-radius:12px;padding:14px 18px;font-size:16px; }
+    .trigger strong { color:var(--navy); }
+    .back-link { display:inline-block;margin:8px 0 60px;font-weight:600;color:var(--teal);text-decoration:none;font-size:17px; }
+    .back-link:hover { text-decoration:underline; }
+    .fig { background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+      padding:12px;box-shadow:var(--shadow);overflow-x:auto; }
+    .fig svg { display:block;width:100%;height:auto; }
+    .flow-anim { stroke-dasharray: 8 6; animation: dashmove 1.2s linear infinite; }
+    @keyframes dashmove { to { stroke-dashoffset: -14; } }
+    .pulse { animation: pulse 2.2s ease-in-out infinite; }
+    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.45; } }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior:auto; } .fcard-inner{transition:none;} .flow-anim{animation:none;} .pulse{animation:none;} }
+  </style>
+</head>
+<body><nav class="portal-nav">
+    <div class="shell portal-nav-inner">
+      <a class="portal-brand" href="../index.html">AI Engineering <span>&middot; Learning Portal</span></a>
+      <div class="portal-links">
+        <a href="../index.html#daily-topics">Daily topics</a>
+        <a href="../index.html#loop">Loop</a>
+        <a href="../index.html#graph">Graph</a>
+        <a href="../index.html#harness">Harness</a>
+      </div>
+    </div>
+  </nav>
+  <div class="shell">
+
+    <header class="hero">
+      <div class="chapter-mark">Daily topic &middot; The trio's adjacents</div>
+      <h1>Error recovery patterns: retries, compensation, sagas</h1>
+      <p class="lede">Your agent just charged the customer and reserved the inventory &mdash; and then the shipping call failed. There is no database transaction to roll back: those were three separate systems. <strong>Error recovery patterns</strong> answer the question &ldquo;what now?&rdquo;: retry what was transient, <strong>compensate</strong> what already committed, and coordinate the whole mess as a <strong>saga</strong> with a marked point of no return.</p>
+      <p class="date-line">2026-10-12 &middot; Topic 029</p>
+    </header>
+
+    <section class="block">
+      <h2><span class="num">01</span> The skill card</h2>
+      <p class="sub">Every topic on this portal is designed like a Codex skill: a name, a trigger, and concrete steps.</p>
+      <div class="skill-card"><pre style="margin:0">---
+<span class="k">name:</span> error-recovery-patterns-retries-sagas
+<span class="k">description:</span> Reach for this when your workflow can fail between steps:
+  classify the fault (retry transient only), apply bounded exponential
+  backoff + jitter on idempotent operations, pair with a circuit breaker,
+  register each step's compensating action BEFORE executing it, unwind
+  compensations LIFO when forward progress dies, mark the pivot point
+  of no return, and persist saga state so crashes resume instead of
+  duplicating.
+---</pre></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">02</span> The one-idea version</h2>
+      <p class="idea">A failure mid-run is not a bug &mdash; it is the normal state of distributed work, and a multi-step agent has no database transaction to roll back. So recovery comes in three layers, tried in order: <strong>retry</strong> the step when the fault is transient (bounded, backed off, jittered, idempotent); <strong>compensate</strong> completed steps with business inverses in reverse order when forward progress is impossible; and wrap the sequence as a <strong>saga</strong> &mdash; a durable record of steps, compensations, and a pivot point &mdash; so crashes resume, and humans get called only for the truly irreversible.</p>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">03</span> The recovery, visually</h2>
+      <p class="sub">Forward steps retry; dead steps compensate. The pivot flag marks where undoing stops being possible.</p>
+      <div class="fig">
+        <svg viewBox="0 0 960 450" role="img" aria-label="Saga diagram: forward steps reserve inventory, charge payment, book shipment; shipment fails; compensation unwinds refund payment then release inventory in reverse order; failed compensation goes to dead-letter queue and human alert">
+          <defs>
+            <marker id="arre" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+              <path d="M0,0 L8,3 L0,6 Z" fill="#163247"></path>
+            </marker>
+            <marker id="arrd" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+              <path d="M0,0 L8,3 L0,6 Z" fill="#d66332"></path>
+            </marker>
+          </defs>
+
+          <g font-family="Source Sans 3, sans-serif" font-size="15">
+            <text x="30" y="34" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="600" fill="#163247">FORWARD PATH &mdash; retry: transient only &middot; exp backoff + jitter &middot; idempotent</text>
+
+            <rect x="30" y="55" width="170" height="105" rx="12" fill="#e3eef4" stroke="#163247" stroke-width="1.5"/>
+            <text x="115" y="86" text-anchor="middle" font-weight="700" fill="#163247">STEP 1</text>
+            <text x="115" y="110" text-anchor="middle" fill="#53636f">Reserve inventory</text>
+            <text x="115" y="138" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#0b8174">&#10003; compensable</text>
+
+            <rect x="245" y="55" width="170" height="105" rx="12" fill="#e3eef4" stroke="#163247" stroke-width="1.5"/>
+            <text x="330" y="86" text-anchor="middle" font-weight="700" fill="#163247">STEP 2</text>
+            <text x="330" y="110" text-anchor="middle" fill="#53636f">Charge payment</text>
+            <text x="330" y="138" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#0b8174">&#10003; compensable</text>
+
+            <rect x="460" y="55" width="200" height="105" rx="12" fill="#ffffff" stroke="#163247" stroke-width="1.5"/>
+            <text x="560" y="86" text-anchor="middle" font-weight="700" fill="#163247">STEP 3</text>
+            <text x="560" y="110" text-anchor="middle" fill="#53636f">Book shipment</text>
+            <text x="560" y="138" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#b3402e">&#10007; carrier rejected</text>
+            <text x="560" y="138" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#b3402e"></text>
+          </g>
+          <g font-family="IBM Plex Mono, monospace" font-size="11" fill="#b3402e">
+            <text x="560" y="150" text-anchor="middle">non-transient &mdash; no retry</text>
+          </g>
+
+          <g stroke="#163247" stroke-width="2" fill="none">
+            <line x1="200" y1="107" x2="241" y2="107" class="flow-anim" marker-end="url(#arre)"/>
+            <line x1="415" y1="107" x2="456" y2="107" class="flow-anim" marker-end="url(#arre)"/>
+          </g>
+          <g font-family="Source Sans 3, sans-serif" font-size="14">
+            <text x="437" y="45" text-anchor="middle" fill="#d8a524" font-weight="700">&#9873; pivot</text>
+            <text x="437" y="63" text-anchor="middle" fill="#53636f" font-size="12">point of no return</text>
+          </g>
+
+          <g font-family="Source Sans 3, sans-serif" font-size="15">
+            <text x="30" y="216" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="600" fill="#d66332">COMPENSATION &mdash; LIFO: last completed step undone first &middot; itself retryable + idempotent</text>
+
+            <rect x="245" y="232" width="170" height="105" rx="12" fill="#f8e4d8" stroke="#d66332" stroke-width="1.5"/>
+            <text x="330" y="263" text-anchor="middle" font-weight="700" fill="#163247">UNDO STEP 2</text>
+            <text x="330" y="287" text-anchor="middle" fill="#53636f">Refund payment</text>
+            <text x="330" y="313" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#53636f">business inverse, not rollback</text>
+
+            <rect x="30" y="232" width="170" height="105" rx="12" fill="#f8e4d8" stroke="#d66332" stroke-width="1.5"/>
+            <text x="115" y="263" text-anchor="middle" font-weight="700" fill="#163247">UNDO STEP 1</text>
+            <text x="115" y="287" text-anchor="middle" fill="#53636f">Release inventory</text>
+            <text x="115" y="313" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#53636f">frees the reservation</text>
+          </g>
+
+          <g stroke="#d66332" stroke-width="2" fill="none">
+            <path d="M 560 160 C 560 200, 480 220, 420 284" stroke-dasharray="7 6" marker-end="url(#arrd)"/>
+            <line x1="241" y1="284" x2="204" y2="284" stroke-dasharray="7 6" class="flow-anim" marker-end="url(#arrd)"/>
+            <text x="150" y="272" font-family="IBM Plex Mono, monospace" font-size="11" fill="#d66332">then</text>
+          </g>
+
+          <g font-family="Source Sans 3, sans-serif" font-size="15">
+            <rect x="700" y="232" width="230" height="105" rx="12" fill="#f9e3de" stroke="#b3402e" stroke-width="1.5"/>
+            <text x="815" y="263" text-anchor="middle" font-weight="700" fill="#b3402e">COMPENSATION FAILED?</text>
+            <text x="815" y="287" text-anchor="middle" fill="#53636f">dead-letter queue</text>
+            <text x="815" y="309" text-anchor="middle" fill="#53636f">+ human alert &mdash; this is an incident</text>
+          </g>
+          <g stroke="#b3402e" stroke-width="2" fill="none">
+            <line x1="415" y1="284" x2="696" y2="284" stroke-dasharray="4 5" marker-end="url(#arrd)"/>
+          </g>
+
+          <g font-family="Source Sans 3, sans-serif" font-size="14">
+            <rect x="30" y="366" width="900" height="64" rx="12" fill="#f7edc8" stroke="#d8a524" stroke-width="1.5"/>
+            <text x="50" y="392" font-family="IBM Plex Mono, monospace" font-size="13.5" fill="#163247">order of operations: retry transient faults first &rarr; if forward progress dies, compensate LIFO &rarr; after the pivot, only forward recovery</text>
+            <text x="50" y="414" font-family="IBM Plex Mono, monospace" font-size="13.5" fill="#163247">saga state persisted durably &rarr; a crash mid-rollback resumes, never duplicates</text>
+          </g>
+        </svg>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">04</span> How it works</h2>
+      <p class="sub">Imperative, concrete. Recovery is a stack of decisions, tried in this order.</p>
+      <div class="mechanics">
+        <div class="mech"><div class="mnum">1</div><div><h3>Classify the fault before you retry</h3><p>Only <strong>transient</strong> faults are worth repeating: timeouts, connection resets, HTTP 429, 502/503/504, throttling, deadlocks. HTTP 400/401/403/404/422 and business-rule rejections will fail identically on attempt #47 &mdash; <strong>report them, never retry them</strong>. Retrying a non-transient fault burns capacity and hides the real error behind a wall of identical log lines.</p></div></div>
+        <div class="mech"><div class="mnum">2</div><div><h3>Retry bounded: exponential backoff + jitter</h3><p>Cap the attempts (3&ndash;5 for interactive work), grow the delay (1s, 2s, 4s&hellip;), and add <strong>random spread</strong> so a fleet of workers doesn&rsquo;t retry in lockstep and turn one outage into a thundering herd. Prefer the SDK&rsquo;s built-in retry or a library like <code class="inline-code">tenacity</code> / <code class="inline-code">Polly</code> over hand-rolled loops &mdash; they already implement the backoff math correctly.</p></div></div>
+        <div class="mech"><div class="mnum">3</div><div><h3>Make every retried operation idempotent</h3><p>The lost-response case: the first attempt <strong>succeeded</strong>, only the reply was lost, and the retry executes the effect twice &mdash; double charge, double shipment. Send an <code class="inline-code">Idempotency-Key</code>; the server returns the original result for a repeated key instead of re-executing. Without this, retries are not a recovery strategy, they are a duplication strategy.</p></div></div>
+        <div class="mech"><div class="mnum">4</div><div><h3>Pair retries with a circuit breaker for persistent faults</h3><p>Backoff doesn&rsquo;t help when a service is down for hours &mdash; it just spaces out the damage. The breaker <strong>opens</strong> after repeated failures so calls fail fast, then lets a trickle of probe traffic through to detect recovery (<strong>half-open</strong>) before closing. Log transient failures as informational; log only the final exhausted attempt as the real error.</p></div></div>
+        <div class="mech"><div class="mnum">5</div><div><h3>Register each step&rsquo;s compensation BEFORE it executes</h3><p>If you only register the undo after a successful forward call, a step whose response was lost leaves an orphaned side effect the rollback can&rsquo;t see. Write the compensation record first, then execute. Design compensation as <strong>business logic in reverse</strong> (refund, release, cancel) &mdash; not as restoring a snapshot: a refund is not a time machine, the customer sees both entries on the statement.</p></div></div>
+        <div class="mech"><div class="mnum">6</div><div><h3>Unwind compensations last-in, first-out</h3><p>The most recent step&rsquo;s effects are usually the most dependent on earlier ones, so undo in <strong>reverse order of completion</strong>. Compensations must themselves be retryable and idempotent &mdash; a rollback that crashes halfway is worse than none &mdash; and the saga&rsquo;s progress must be <strong>persisted durably</strong> (event history, outbox) so a crash mid-rollback resumes instead of starting over.</p></div></div>
+        <div class="mech"><div class="mnum">7</div><div><h3>Mark the pivot: the point of no return</h3><p>Some steps are <strong>irreversible</strong>: money moved, email sent, a legal filing made. Put all validations and compensable steps <em>before</em> the pivot; after it, steps must be retryable-to-completion, never compensable. And if a compensation itself fails irrecoverably, <strong>dead-letter it and alert a human</strong> &mdash; that is an incident, not a log line.</p></div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">05</span> Code sketch</h2>
+      <p class="sub">A saga runner in miniature: idempotent retried steps, pre-registered compensations, LIFO unwind, dead-letter on compensation failure.</p>
+      <div class="card"><pre class="code"><span class="c"># Saga runner: retry forward, compensate in reverse, never duplicate</span>
+<span class="k">import</span> random, time
+
+<span class="k">class</span> TransientError(Exception): <span class="k">pass</span>
+
+<span class="k">class</span> Saga:
+    <span class="k">def</span> <span class="k">__init__</span>(self):
+        self._undo = []          <span class="c"># stack: unwinds LIFO</span>
+
+    <span class="k">def</span> <span class="k">step</span>(self, name, do, undo, idem_key, attempts=4):
+        self._undo.append((name, undo))   <span class="c"># register BEFORE execute:</span>
+        <span class="k">for</span> n <span class="k">in</span> range(attempts):          <span class="c"># a lost response may mean it DID run</span>
+            <span class="k">try</span>:
+                <span class="k">return</span> do(idem_key)           <span class="c"># idempotent: same key, one effect</span>
+            <span class="k">except</span> TransientError:
+                <span class="k">if</span> n == attempts - 1: <span class="k">raise</span>
+                time.sleep(2 ** n * random.uniform(0.8, 1.2))  <span class="c"># exp backoff + jitter</span>
+        <span class="c"># non-transient errors are never retried: they raise immediately</span>
+
+    <span class="k">def</span> <span class="k">rollback</span>(self):
+        <span class="k">for</span> name, undo <span class="k">in</span> reversed(self._undo):  <span class="c"># last touched, first undone</span>
+            <span class="k">try</span>:
+                undo()                       <span class="c"># compensation must itself retry</span>
+            <span class="k">except</span> Exception <span class="k">as</span> e:
+                dead_letter(name, e)         <span class="c"># compensate failed = human incident</span></pre></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">06</span> Failure modes</h2>
+      <p class="sub">Named, with a one-line fix each. Most recovery code dies from these, not from bad models.</p>
+      <div class="mechanics">
+        <div class="mech fail"><div class="mnum">F1</div><div><h3>Retrying what will never succeed<span class="fix">Fix: classify every failure as transient, business, or terminal &mdash; retry only the first kind.</span></h3><p>The card is declined with a hard 402; your agent retries it with beautiful exponential backoff eleven times, burning latency and rate-limit budget. Worse, the repeated attempts mask the real problem: a validation issue that needed a human, not a loop. If the answer won&rsquo;t change, don&rsquo;t ask again.</p></div></div>
+        <div class="mech fail"><div class="mnum">F2</div><div><h3>Retry without idempotency: the double-charge<span class="fix">Fix: every mutating call gets an idempotency key; repeated keys return the original result.</span></h3><p>The charge went through; only the response was lost. The retry charged again and the customer now has two holds. This is the single most expensive recovery bug in agent systems &mdash; the first attempt wasn&rsquo;t the failure, the retry was. Idempotency keys turn &ldquo;at-least-once delivery&rdquo; into &ldquo;exactly-once effect.&rdquo;</p></div></div>
+        <div class="mech fail"><div class="mnum">F3</div><div><h3>The retry storm: synchronized, unbounded retries<span class="fix">Fix: bound attempts, exponential backoff with jitter, and a circuit breaker for persistent faults.</span></h3><p>Fifty workers all fail against the same struggling service and all retry at once &mdash; in lockstep, forever. The recovery traffic becomes a self-inflicted DDoS that prevents the very recovery you&rsquo;re waiting for. Jitter desynchronizes; the breaker stops the hammering; bounds stop the infinity.</p></div></div>
+        <div class="mech fail"><div class="mnum">F4</div><div><h3>Compensating like a database rollback<span class="fix">Fix: write compensation as forward business logic (refund, cancel, release) &mdash; and honor dependency order, usually LIFO.</span></h3><p>You restore the inventory row to its old value, but the payment service already issued a refund against the new one. Undoing in forward order, or as raw state restoration, corrupts the dependents. Compensation is <em>new</em> business logic: semantically undo the effect, in the order the effects were built.</p></div></div>
+        <div class="mech fail"><div class="mnum">F5</div><div><h3>No pivot: trying to un-send the email<span class="fix">Fix: declare compensable vs irreversible steps up front; pivot marks the boundary, validations go before it.</span></h3><p>The saga &ldquo;rolls back&rdquo; a step that sent a legal notice. You can&rsquo;t un-notify someone &mdash; the compensation is meaningless and the audit trail is a lie. Identify the irreversible steps at design time, keep them after the pivot, and make them retryable-to-completion instead of pretend-undoable.</p></div></div>
+        <div class="mech fail"><div class="mnum">F6</div><div><h3>The orchestrator dies mid-rollback<span class="fix">Fix: persist every step and compensation record durably; compensations must be retryable and idempotent; dead-letter failures to a human.</span></h3><p>The refund succeeded, the release didn&rsquo;t, and then the process crashed &mdash; now nobody knows what was undone. A compensation you can&rsquo;t observe, resume, and audit is a hope, not a mechanism. Durable event history turns &ldquo;did we refund?&rdquo; into a query instead of an investigation.</p></div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">07</span> Go deeper</h2>
+      <p class="sub">Curated and real &mdash; every link opened and verified before publishing.</p>
+      <div class="ref-list">
+        <a class="ref" href="https://learn.microsoft.com/sl-si/azure/architecture/patterns/retry"><span class="badge doc">Docs</span><div><h3>Retry pattern &mdash; Azure Architecture Center</h3><p>The canonical rules: which failures are transient, the three retry strategies (cancel, immediate, after delay), exponential backoff, why operations must be idempotent, and why Retry pairs with Circuit Breaker.</p></div></a>
+        <a class="ref" href="https://learn.microsoft.com/bg-bg/azure/architecture/patterns/compensating-transaction"><span class="badge doc">Docs</span><div><h3>Compensating Transaction pattern &mdash; Azure Architecture Center</h3><p>Retries first, compensation as last resort: an orchestrator example that records forward and compensation state durably, and pauses for human review when the call is ambiguous instead of auto-undoing.</p></div></a>
+        <a class="ref" href="https://learn.Microsoft.com/en-us/azure/architecture/patterns/saga"><span class="badge doc">Docs</span><div><h3>Saga design pattern &mdash; Azure Architecture Center</h3><p>The full vocabulary: compensable, pivot, and retryable transactions; choreography vs orchestration with honest trade-offs; and the data-anomaly countermeasures (semantic locks, commutative updates, rereading values).</p></div></a>
+        <a class="ref" href="https://www.youtube.com/watch?v=L8ZNaYsN0Y8"><span class="badge vid">Video</span><div><h3>How the Saga Pattern Handles Microservice Failures</h3><p>Walks a real Order &rarr; Payment &rarr; Inventory &rarr; Shipping flow failing mid-way and rolling back via compensating transactions &mdash; the visual version of today&rsquo;s diagram, with failure-handling trade-offs.</p></div></a>
+        <a class="ref" href="https://www.youtube.com/watch?v=aSiVopxIcj4"><span class="badge vid">Video</span><div><h3>Two Phase Commit vs Saga Patterns</h3><p>Why 2PC blocks and dies in production, how saga plus the transactional outbox became the industry answer, and how large-scale shops handle distributed transactions &mdash; with the retry and dual-write context.</p></div></a>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">08</span> Sample prompts</h2>
+      <p class="sub">Copy-paste starters. Use the copy button; each one is a full working prompt.</p>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>PROMPT 1 &middot; DESIGN THE RETRY POLICY</strong><button class="copy-btn" data-copy="pr1">Copy</button></div>
+        <p class="prompt-text" id="pr1">My agent calls this API: [endpoint, method, what it does]. It can fail in these ways: [list error codes / situations, e.g. 429, 503, timeouts, 400, 401, 422].
+
+Design a retry policy for each failure mode: classify it as transient, business, or terminal, and say retry or report. For the retryable ones, set max attempts, base delay, the backoff formula (exponential), and the jitter strategy; say whether the operation is idempotent and, if not, propose an idempotency-key scheme (key scope, TTL, where the server stores it). Recommend whether to use the SDK's built-in retry or tenacity/Polly, and name the conditions under which a circuit breaker should open.</p>
+      </div>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>PROMPT 2 &middot; DESIGN THE SAGA</strong><button class="copy-btn" data-copy="pr2">Copy</button></div>
+        <p class="prompt-text" id="pr2">Design a saga for this business operation: [describe the operation and the systems involved].
+
+List the forward steps in order. For each step, name its compensating action — a business inverse (refund, cancel, release), not a data rollback — and label the step compensable, retryable, or irreversible. Mark the pivot point (the point of no return), move all validations before it, and explain why the pivot sits where it does. Recommend choreography vs orchestration for this workflow and why. Then specify: what saga state must be persisted so a crash mid-rollback resumes safely, how compensations themselves retry, and exactly what happens when a compensation fails (dead-letter + human alert path).</p>
+      </div>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>PROMPT 3 &middot; CLASSIFY A PRODUCTION FAILURE</strong><button class="copy-btn" data-copy="pr3">Copy</button></div>
+        <p class="prompt-text" id="pr3">A multi-step agent run failed in production. Here is the timeline: [what ran, what failed, what was retried, what state was left behind].
+
+Classify each failure as transient, business, or terminal. Tell me what should have been retried vs compensated vs escalated to a human, and what actually happened instead. Flag any retry-storm risk (synchronized retries, unbounded attempts, missing backoff/jitter, no circuit breaker). Identify the missing pieces: idempotency keys, pivot placement, compensation order, durable saga state. End with the minimal fix list, ordered by blast radius, and for each fix name which failure mode (F1-F6 in today's lesson) it addresses.</p>
+      </div>
+      <div id="copy-status" class="sr-only" role="status" aria-live="polite"></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">09</span> Check yourself</h2>
+      <p class="sub">Five questions. Click an answer &mdash; right or wrong, you get the why immediately.</p>
+      <div class="quiz-q" data-answer="2">
+        <p class="qq">1. Your payment call fails with HTTP 503; your validation call fails with HTTP 422. Which retry policy is correct?</p>
+        <div class="qopts">
+          <button class="qopt" data-i="0">Retry both &mdash; more attempts mean more chances of success.</button>
+          <button class="qopt" data-i="1">Retry neither &mdash; every failure should surface to a human immediately.</button>
+          <button class="qopt" data-i="2">Retry the 503 with backoff; report the 422 immediately without retrying.</button>
+          <button class="qopt" data-i="3">Retry the 422 with backoff; escalate the 503 to a human.</button>
+        </div>
+        <p class="qexp" hidden></p>
+      </div>
+      <div class="quiz-q" data-answer="2">
+        <p class="qq">2. Your charge step succeeded, but the response was lost on the network and the client retried. The customer was charged twice. What was missing?</p>
+        <div class="qopts">
+          <button class="qopt" data-i="0">Exponential backoff &mdash; the retry fired too soon.</button>
+          <button class="qopt" data-i="1">A circuit breaker &mdash; too many retries were allowed.</button>
+          <button class="qopt" data-i="2">Idempotency &mdash; the charge had to be safe to repeat with the same key.</button>
+          <button class="qopt" data-i="3">A longer timeout &mdash; the client gave up too early.</button>
+        </div>
+        <p class="qexp" hidden></p>
+      </div>
+      <div class="quiz-q" data-answer="1">
+        <p class="qq">3. A saga completed steps A &rarr; B &rarr; C, then C failed with a business error. In what order do the compensations run?</p>
+        <div class="qopts">
+          <button class="qopt" data-i="0">A &rarr; B &rarr; C: the same order as the forward steps.</button>
+          <button class="qopt" data-i="1">C &rarr; B &rarr; A: reverse of the forward steps (last completed, first undone).</button>
+          <button class="qopt" data-i="2">Any order &mdash; compensation order doesn't matter.</button>
+          <button class="qopt" data-i="3">Only A, since it was the first step to complete.</button>
+        </div>
+        <p class="qexp" hidden></p>
+      </div>
+      <div class="quiz-q" data-answer="2">
+        <p class="qq">4. The saga reaches the pivot transaction and it succeeds. What changes after the pivot?</p>
+        <div class="qopts">
+          <button class="qopt" data-i="0">Nothing &mdash; every step stays compensable.</button>
+          <button class="qopt" data-i="1">Retrying stops; all remaining steps run exactly once.</button>
+          <button class="qopt" data-i="2">No going back: remaining steps must reach completion via retries (they must be idempotent), not via compensation.</button>
+          <button class="qopt" data-i="3">Compensation now runs in forward order instead of reverse.</button>
+        </div>
+        <p class="qexp" hidden></p>
+      </div>
+      <div class="quiz-q" data-answer="1">
+        <p class="qq">5. A downstream service is hard down (not transient) and your workers keep retrying it with backoff. What should pair with the retry policy?</p>
+        <div class="qopts">
+          <button class="qopt" data-i="0">More retries with longer backoff &mdash; eventually the service comes back.</button>
+          <button class="qopt" data-i="1">A circuit breaker &mdash; stop sending requests, fail fast, and probe for recovery.</button>
+          <button class="qopt" data-i="2">Immediate retries &mdash; if it's down, retry faster to catch the recovery.</button>
+          <button class="qopt" data-i="3">Compensation &mdash; undo the other steps now.</button>
+        </div>
+        <p class="qexp" hidden></p>
+      </div>
+      <div id="quiz-score"></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">10</span> Flashcards</h2>
+      <p class="sub">Click a card to flip it. Tab to a card and press Enter or Space.</p>
+      <div class="fgrid">
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Transient fault</div>
+          <div class="fface back">A momentary, self-correcting failure: timeouts, 429, 502/503/504, connection resets. The only kind worth retrying.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Exponential backoff + jitter</div>
+          <div class="fface back">Delay grows per attempt (1s, 2s, 4s&hellip;) with random spread, so a fleet of workers doesn't retry in lockstep and herd.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Idempotency</div>
+          <div class="fface back">Repeating an operation with the same key has one effect. What makes the lost-response retry safe instead of a double-charge.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Circuit breaker</div>
+          <div class="fface back">Stops calling a persistently failing dependency: open (fail fast) &rarr; half-open (probe) &rarr; closed (recovered). Pairs with retry.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Retry storm</div>
+          <div class="fface back">Synchronized, unbounded retries that amplify an outage into a self-inflicted DDoS. Fixed by bounds, backoff, jitter, breakers.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Compensating transaction</div>
+          <div class="fface back">A business inverse (refund, cancel, release) that semantically undoes a committed step. A refund is not a time machine.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Saga</div>
+          <div class="fface back">A sequence of local transactions, each with a compensating action, kept eventually consistent &mdash; no distributed locks.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">LIFO unwind</div>
+          <div class="fface back">Compensations run in reverse order of the forward steps: last completed step undone first. Order by dependency.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Pivot transaction</div>
+          <div class="fface back">The point of no return. Compensable before it; must-complete (retryable, idempotent) after it. Validations go before the pivot.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Choreography vs orchestration</div>
+          <div class="fface back">Choreography: services react to each other's events, no center. Orchestration: a central controller drives steps and compensation.</div>
+        </div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">11</span> Reach for this when&hellip;</h2>
+      <div class="triggers">
+        <div class="trigger"><strong>Your agent calls external APIs or runs multi-step workflows and sometimes &ldquo;succeeds&rdquo; halfway</strong>, leaving charges, reservations, or records behind. Recovery isn&rsquo;t a try/except around the whole run &mdash; it&rsquo;s retry for the transient, compensation for the committed, each decided per step.</div>
+        <div class="trigger"><strong>You&rsquo;re about to chain two writes that can&rsquo;t share a transaction</strong> (database + event, payment + shipment, ticket + notification). Failure between them corrupts consistency &mdash; design the compensating action before you write the forward step.</div>
+        <div class="trigger"><strong>A step can irreversibly fail after earlier steps committed</strong> (payment captured, email sent, filing made). There is no rollback for that &mdash; you need a saga with a declared pivot, business-inverse compensation, and durable state so a crash mid-rollback resumes.</div>
+      </div>
+    </section>
+
+    <a class="back-link" href="../index.html#daily-topics">&larr; Back to the daily topics</a>
+  </div>
+  <div id="live-status" class="sr-only" role="status" aria-live="polite"></div>
+  <script>
+    // copy buttons
+    const status = document.getElementById('live-status');
+    document.querySelectorAll('.copy-btn').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const target = document.getElementById(button.dataset.copy);
+        const text = target.innerText;
+        try {
+          await navigator.clipboard.writeText(text);
+          const original = button.textContent;
+          button.textContent = 'Copied';
+          status.textContent = 'Prompt copied to clipboard.';
+          setTimeout(() => button.textContent = original, 1600);
+        } catch {
+          const range = document.createRange();
+          range.selectNodeContents(target);
+          const selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+          status.textContent = 'Prompt selected. Copy it with your device copy command.';
+        }
+      });
+    });
+
+    // quiz
+    const explanations = [
+      ["Retrying the 422 burns capacity on a request that will fail identically next time &mdash; and it buries the real error in log noise.",
+       "The 503 is transient: a retry after a delay is very likely to succeed. Surfacing every transient blip to a human is the opposite of resilience.",
+       "Right. 503 is transient &mdash; the service is telling you to come back later. 422 means your request was understood and rejected; resending it changes nothing.",
+       "Backwards. The 422 is a business rejection (no retry will fix it); the 503 is exactly the transient case retries exist for."],
+      ["Backoff controls timing, not duplication. The retry arrived at a perfectly reasonable time &mdash; and still duplicated the effect.",
+       "The breaker stops hammering a failing service; it does nothing about a retry that duplicates a successful effect.",
+       "Right. The first attempt succeeded &mdash; only the response was lost. An idempotency key makes the second attempt return the original result instead of charging again. Retries without idempotency are duplicate effects.",
+       "A longer timeout avoids one retry; it doesn't fix the underlying hazard. Any retry of a non-idempotent mutation can double the effect."],
+      ["Forward order leaves dependents broken: step B's effects were built on A's, so A's undo must come last, not first.",
+       "Right. Last-in, first-out: the most recent step's effects are usually the most dependent on earlier ones, so undo C first, then B, then A. Order by dependency &mdash; which is usually reverse.",
+       "Order matters: reversing a reservation before refunding the payment that funded it (or vice versa) can corrupt dependent state.",
+       "Skipping B and C leaves their effects in place &mdash; the half-applied work is exactly what compensation exists to undo."],
+      ["If every step stayed compensable there would be no point to the pivot &mdash; it exists precisely because some effects can't be undone.",
+       "Retrying stops nothing: steps after the pivot still fail transiently and still need retries. What changes is that compensation is no longer an option.",
+       "Right. The pivot is the point of no return &mdash; after money moves or a legal action lands, there is no true undo. Design steps after the pivot as retryable-to-completion, and put all validations before it.",
+       "Order doesn't flip at the pivot. Compensation always unwinds reverse; the pivot instead marks where compensation stops being available."],
+      ["Longer backoff against a hard-down service just spaces out the damage. It never detects recovery and never relieves the pressure.",
+       "Right. Backoff doesn't fix a service down for hours &mdash; it just spaces out the damage. A circuit breaker opens, calls fail fast, and a trickle of probe traffic detects recovery before normal traffic resumes.",
+       "Faster retries against a down service are a retry storm in miniature: maximum pressure at exactly the wrong moment.",
+       "Compensation answers 'a step committed and the saga can't finish' &mdash; it doesn't stop workers from hammering a dead dependency."]
+    ];
+    const questions = [...document.querySelectorAll('.quiz-q')];
+    let score = 0, answered = 0;
+    questions.forEach((q, qi) => {
+      const correct = parseInt(q.dataset.answer, 10);
+      const exp = q.querySelector('.qexp');
+      q.querySelectorAll('.qopt').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          if (q.dataset.done) return;
+          q.dataset.done = "1";
+          const chosen = parseInt(btn.dataset.i, 10);
+          const ok = chosen === correct;
+          q.querySelectorAll('.qopt').forEach((b) => {
+            b.disabled = true;
+            if (parseInt(b.dataset.i, 10) === correct) b.classList.add('correct');
+          });
+          if (!ok) btn.classList.add('wrong');
+          else score++;
+          answered++;
+          exp.hidden = false;
+          exp.innerHTML = ok
+            ? "<strong class=\"ok\">Correct.</strong> " + explanations[qi][chosen]
+            : "<strong class=\"no\">Not quite.</strong> " + explanations[qi][chosen];
+          if (answered === questions.length) {
+            const box = document.getElementById('quiz-score');
+            box.style.display = "block";
+            box.innerHTML = "You scored <strong>" + score + " / " + questions.length + "</strong>." +
+              (score === questions.length ? " Clean sweep &mdash; your sagas will unwind gracefully." :
+               score >= 3 ? " Solid &mdash; re-read the section you missed." :
+               " Worth a re-read of section 04 before moving on.");
+          }
+        });
+      });
+    });
+
+    // flashcards
+    document.querySelectorAll('.fcard').forEach((card) => {
+      const flip = () => card.classList.toggle('flipped');
+      card.addEventListener('click', flip);
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); }
+      });
+    });
+  </script>
+</body>
+</html>
