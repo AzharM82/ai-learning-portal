@@ -201,5 +201,12 @@
     "date": "2026-10-12",
     "summary": "The middle of a multi-step agent run is the worst place to fail: state is half-changed and nothing rolls back by itself. Retry transient faults with bounded backoff + jitter (idempotently), compensate completed steps in reverse when forward progress dies, and coordinate the whole thing as a saga with a pivot point of no return.",
     "skill": "error-recovery-patterns-retries-sagas"
+  },
+  {
+    "slug": "2026-10-13-checkpointing-resumable-agent-runs",
+    "title": "Checkpointing and resumable agent runs",
+    "date": "2026-10-13",
+    "summary": "A crash mid-run must never mean starting over: persist state + resume pointer + idempotency ledger at step boundaries, resume by skipping completed steps, and treat human approvals as checkpoints with a signal.",
+    "skill": "checkpointing-resumable-agent-runs"
   }
 ]

@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Checkpointing and resumable agent runs &middot; AI Learning Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+    :root {
+      --ink: #14212b; --muted: #53636f; --paper: #f6f8f7; --white: #ffffff;
+      --line: #cbd5d8; --navy: #163247; --navy-2: #21465e; --teal: #0b8174;
+      --teal-soft: #dff2ee; --orange: #d66332; --orange-soft: #f8e4d8;
+      --gold: #d8a524; --gold-soft: #f7edc8; --blue-soft: #e3eef4;
+      --red: #b3402e; --red-soft: #f9e3de; --green: #1e7a3c; --green-soft: #e2f2e6;
+      --shadow: 0 18px 45px rgba(20, 33, 43, .09); --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; color: var(--ink);
+      background: linear-gradient(rgba(20,33,43,.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(20,33,43,.035) 1px, transparent 1px), var(--paper);
+      background-size: 28px 28px;
+      font-family: "Source Sans 3", sans-serif; font-size: 17px; line-height: 1.58;
+    }
+    .shell { width: min(960px, calc(100% - 40px)); margin: 0 auto; }
+    .portal-nav{position:sticky;top:0;z-index:50;background:rgba(22,50,71,.97);border-bottom:1px solid rgba(255,255,255,.12)}
+    .portal-nav-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;flex-wrap:wrap}
+    .portal-brand{color:#fff;text-decoration:none;font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:15px}
+    .portal-brand span{color:var(--gold);font-weight:400}
+    .portal-links{display:flex;gap:18px;flex-wrap:wrap}
+    .portal-links a{color:#dbe7ee;text-decoration:none;font-size:14.5px}
+    .portal-links a:hover{color:#fff;text-decoration:underline}
+    .hero { padding: 56px 0 36px; }
+    .chapter-mark { display:inline-flex;align-items:center;gap:10px;color:var(--navy);
+      font:600 12px/1.2 "IBM Plex Mono",monospace;letter-spacing:.09em;text-transform:uppercase;margin-bottom:18px; }
+    .chapter-mark::before { content:"";width:42px;height:3px;background:var(--orange); }
+    h1 { font-size: clamp(36px, 5vw, 58px); line-height: 1.02; letter-spacing:-.03em; margin:0 0 14px; }
+    .lede { color: var(--muted); font-size: clamp(18px,2vw,22px); max-width: 64ch; margin:0 0 8px; }
+    .date-line { font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--muted); }
+    section.block { margin: 44px 0; }
+    h2 { font-size: 26px; letter-spacing:-.02em; margin:0 0 6px; display:flex;align-items:center;gap:12px; }
+    h2 .num { font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:600;color:var(--white);
+      background:var(--navy);border-radius:999px;min-width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center; }
+    .sub { color:var(--muted); margin:0 0 18px; max-width: 68ch; }
+    .card { background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+      padding:24px;box-shadow:var(--shadow); }
+    .skill-card { background:var(--navy);color:#eaf2f7;border-radius:var(--radius);padding:22px 24px;
+      font-family:"IBM Plex Mono",monospace;font-size:14.5px;overflow-x:auto;box-shadow:var(--shadow); }
+    .skill-card .k { color:var(--gold); }
+    .idea { font-size:21px;line-height:1.5;border-left:4px solid var(--teal);padding:6px 0 6px 20px;max-width:62ch; }
+    .idea strong { color:var(--navy); }
+    .mechanics { display:grid;gap:14px; }
+    .mech { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:18px 20px;
+      display:grid;grid-template-columns:44px 1fr;gap:14px;align-items:start; }
+    .mech .mnum { font-family:"IBM Plex Mono",monospace;font-weight:600;color:var(--teal);
+      background:var(--teal-soft);border-radius:10px;width:44px;height:44px;display:flex;align-items:center;justify-content:center; }
+    .mech h3 { margin:0 0 6px;font-size:18px; }
+    .mech p { margin:0;color:var(--muted);font-size:15.5px; }
+    .mech code, .inline-code { font-family:"IBM Plex Mono",monospace;font-size:.88em;background:var(--blue-soft);
+      padding:2px 7px;border-radius:6px;color:var(--navy); }
+    pre.code { background:#0f2233;color:#e8f1f5;border-radius:14px;padding:20px 22px;overflow-x:auto;
+      font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.6;margin:0; }
+    pre.code .c { color:#8ba3b0; } pre.code .s { color:#ffd479; } pre.code .k { color:#7fd6c2; }
+    .fail { border-left:4px solid var(--orange); }
+    .fail h3 .fix { display:block;margin-top:8px;font-size:15px;font-weight:500;color:var(--green); }
+    .ref-list { display:grid;gap:12px; }
+    .ref { display:flex;gap:14px;align-items:flex-start;background:var(--white);border:1px solid var(--line);
+      border-radius:14px;padding:16px 18px;text-decoration:none;color:inherit; }
+    .ref:hover { border-color:var(--teal); }
+    .ref .badge { flex:none;font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;letter-spacing:.06em;
+      padding:5px 10px;border-radius:999px;text-transform:uppercase; }
+    .badge.doc { background:var(--blue-soft);color:var(--navy); }
+    .badge.vid { background:var(--orange-soft);color:var(--orange); }
+    .ref h3 { margin:0 0 4px;font-size:17px; }
+    .ref p { margin:0;color:var(--muted);font-size:14.5px; }
+    .prompt-block { background:#0f2233;border-radius:var(--radius);overflow:hidden;margin-bottom:18px;box-shadow:var(--shadow); }
+    .prompt-top { display:flex;justify-content:space-between;align-items:center;gap:12px;
+      padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.12); }
+    .prompt-top strong { color:#fff;font-size:13px;letter-spacing:.06em;font-family:"IBM Plex Mono",monospace; }
+    .copy-btn { border:1px solid #6c8796;background:transparent;color:#fff;border-radius:6px;padding:7px 11px;
+      cursor:pointer;font-weight:700;font-size:14px; }
+    .copy-btn:hover { background:rgba(255,255,255,.1); }
+    .copy-btn:focus-visible { outline:2px solid var(--gold);outline-offset:2px; }
+    .prompt-text { color:#e8f1f5;font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.65;
+      padding:18px;white-space:pre-wrap;margin:0; }
+    .sr-only { position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0); }
+    .quiz-q { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px; }
+    .quiz-q .qq { font-weight:700;margin:0 0 12px;font-size:18px; }
+    .qopts { display:grid;gap:8px; }
+    .qopt { text-align:left;background:var(--paper);border:1px solid var(--line);border-radius:10px;
+      padding:12px 14px;cursor:pointer;font-size:15.5px;color:var(--ink); }
+    .qopt:hover:not(:disabled) { border-color:var(--navy); }
+    .qopt:disabled { cursor:default;opacity:.85; }
+    .qopt.correct { background:var(--green-soft);border-color:var(--green); }
+    .qopt.wrong { background:var(--red-soft);border-color:var(--red); }
+    .qexp { margin:12px 0 0;font-size:15px;color:var(--muted); }
+    .qexp strong.ok { color:var(--green); } .qexp strong.no { color:var(--red); }
+    #quiz-score { display:none;margin-top:8px;background:var(--navy);color:#fff;border-radius:14px;
+      padding:20px 24px;font-size:19px; }
+    #quiz-score strong { color:var(--gold); }
+    .fgrid { display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px; }
+    .fcard { perspective:900px;cursor:pointer;min-height:170px; }
+    .fcard-inner { position:relative;width:100%;height:100%;min-height:170px;transform-style:preserve-3d;transition:transform .45s; }
+    .fcard.flipped .fcard-inner { transform:rotateY(180deg); }
+    .fface { position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+      border-radius:14px;padding:18px;display:flex;align-items:center;justify-content:center;text-align:center;
+      border:1px solid var(--line);background:var(--white);box-shadow:var(--shadow);font-size:15.5px; }
+    .fface.front { font-weight:700;color:var(--navy); }
+    .fface.back { transform:rotateY(180deg);background:var(--teal-soft);color:var(--ink);font-size:14.5px; }
+    .fcard:focus-visible { outline:2px solid var(--teal);outline-offset:3px;border-radius:14px; }
+    .triggers { display:grid;gap:10px; }
+    .trigger { background:var(--gold-soft);border-radius:12px;padding:14px 18px;font-size:16px; }
+    .trigger strong { color:var(--navy); }
+    .back-link { display:inline-block;margin:8px 0 60px;font-weight:600;color:var(--teal);text-decoration:none;font-size:17px; }
+    .back-link:hover { text-decoration:underline; }
+    .fig { background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+      padding:12px;box-shadow:var(--shadow);overflow-x:auto; }
+    .fig svg { display:block;width:100%;height:auto; }
+    .flow-anim { stroke-dasharray: 8 6; animation: dashmove 1.2s linear infinite; }
+    @keyframes dashmove { to { stroke-dashoffset: -14; } }
+    .pulse { animation: pulse 2.2s ease-in-out infinite; }
+    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.45; } }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior:auto; } .fcard-inner{transition:none;} .flow-anim{animation:none;} .pulse{animation:none;} }
+  </style>
+</head>
+<body><nav class="portal-nav">
+    <div class="shell portal-nav-inner">
+      <a class="portal-brand" href="../index.html">AI Engineering <span>&middot; Learning Portal</span></a>
+      <div class="portal-links">
+        <a href="../index.html#daily-topics">Daily topics</a>
+        <a href="../index.html#loop">Loop</a>
+        <a href="../index.html#graph">Graph</a>
+        <a href="../index.html#harness">Harness</a>
+      </div>
+    </div>
+  </nav>
+  <div class="shell">
+
+    <header class="hero">
+      <div class="chapter-mark">Daily topic &middot; The trio's adjacents</div>
+      <h1>Checkpointing and resumable agent runs</h1>
+      <p class="lede">Your agent is six steps into an eight-step research task &mdash; then the process dies. Without checkpoints, it starts over: re-burning tokens, re-calling tools, re-running side effects. <strong>Checkpointing</strong> durably records each step&rsquo;s completed state, so a crashed run <strong>resumes from the last checkpoint</strong> instead of restarting. Replay restores state; <strong>idempotency keys</strong> protect the outside world.</p>
+      <p class="date-line">2026-10-13 &middot; Topic 030</p>
+    </header>
+
+    <section class="block">
+      <h2><span class="num">01</span> The skill card</h2>
+      <p class="sub">Every topic on this portal is designed like a Codex skill: a name, a trigger, and concrete steps.</p>
+      <div class="skill-card"><pre style="margin:0">---
+<span class="k">name:</span> checkpointing-resumable-agent-runs
+<span class="k">description:</span> Reach for this when an agent run must survive crashes,
+  restarts, or human approvals: persist completed step state to a durable
+  checkpointer after each step boundary (thread_id-scoped snapshots,
+  Postgres/SQLite in production, never in-memory), resume by skipping
+  completed steps instead of replaying tools, guard every side effect with
+  an idempotency key, version the checkpoint schema, and prune old threads.
+---</pre></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">02</span> The one-idea version</h2>
+      <p class="idea">A crash mid-run must never mean starting over. A checkpoint is a durable record of <strong>what completed and where to resume</strong> &mdash; the state snapshot plus the pointer to the next un-done step. On restart the runner replays the record to reconstruct state and <strong>skips completed steps</strong> rather than re-executing tools. Checkpoints restore memory; they do <em>not</em> undo the outside world &mdash; that is why every side effect rides an <strong>idempotency key</strong>.</p>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">03</span> Crash mid-run: the two futures</h2>
+      <p class="sub">Same run, same crash at step 4 of 6. One run re-burns everything; the other resumes in seconds.</p>
+      <div class="fig">
+        <svg viewBox="0 0 960 500" role="img" aria-label="Diagram: six steps across a timeline; crash marker at step 4. Top path without checkpointing restarts from step 1 and re-runs everything including side effects. Bottom path with checkpointing loads the checkpoint and resumes at step 4, skipping completed steps.">
+          <defs>
+            <marker id="arrn" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+              <path d="M0,0 L8,3 L0,6 Z" fill="#163247"></path>
+            </marker>
+            <marker id="arrr" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+              <path d="M0,0 L8,3 L0,6 Z" fill="#b3402e"></path>
+            </marker>
+            <marker id="arrt" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+              <path d="M0,0 L8,3 L0,6 Z" fill="#0b8174"></path>
+            </marker>
+          </defs>
+
+          <g font-family="IBM Plex Mono, monospace" font-size="13" font-weight="600" fill="#b3402e">
+            <text x="30" y="40">WITHOUT CHECKPOINTS &mdash; crash at step 4 &rarr; restart from step 1</text>
+          </g>
+          <g font-family="Source Sans 3, sans-serif" font-size="14">
+            <rect x="30" y="58" width="120" height="70" rx="10" fill="#e2f2e6" stroke="#1e7a3c" stroke-width="1.5"/>
+            <text x="90" y="84" text-anchor="middle" font-weight="700" fill="#163247">STEP 1</text>
+            <text x="90" y="106" text-anchor="middle" fill="#53636f" font-size="12">fetch + summarize</text>
+            <rect x="175" y="58" width="120" height="70" rx="10" fill="#e2f2e6" stroke="#1e7a3c" stroke-width="1.5"/>
+            <text x="235" y="84" text-anchor="middle" font-weight="700" fill="#163247">STEP 2</text>
+            <text x="235" y="106" text-anchor="middle" fill="#53636f" font-size="12">plan searches</text>
+            <rect x="320" y="58" width="120" height="70" rx="10" fill="#e2f2e6" stroke="#1e7a3c" stroke-width="1.5"/>
+            <text x="380" y="84" text-anchor="middle" font-weight="700" fill="#163247">STEP 3</text>
+            <text x="380" y="106" text-anchor="middle" fill="#53636f" font-size="12">write draft</text>
+            <rect x="465" y="58" width="120" height="70" rx="10" fill="#f9e3de" stroke="#b3402e" stroke-width="1.5"/>
+            <text x="525" y="84" text-anchor="middle" font-weight="700" fill="#b3402e">&#9888; STEP 4</text>
+            <text x="525" y="106" text-anchor="middle" fill="#53636f" font-size="12">send for review &mdash; CRASH</text>
+            <rect x="610" y="58" width="120" height="70" rx="10" fill="#ffffff" stroke="#cbd5d8" stroke-width="1.5"/>
+            <text x="670" y="84" text-anchor="middle" font-weight="700" fill="#53636f">STEP 5</text>
+            <text x="670" y="106" text-anchor="middle" fill="#53636f" font-size="12">not reached</text>
+            <rect x="755" y="58" width="120" height="70" rx="10" fill="#ffffff" stroke="#cbd5d8" stroke-width="1.5"/>
+            <text x="815" y="84" text-anchor="middle" font-weight="700" fill="#53636f">STEP 6</text>
+            <text x="815" y="106" text-anchor="middle" fill="#53636f" font-size="12">not reached</text>
+          </g>
+          <g stroke="#b3402e" stroke-width="2" fill="none">
+            <path d="M 815 128 C 815 175, 500 150, 90 200" class="flow-anim" marker-end="url(#arrr)"/>
+          </g>
+          <g font-family="IBM Plex Mono, monospace" font-size="12" fill="#b3402e">
+            <text x="500" y="192">restart from zero: steps 1-3 re-run, tokens re-burned, side effects re-fired</text>
+          </g>
+
+          <g font-family="IBM Plex Mono, monospace" font-size="13" font-weight="600" fill="#0b8174">
+            <text x="30" y="248">WITH CHECKPOINTS &mdash; crash at step 4 &rarr; resume from step 4</text>
+          </g>
+          <g font-family="Source Sans 3, sans-serif" font-size="14">
+            <rect x="30" y="266" width="120" height="70" rx="10" fill="#dff2ee" stroke="#0b8174" stroke-width="1.5"/>
+            <text x="90" y="292" text-anchor="middle" font-weight="700" fill="#163247">STEP 1</text>
+            <text x="90" y="314" text-anchor="middle" fill="#0b8174" font-size="12">&#10003; checkpointed</text>
+            <rect x="175" y="266" width="120" height="70" rx="10" fill="#dff2ee" stroke="#0b8174" stroke-width="1.5"/>
+            <text x="235" y="292" text-anchor="middle" font-weight="700" fill="#163247">STEP 2</text>
+            <text x="235" y="314" text-anchor="middle" fill="#0b8174" font-size="12">&#10003; checkpointed</text>
+            <rect x="320" y="266" width="120" height="70" rx="10" fill="#dff2ee" stroke="#0b8174" stroke-width="1.5"/>
+            <text x="380" y="292" text-anchor="middle" font-weight="700" fill="#163247">STEP 3</text>
+            <text x="380" y="314" text-anchor="middle" fill="#0b8174" font-size="12">&#10003; checkpointed</text>
+            <rect x="465" y="266" width="120" height="70" rx="10" fill="#ffffff" stroke="#0b8174" stroke-width="2.5" class="pulse"/>
+            <text x="525" y="292" text-anchor="middle" font-weight="700" fill="#163247">STEP 4</text>
+            <text x="525" y="314" text-anchor="middle" fill="#0b8174" font-size="12">resume here</text>
+            <rect x="610" y="266" width="120" height="70" rx="10" fill="#ffffff" stroke="#cbd5d8" stroke-width="1.5"/>
+            <text x="670" y="292" text-anchor="middle" font-weight="700" fill="#53636f">STEP 5</text>
+            <rect x="755" y="266" width="120" height="70" rx="10" fill="#ffffff" stroke="#cbd5d8" stroke-width="1.5"/>
+            <text x="815" y="292" text-anchor="middle" font-weight="700" fill="#53636f">STEP 6</text>
+          </g>
+          <g stroke="#0b8174" stroke-width="2" fill="none">
+            <path d="M 320 358 L 320 420 L 465 420 L 465 348" class="flow-anim" marker-end="url(#arrt)"/>
+          </g>
+          <g font-family="IBM Plex Mono, monospace" font-size="12" fill="#0b8174">
+            <text x="335" y="440">load latest checkpoint &rarr; skip steps 1-3 &rarr; resume at 4 with same thread_id</text>
+          </g>
+
+          <g font-family="Source Sans 3, sans-serif" font-size="14">
+            <rect x="30" y="462" width="900" height="30" rx="10" fill="none"/>
+          </g>
+          <g font-family="IBM Plex Mono, monospace" font-size="12.5" fill="#163247">
+            <text x="30" y="484">checkpoint = { values: state snapshot, next: step 4 pointer, thread_id, idempotency ledger } &mdash; durable store, never RAM</text>
+          </g>
+        </svg>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">04</span> How it works</h2>
+      <p class="sub">Imperative, concrete. Crash-safety is designed in, not bolted on.</p>
+      <div class="mechanics">
+        <div class="mech"><div class="mnum">1</div><div><h3>Checkpoint state AND intent at step boundaries</h3><p>Record <strong>three things</strong>: the state snapshot (what the run knows so far), the resume pointer (which step comes next &mdash; LangGraph calls this <code class="inline-code">next</code> in its <code class="inline-code">StateSnapshot</code>), and the thread identity. State without a pointer tells you what the run knew, not what to do; a pointer without state makes you re-derive everything. Step boundaries &mdash; node completions, completed tool batches &mdash; are the natural checkpoint unit.</p></div></div>
+        <div class="mech"><div class="mnum">2</div><div><h3>Use a durable checkpointer &mdash; never in-memory for real runs</h3><p><code class="inline-code">InMemorySaver</code>/<code class="inline-code">MemorySaver</code> dies with the process; they are for dev only. Production means a database-backed checkpointer: <code class="inline-code">SqliteSaver</code> for local runs, <code class="inline-code">PostgresSaver</code> for production. Compile once with <code class="inline-code">graph.compile(checkpointer=checkpointer)</code>, then every <code class="inline-code">invoke</code>/<code class="inline-code">stream</code> writes checkpoints automatically &mdash; one line of durability.</p></div></div>
+        <div class="mech"><div class="mnum">3</div><div><h3>Resume means skip, not replay</h3><p>On restart, load the latest checkpoint for the <code class="inline-code">thread_id</code>, restore state, and <strong>skip every completed step</strong> &mdash; resume with no new input (LangGraph: <code class="inline-code">invoke(None, config)</code>). Replay reconstructs state from the record; it does not re-run tool calls. If your resume logic re-fires an API to &ldquo;rebuild state,&rdquo; you wrote a restart, not a resume &mdash; and you just re-burned the tokens.</p></div></div>
+        <div class="mech"><div class="mnum">4</div><div><h3>Guard every side effect with an idempotency key</h3><p>A checkpoint restores the run&rsquo;s memory; it does not un-send the email or un-charge the card. Record the <strong>idempotency ledger</strong> &mdash; which external effects already fired, with which keys &mdash; in the checkpoint. On resume, any step that touches the outside world must carry the <em>same</em> key, so the world sees one effect no matter how many times the run restarts.</p></div></div>
+        <div class="mech"><div class="mnum">5</div><div><h3>Treat a human approval as a checkpoint with a signal</h3><p>Pause before the risky step, persist state, then <strong>release the worker</strong> &mdash; do not hold a process open waiting on a person. The human&rsquo;s decision arrives as ordinary input (approve/reject/edit), the run resumes from the checkpoint, and the audit trail shows exactly what was known at decision time. The graph never blocks on a human; it waits in the database.</p></div></div>
+        <div class="mech"><div class="mnum">6</div><div><h3>Version the checkpoint schema and prune old threads</h3><p>State shapes evolve; resuming an old checkpoint with new code corrupts the run. Stamp a <strong>schema version</strong> into the checkpoint metadata and refuse (or migrate) on mismatch. Checkpoints also accumulate: prune completed or expired threads on a retention schedule &mdash; storage and read latency both grow with a thread&rsquo;s history.</p></div></div>
+        <div class="mech"><div class="mnum">7</div><div><h3>For long-running orchestration, replay from an event history</h3><p>Temporal&rsquo;s model: every workflow event is durably logged, and a crashed worker <strong>replays that history</strong> to rebuild state before continuing. The determinism rule falls out of this: keep LLM calls and API calls in activities (non-deterministic by nature), keep orchestration logic deterministic, and the run can resume after hours, days, or a deploy.</p></div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">05</span> Code sketch</h2>
+      <p class="sub">A journaled step runner: durable JSON checkpoint, resume skips completed steps, side effects ride an idempotency ledger.</p>
+      <div class="card"><pre class="code"><span class="c"># Checkpointed runner: crash anywhere, resume from the last boundary</span>
+<span class="k">import</span> json, os, uuid
+
+CKPT = <span class="s">"run_checkpoint.json"</span>
+
+<span class="k">def</span> <span class="k">save</span>(ckpt):
+    tmp = CKPT + <span class="s">".tmp"</span>
+    json.dump(ckpt, open(tmp, <span class="s">"w"</span>))      <span class="c"># atomic write: never a torn file</span>
+    os.replace(tmp, CKPT)
+
+<span class="k">def</span> <span class="k">run_resumable</span>(steps, thread_id):
+    ckpt = json.load(open(CKPT)) <span class="k">if</span> os.path.exists(CKPT) <span class="k">else</span> {
+        <span class="s">"thread_id"</span>: thread_id, <span class="s">"schema_v"</span>: 1,
+        <span class="s">"next"</span>: 0, <span class="s">"state"</span>: {}, <span class="s">"effects"</span>: {},  <span class="c"># idempotency ledger</span>
+    }
+    <span class="k">assert</span> ckpt[<span class="s">"schema_v"</span>] == 1, <span class="s">"stale checkpoint schema; migrate first"</span>
+    <span class="k">for</span> i, step <span class="k">in</span> enumerate(steps):
+        <span class="k">if</span> i &lt; ckpt[<span class="s">"next"</span>]:
+            <span class="k">continue</span>                                  <span class="c"># completed: skip, never replay</span>
+        key = ckpt[<span class="s">"effects"</span>].get(step.name) <span class="k">or</span> str(uuid.uuid4())
+        result = step(key, ckpt[<span class="s">"state"</span>])            <span class="c"># same key on resume: one effect</span>
+        ckpt[<span class="s">"effects"</span>][step.name] = key
+        ckpt[<span class="s">"state"</span>].update(result)
+        ckpt[<span class="s">"next"</span>] = i + 1                    <span class="c"># pointer advances only after success</span>
+        save(ckpt)                                <span class="c"># checkpoint at every boundary</span>
+    <span class="k">return</span> ckpt[<span class="s">"state"</span>]</pre></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">06</span> Failure modes</h2>
+      <p class="sub">Named, with a one-line fix each. Most resumability bugs are about what was NOT in the checkpoint.</p>
+      <div class="mechanics">
+        <div class="mech fail"><div class="mnum">F1</div><div><h3>In-memory checkpointing in production<span class="fix">Fix: durable backend for real runs &mdash; SQLite locally, Postgres in production.</span></h3><p>The demo worked beautifully with <code class="inline-code">InMemorySaver</code> &mdash; then the container restarted and three hours of agent work vanished. RAM is not storage. The swap is one line at compile time; the lesson is that your first deploy is where this always breaks.</p></div></div>
+        <div class="mech fail"><div class="mnum">F2</div><div><h3>Checkpointing state but not the side-effect ledger<span class="fix">Fix: record every external effect (with its idempotency key) in the checkpoint.</span></h3><p>The run resumed perfectly &mdash; state restored, pointer correct &mdash; and then re-sent the customer email because nothing recorded that it already went out. A checkpoint that forgets the outside world is an amnesiac resume: technically correct, practically a duplicate.</p></div></div>
+        <div class="mech fail"><div class="mnum">F3</div><div><h3>Resume replays tool calls to "rebuild state"<span class="fix">Fix: restore state from the record, then skip completed steps; never re-execute.</span></h3><p>The resume handler re-runs the search and the LLM calls &ldquo;to get back to where it was&rdquo; &mdash; burning tokens, drifting results (LLMs don&rsquo;t repeat), and possibly re-firing non-idempotent effects. If resuming costs the same as restarting, your checkpoints are decoration.</p></div></div>
+        <div class="mech fail"><div class="mnum">F4</div><div><h3>No schema version on checkpoints<span class="fix">Fix: stamp schema_v into every checkpoint; refuse or migrate on mismatch.</span></h3><p>You ship a state-shape change; threads that paused before the deploy resume into a shape the new code doesn&rsquo;t understand. Keys are missing, types are wrong, and the failure looks like a model hallucination. Versioning turns &ldquo;stale checkpoint&rdquo; into a planned path instead of a mystery bug.</p></div></div>
+        <div class="mech fail"><div class="mnum">F5</div><div><h3>Checkpointing inside tight loops or never at all<span class="fix">Fix: checkpoint at step boundaries &mdash; node completions, completed tool batches.</span></h3><p>Checkpointing every LLM token costs more in write latency than it saves; checkpointing once per run means one crash loses the whole run. The sweet spot is the unit where re-running is expensive but writing is cheap: after each completed step.</p></div></div>
+        <div class="mech fail"><div class="mnum">F6</div><div><h3>Holding a process open while waiting on a human<span class="fix">Fix: interrupt &rarr; persist &rarr; release the worker; resume on the human&rsquo;s signal.</span></h3><p>The agent pauses before the send-email step and blocks the process &mdash; for two days, while the approver is on leave. Workers are expensive and restartable; the database is cheap and durable. A pause that survives a weekend is a checkpoint with a human-shaped resume signal.</p></div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">07</span> Go deeper</h2>
+      <p class="sub">Curated and real &mdash; every link opened and verified before publishing.</p>
+      <div class="ref-list">
+        <a class="ref" href="https://docs.langchain.com/oss/python/langgraph/persistence"><span class="badge doc">Docs</span><div><h3>Persistence &mdash; LangGraph official docs</h3><p>The authoritative map: checkpointers (thread-scoped state snapshots) vs stores (cross-thread data), the checkpointer/state tradeoff table, and the troubleshooting section that calls out MemorySaver-not-surviving-restarts and unbounded checkpoint growth.</p></div></a>
+        <a class="ref" href="https://learn.temporal.io/tutorials/python/background-check/durable-execution/"><span class="badge doc">Docs</span><div><h3>Develop code that durably executes &mdash; Temporal Learn</h3><p>The event-history model in full: how workers replay history to rebuild state after a crash, why LLM and API calls belong in activities (non-deterministic by nature), and the replay test that catches code/history incompatibility before deploy.</p></div></a>
+        <a class="ref" href="https://www.youtube.com/watch?v=sKyknbiPR-Y"><span class="badge vid">Video</span><div><h3>LangGraph Workflow Checkpointing and Interrupts &mdash; Part 1/3</h3><p>Hands-on build of exactly today&rsquo;s mechanics: InMemorySaver checkpointing, interrupt handling, and thread management for resumable workflows &mdash; watch how <code class="inline-code">interrupt()</code> plus a thread_id turns a pause into a resume.</p></div></a>
+        <a class="ref" href="https://www.youtube.com/watch?v=k0dGx1TLavg"><span class="badge vid">Video</span><div><h3>Agentic AI with LangGraph: Edges, HITL, Agent Loop &amp; Checkpoints</h3><p>Places checkpointing in the full architecture: the think&ndash;act&ndash;observe loop, human approval gates, then checkpoints as the durability layer and stores as the long-term layer &mdash; good for seeing where today&rsquo;s idea sits.</p></div></a>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">08</span> Sample prompts</h2>
+      <p class="sub">Copy-paste starters. Use the copy button; each one is a full working prompt.</p>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>PROMPT 1 &middot; ADD CHECKPOINTING TO AN EXISTING AGENT</strong><button class="copy-btn" data-copy="pr1">Copy</button></div>
+        <p class="prompt-text" id="pr1">Here is my agent's main loop / graph definition: [paste code]. It runs [N] steps: [describe steps, which call tools, which have side effects].
+
+Add resumability: choose the checkpoint boundaries (after which steps), pick a durable checkpointer appropriate for [local dev / production Postgres], and show the exact compile + invoke changes. Add an idempotency ledger for these side-effect steps: [list them]. Show the resume path: how the runner loads the latest checkpoint for a thread_id, skips completed steps, and handles the lost-response case. Name what the checkpoint must store beyond the raw state dict.</p>
+      </div>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>PROMPT 2 &middot; DESIGN THE APPROVAL INTERRUPT</strong><button class="copy-btn" data-copy="pr2">Copy</button></div>
+        <p class="prompt-text" id="pr2">My agent performs these irreversible actions: [list them]. Design a human-in-the-loop interrupt around them.
+
+For each risky step, specify: the checkpoint written before pausing, the approval payload shown to the human (what was proposed + what was known at decision time), the resume signal (approve / reject / edit-with-changes), and what happens to the checkpoint on each outcome. The worker must NOT stay alive while waiting — show the persist-and-release flow. Then list 3 failure modes of this approval flow and a fix for each (F1-F6 from today's lesson style).</p>
+      </div>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>PROMPT 3 &middot; AUDIT A RUN FOR RESUMABILITY</strong><button class="copy-btn" data-copy="pr3">Copy</button></div>
+        <p class="prompt-text" id="pr3">Audit this agent run for crash-safety: [paste the run code or describe the steps, tools, side effects, and storage].
+
+Check: (1) is the checkpointer durable or in-memory? (2) what exactly lands in the checkpoint — state, resume pointer, thread identity, idempotency ledger? (3) does resume skip completed steps or replay them? (4) which side effects would duplicate on resume and what keys guard them? (5) is the checkpoint schema versioned, and is there a retention policy? (6) do any steps block on a human instead of interrupt-and-release? End with the minimal fix list ordered by blast radius.</p>
+      </div>
+      <div id="copy-status" class="sr-only" role="status" aria-live="polite"></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">09</span> Check yourself</h2>
+      <p class="sub">Five questions. Click an answer &mdash; right or wrong, you get the why immediately.</p>
+      <div class="quiz-q" data-answer="2">
+        <p class="qq">1. An agent crashes at step 4 of 6 with checkpoints written after each completed step. What should the resume do?</p>
+        <div class="qopts">
+          <button class="qopt" data-i="0">Restart the whole run from step 1 &mdash; checkpoints are for humans, not the runner.</button>
+          <button class="qopt" data-i="1">Re-run steps 1&ndash;3 to "rebuild state," then continue from step 4.</button>
+          <button class="qopt" data-i="2">Load the latest checkpoint, restore state, skip steps 1&ndash;3, and resume at step 4.</button>
+          <button class="qopt" data-i="3">Load the checkpoint and retry step 4 indefinitely until it succeeds.</button>
+        </div>
+        <p class="qexp" hidden></p>
+      </div>
+      <div class="quiz-q" data-answer="3">
+        <p class="qq">2. Your checkpointed agent sends emails, and on resume it re-sent an email the run already delivered. What was missing from the checkpoint?</p>
+        <div class="qopts">
+          <button class="qopt" data-i="0">The LLM's conversation history &mdash; it forgot the email was sent.</button>
+          <button class="qopt" data-i="1">A larger checkpoint interval &mdash; it checkpointed too rarely.</button>
+          <button class="qopt" data-i="2">The resume pointer &mdash; the run didn't know which step came next.</button>
+          <button class="qopt" data-i="3">The side-effect ledger &mdash; no record that the email went out with which idempotency key.</button>
+        </div>
+        <p class="qexp" hidden></p>
+      </div>
+      <div class="quiz-q" data-answer="1">
+        <p class="qq">3. A teammate demos resumable agent runs using InMemorySaver, all running in one long-lived process. What's the risk at deploy time?</p>
+        <div class="qopts">
+          <button class="qopt" data-i="0">Checkpoints will be too slow &mdash; RAM can't keep up with the write rate.</button>
+          <button class="qopt" data-i="1">Everything vanishes on process restart &mdash; in-memory checkpointing is for dev only.</button>
+          <button class="qopt" data-i="2">The checkpoint format is incompatible with threads &mdash; thread_id won't work.</button>
+          <button class="qopt" data-i="3">None &mdash; InMemorySaver is the production default.</button>
+        </div>
+        <p class="qexp" hidden></p>
+      </div>
+      <div class="quiz-q" data-answer="0">
+        <p class="qq">4. Your agent must pause for a human approval that may take two days. What's the correct design?</p>
+        <div class="qopts">
+          <button class="qopt" data-i="0">Interrupt, persist the checkpoint, release the worker, and resume when the decision arrives.</button>
+          <button class="qopt" data-i="1">Keep the process blocked on the interrupt &mdash; the run is paused, nothing is lost.</button>
+          <button class="qopt" data-i="2">Skip checkpointing for approvals &mdash; just re-run the whole thing after approval.</button>
+          <button class="qopt" data-i="3">Delete the checkpoint at pause so a stale run can't resume twice.</button>
+        </div>
+        <p class="qexp" hidden></p>
+      </div>
+      <div class="quiz-q" data-answer="2">
+        <p class="qq">5. You ship a change to the agent's state shape. Threads that paused before the deploy now resume. What prevents silent corruption?</p>
+        <div class="qopts">
+          <button class="qopt" data-i="0">Re-checkpointing every thread immediately before deploy &mdash; old checkpoints are never read.</button>
+          <button class="qopt" data-i="1">Making checkpoints expire after 24 hours &mdash; stale ones just disappear.</button>
+          <button class="qopt" data-i="2">A schema version stamped in the checkpoint &mdash; refuse or migrate on mismatch.</button>
+          <button class="qopt" data-i="3">Nothing is needed &mdash; the new code tolerates any old state shape.</button>
+        </div>
+        <p class="qexp" hidden></p>
+      </div>
+      <div id="quiz-score"></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">10</span> Flashcards</h2>
+      <p class="sub">Click a card to flip it. Tab to a card and press Enter or Space.</p>
+      <div class="fgrid">
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Checkpoint</div>
+          <div class="fface back">A durable record of what completed and where to resume: state snapshot + resume pointer + thread identity. Written at step boundaries.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Resume pointer ("next")</div>
+          <div class="fface back">The recorded identity of the next un-done step. State without a pointer tells you what the run knew, not what to do next.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Checkpointer</div>
+          <div class="fface back">Saves thread-scoped graph state as checkpoints (InMemorySaver for dev; SqliteSaver / PostgresSaver for durable runs).</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">thread_id</div>
+          <div class="fface back">The scope a checkpointer writes to: one ID, one continuous run history. Same ID resumes; a new ID starts fresh.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Resume by skipping</div>
+          <div class="fface back">Load the latest checkpoint, restore state, and skip completed steps (invoke(None, config)). Replay restores memory; it never re-runs tools.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Idempotency ledger</div>
+          <div class="fface back">The checkpoint's record of external effects already fired, with their keys. Checkpoints restore the run's memory &mdash; the ledger protects the outside world.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Planned interrupt</div>
+          <div class="fface back">A checkpoint with a human-shaped resume signal: pause, persist, release the worker; resume on approve / reject / edit. Never block a process on a person.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Checkpoint schema version</div>
+          <div class="fface back">Stamped into checkpoint metadata; refuse or migrate when code and checkpoint disagree. Stops state-shape changes from corrupting paused threads.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Event history replay (Temporal)</div>
+          <div class="fface back">Every workflow event durably logged; a crashed worker replays the history to rebuild state, then continues. Non-deterministic calls live in activities.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Checkpoint retention</div>
+          <div class="fface back">Checkpoints accumulate: storage and read latency grow with thread history. Prune completed or expired threads on a retention schedule.</div>
+        </div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">11</span> Reach for this when&hellip;</h2>
+      <div class="triggers">
+        <div class="trigger"><strong>Your agent runs longer than your infrastructure's patience</strong> &mdash; multi-step tasks, flaky infra, deploys mid-run. Any run that can die between steps needs checkpoints: persist state at step boundaries so a crash resumes instead of restarting.</div>
+        <div class="trigger"><strong>A human must approve or edit before an irreversible step</strong>. Don&rsquo;t block a process on a person &mdash; interrupt, persist the checkpoint, release the worker, and let the decision arrive as ordinary resume input with the full decision-time state attached.</div>
+        <div class="trigger"><strong>You&rsquo;re building the run to be long-running by design</strong> (hours, days): checkpoint schema versioning, retention policies, and an idempotency ledger for every external effect are what keep a months-old thread resumable instead of a mystery crash.</div>
+      </div>
+    </section>
+
+    <a class="back-link" href="../index.html#daily-topics">&larr; Back to the daily topics</a>
+  </div>
+  <div id="live-status" class="sr-only" role="status" aria-live="polite"></div>
+  <script>
+    // copy buttons
+    const status = document.getElementById('live-status');
+    document.querySelectorAll('.copy-btn').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const target = document.getElementById(button.dataset.copy);
+        const text = target.innerText;
+        try {
+          await navigator.clipboard.writeText(text);
+          const original = button.textContent;
+          button.textContent = 'Copied';
+          status.textContent = 'Prompt copied to clipboard.';
+          setTimeout(() => button.textContent = original, 1600);
+        } catch {
+          const range = document.createRange();
+          range.selectNodeContents(target);
+          const selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+          status.textContent = 'Prompt selected. Copy it with your device copy command.';
+        }
+      });
+    });
+
+    // quiz
+    const explanations = [
+      ["Checkpoints are the resume record. Re-running completed steps re-burns tokens and can re-fire side effects; restarting wastes the work the checkpoints preserved.",
+       "Re-running steps 1\u20133 to 'rebuild state' is the anti-pattern: LLM calls don't repeat identically, and any non-idempotent tool call re-fires its effect. State comes from the checkpoint, not from re-execution.",
+       "Right. Load the latest checkpoint for the thread, restore state, and skip everything before the resume pointer. invoke(None, config): no new input, just continue from where it stopped.",
+       "Retries are for transient step failures within a run (yesterday's topic), not for resuming a crashed run. The run doesn't need retries here \u2014 it needs to skip to step 4."],
+      ["The model didn't forget; the checkpoint had nothing to remember. No ledger entry said 'email sent, key K', so resume had no way to know the effect already happened.",
+       "Checkpoint frequency doesn't cause duplicate effects. An hourly checkpoint of the same incomplete state still re-sends the email.",
+       "A wrong pointer repeats or skips steps, but the specific hazard here \u2014 re-firing an external effect \u2014 is about the world, not the step order. The ledger is the fix.",
+       "Right. The checkpoint recorded the run's memory but not its footprint. An idempotency ledger (which effects fired, with which keys) makes a resume send each external effect exactly once."],
+      ["RAM speed is not the problem \u2014 volatility is. The demo only works because the demo process never restarts.",
+       "Right. InMemorySaver and MemorySaver store checkpoints in RAM; a process restart wipes them. Durable checkpointer is a one-line swap (SqliteSaver locally, PostgresSaver in production), but forgetting it turns every deploy into data loss.",
+       "thread_id works identically across savers \u2014 it keys which checkpoint stream you resume. The risk is where those streams live.",
+       "Wrong way round: in-memory savers are explicitly the development option in the LangGraph docs. Nothing about them is production-default."],
+      ["Blocking holds an expensive, restartable process hostage to a human calendar. Persist-and-release makes the wait a database row instead of a live process.",
+       "Wrong. A blocked process still crashes when the container restarts \u2014 and it burns a worker slot for two days. Interrupt, persist, release; the decision arrives as resume input.",
+       "Re-running wastes the completed work and risks duplicating side effects (F2). The checkpoint exists precisely so approval doesn't cost a restart.",
+       "Deleting the checkpoint destroys the resume path \u2014 the approval then has nothing to attach to, and the run starts from zero."],
+      ["Re-checkpointing every thread at every deploy is operational fantasy \u2014 threads pause at arbitrary times and you can't catch them all.",
+       "Expiry alone doesn't fix it: a thread that paused 23 hours ago still resumes corrupted. Retention controls storage, not schema safety.",
+       "Right. Stamp schema_v into every checkpoint; on resume, refuse or migrate on mismatch. The version turns 'state-shape changed under a paused run' into a planned path instead of silent corruption.",
+       "New code never tolerates arbitrary old shapes \u2014 renamed fields, missing keys, changed types. Assuming it does is F4 waiting to happen."]
+    ];
+    const questions = [...document.querySelectorAll('.quiz-q')];
+    let score = 0, answered = 0;
+    questions.forEach((q, qi) => {
+      const correct = parseInt(q.dataset.answer, 10);
+      const exp = q.querySelector('.qexp');
+      q.querySelectorAll('.qopt').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          if (q.dataset.done) return;
+          q.dataset.done = "1";
+          const chosen = parseInt(btn.dataset.i, 10);
+          const ok = chosen === correct;
+          q.querySelectorAll('.qopt').forEach((b) => {
+            b.disabled = true;
+            if (parseInt(b.dataset.i, 10) === correct) b.classList.add('correct');
+          });
+          if (!ok) btn.classList.add('wrong');
+          else score++;
+          answered++;
+          exp.hidden = false;
+          exp.innerHTML = ok
+            ? "<strong class=\"ok\">Correct.</strong> " + explanations[qi][chosen]
+            : "<strong class=\"no\">Not quite.</strong> " + explanations[qi][chosen];
+          if (answered === questions.length) {
+            const box = document.getElementById('quiz-score');
+            box.style.display = "block";
+            box.innerHTML = "You scored <strong>" + score + " / " + questions.length + "</strong>." +
+              (score === questions.length ? " Clean sweep &mdash; your runs will survive anything." :
+               score >= 3 ? " Solid &mdash; re-read the section you missed." :
+               " Worth a re-read of section 04 before moving on.");
+          }
+        });
+      });
+    });
+
+    // flashcards
+    document.querySelectorAll('.fcard').forEach((card) => {
+      const flip = () => card.classList.toggle('flipped');
+      card.addEventListener('click', flip);
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); }
+      });
+    });
+  </script>
+</body>
+</html>
