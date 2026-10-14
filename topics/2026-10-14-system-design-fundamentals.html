@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>System design fundamentals: thinking in trade-offs &middot; AI Learning Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+    :root {
+      --ink: #14212b; --muted: #53636f; --paper: #f6f8f7; --white: #ffffff;
+      --line: #cbd5d8; --navy: #163247; --navy-2: #21465e; --teal: #0b8174;
+      --teal-soft: #dff2ee; --orange: #d66332; --orange-soft: #f8e4d8;
+      --gold: #d8a524; --gold-soft: #f7edc8; --blue-soft: #e3eef4;
+      --red: #b3402e; --red-soft: #f9e3de; --green: #1e7a3c; --green-soft: #e2f2e6;
+      --shadow: 0 18px 45px rgba(20, 33, 43, .09); --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; color: var(--ink);
+      background: linear-gradient(rgba(20,33,43,.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(20,33,43,.035) 1px, transparent 1px), var(--paper);
+      background-size: 28px 28px;
+      font-family: "Source Sans 3", sans-serif; font-size: 17px; line-height: 1.58;
+    }
+    .shell { width: min(960px, calc(100% - 40px)); margin: 0 auto; }
+    .portal-nav{position:sticky;top:0;z-index:50;background:rgba(22,50,71,.97);border-bottom:1px solid rgba(255,255,255,.12)}
+    .portal-nav-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;flex-wrap:wrap}
+    .portal-brand{color:#fff;text-decoration:none;font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:15px}
+    .portal-brand span{color:var(--gold);font-weight:400}
+    .portal-links{display:flex;gap:18px;flex-wrap:wrap}
+    .portal-links a{color:#dbe7ee;text-decoration:none;font-size:14.5px}
+    .portal-links a:hover{color:#fff;text-decoration:underline}
+    .hero { padding: 56px 0 36px; }
+    .chapter-mark { display:inline-flex;align-items:center;gap:10px;color:var(--navy);
+      font:600 12px/1.2 "IBM Plex Mono",monospace;letter-spacing:.09em;text-transform:uppercase;margin-bottom:18px; }
+    .chapter-mark::before { content:"";width:42px;height:3px;background:var(--orange); }
+    h1 { font-size: clamp(36px, 5vw, 58px); line-height: 1.02; letter-spacing:-.03em; margin:0 0 14px; }
+    .lede { color: var(--muted); font-size: clamp(18px,2vw,22px); max-width: 64ch; margin:0 0 8px; }
+    .date-line { font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--muted); }
+    section.block { margin: 44px 0; }
+    h2 { font-size: 26px; letter-spacing:-.02em; margin:0 0 6px; display:flex;align-items:center;gap:12px; }
+    h2 .num { font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:600;color:var(--white);
+      background:var(--navy);border-radius:999px;min-width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center; }
+    .sub { color:var(--muted); margin:0 0 18px; max-width: 68ch; }
+    .card { background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+      padding:24px;box-shadow:var(--shadow); }
+    .skill-card { background:var(--navy);color:#eaf2f7;border-radius:var(--radius);padding:22px 24px;
+      font-family:"IBM Plex Mono",monospace;font-size:14.5px;overflow-x:auto;box-shadow:var(--shadow); }
+    .skill-card .k { color:var(--gold); }
+    .idea { font-size:21px;line-height:1.5;border-left:4px solid var(--teal);padding:6px 0 6px 20px;max-width:62ch; }
+    .idea strong { color:var(--navy); }
+    .mechanics { display:grid;gap:14px; }
+    .mech { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:18px 20px;
+      display:grid;grid-template-columns:44px 1fr;gap:14px;align-items:start; }
+    .mech .mnum { font-family:"IBM Plex Mono",monospace;font-weight:600;color:var(--teal);
+      background:var(--teal-soft);border-radius:10px;width:44px;height:44px;display:flex;align-items:center;justify-content:center; }
+    .mech h3 { margin:0 0 6px;font-size:18px; }
+    .mech p { margin:0;color:var(--muted);font-size:15.5px; }
+    .mech code, .inline-code { font-family:"IBM Plex Mono",monospace;font-size:.88em;background:var(--blue-soft);
+      padding:2px 7px;border-radius:6px;color:var(--navy); }
+    pre.code { background:#0f2233;color:#e8f1f5;border-radius:14px;padding:20px 22px;overflow-x:auto;
+      font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.6;margin:0; }
+    pre.code .c { color:#8ba3b0; } pre.code .s { color:#ffd479; } pre.code .k { color:#7fd6c2; }
+    .fail { border-left:4px solid var(--orange); }
+    .fail h3 .fix { display:block;margin-top:8px;font-size:15px;font-weight:500;color:var(--green); }
+    .ref-list { display:grid;gap:12px; }
+    .ref { display:flex;gap:14px;align-items:flex-start;background:var(--white);border:1px solid var(--line);
+      border-radius:14px;padding:16px 18px;text-decoration:none;color:inherit; }
+    .ref:hover { border-color:var(--teal); }
+    .ref .badge { flex:none;font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;letter-spacing:.06em;
+      padding:5px 10px;border-radius:999px;text-transform:uppercase; }
+    .badge.doc { background:var(--blue-soft);color:var(--navy); }
+    .badge.vid { background:var(--orange-soft);color:var(--orange); }
+    .ref h3 { margin:0 0 4px;font-size:17px; }
+    .ref p { margin:0;color:var(--muted);font-size:14.5px; }
+    .prompt-block { background:#0f2233;border-radius:var(--radius);overflow:hidden;margin-bottom:18px;box-shadow:var(--shadow); }
+    .prompt-top { display:flex;justify-content:space-between;align-items:center;gap:12px;
+      padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.12); }
+    .prompt-top strong { color:#fff;font-size:13px;letter-spacing:.06em;font-family:"IBM Plex Mono",monospace; }
+    .copy-btn { border:1px solid #6c8796;background:transparent;color:#fff;border-radius:6px;padding:7px 11px;
+      cursor:pointer;font-weight:700;font-size:14px; }
+    .copy-btn:hover { background:rgba(255,255,255,.1); }
+    .copy-btn:focus-visible { outline:2px solid var(--gold);outline-offset:2px; }
+    .prompt-text { color:#e8f1f5;font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.65;
+      padding:18px;white-space:pre-wrap;margin:0; }
+    .sr-only { position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0); }
+    .quiz-q { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px; }
+    .quiz-q .qq { font-weight:700;margin:0 0 12px;font-size:18px; }
+    .qopts { display:grid;gap:8px; }
+    .qopt { text-align:left;background:var(--paper);border:1px solid var(--line);border-radius:10px;
+      padding:12px 14px;cursor:pointer;font-size:15.5px;color:var(--ink); }
+    .qopt:hover:not(:disabled) { border-color:var(--navy); }
+    .qopt:disabled { cursor:default;opacity:.85; }
+    .qopt.correct { background:var(--green-soft);border-color:var(--green); }
+    .qopt.wrong { background:var(--red-soft);border-color:var(--red); }
+    .qexp { margin:12px 0 0;font-size:15px;color:var(--muted); }
+    .qexp strong.ok { color:var(--green); } .qexp strong.no { color:var(--red); }
+    #quiz-score { display:none;margin-top:8px;background:var(--navy);color:#fff;border-radius:14px;
+      padding:20px 24px;font-size:19px; }
+    #quiz-score strong { color:var(--gold); }
+    .fgrid { display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px; }
+    .fcard { perspective:900px;cursor:pointer;min-height:170px; }
+    .fcard-inner { position:relative;width:100%;height:100%;min-height:170px;transform-style:preserve-3d;transition:transform .45s; }
+    .fcard.flipped .fcard-inner { transform:rotateY(180deg); }
+    .fface { position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+      border-radius:14px;padding:18px;display:flex;align-items:center;justify-content:center;text-align:center;
+      border:1px solid var(--line);background:var(--white);box-shadow:var(--shadow);font-size:15.5px; }
+    .fface.front { font-weight:700;color:var(--navy); }
+    .fface.back { transform:rotateY(180deg);background:var(--teal-soft);color:var(--ink);font-size:14.5px; }
+    .fcard:focus-visible { outline:2px solid var(--teal);outline-offset:3px;border-radius:14px; }
+    .triggers { display:grid;gap:10px; }
+    .trigger { background:var(--gold-soft);border-radius:12px;padding:14px 18px;font-size:16px; }
+    .trigger strong { color:var(--navy); }
+    .back-link { display:inline-block;margin:8px 0 60px;font-weight:600;color:var(--teal);text-decoration:none;font-size:17px; }
+    .back-link:hover { text-decoration:underline; }
+    .fig { background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+      padding:12px;box-shadow:var(--shadow);overflow-x:auto; }
+    .fig svg { display:block;width:100%;height:auto; }
+    .flow-anim { stroke-dasharray: 8 6; animation: dashmove 1.2s linear infinite; }
+    @keyframes dashmove { to { stroke-dashoffset: -14; } }
+    .pulse { animation: pulse 2.2s ease-in-out infinite; }
+    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.45; } }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior:auto; } .fcard-inner{transition:none;} .flow-anim{animation:none;} .pulse{animation:none;} }
+  </style>
+</head>
+<body><nav class="portal-nav">
+    <div class="shell portal-nav-inner">
+      <a class="portal-brand" href="../index.html">AI Engineering <span>&middot; Learning Portal</span></a>
+      <div class="portal-links">
+        <a href="../index.html#daily-topics">Daily topics</a>
+        <a href="../index.html#loop">Loop</a>
+        <a href="../index.html#graph">Graph</a>
+        <a href="../index.html#harness">Harness</a>
+      </div>
+    </div>
+  </nav>
+  <div class="shell">
+
+    <header class="hero">
+      <div class="chapter-mark">Daily topic &middot; Software engineering</div>
+      <h1>System design fundamentals: thinking in trade-offs</h1>
+      <p class="lede">There is almost never one correct architecture &mdash; only <strong>trade-offs</strong> between scalability, availability, consistency, latency, cost, and complexity. System design is the discipline of writing down what matters most for <em>this</em> workload, doing the capacity arithmetic, and adding components <strong>only when a failure demands them</strong>.</p>
+      <p class="date-line">2026-10-14 &middot; Topic 031</p>
+    </header>
+
+    <section class="block">
+      <h2><span class="num">01</span> The skill card</h2>
+      <p class="sub">Every topic on this portal is designed like a Codex skill: a name, a trigger, and concrete steps.</p>
+      <div class="skill-card"><pre style="margin:0">---
+<span class="k">name:</span> system-design-fundamentals
+<span class="k">description:</span> Reach for this before drawing any architecture: list the
+  quality attributes in priority order (scalability, availability, reliability,
+  latency, consistency, cost), estimate QPS/storage/bandwidth from the
+  requirements, keep the app tier stateless, add components only in response to
+  a named failure, and document each trade-off with what you sacrificed and why.
+---</pre></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">02</span> The one-idea version</h2>
+      <p class="idea">Every component in a distributed system exists because something simpler <strong>stopped working</strong>. System design is therefore a two-step habit: first name the quality attributes you are optimizing &mdash; you cannot have infinite scale, perfect correctness, and zero downtime at once &mdash; then let failures, not fashion, dictate which boxes and arrows you add. A design review that never asks <strong>&ldquo;what did you give up?&rdquo;</strong> is not finished.</p>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">03</span> How systems grow: one failure at a time</h2>
+      <p class="sub">Start with one box and one database. Each stage below adds exactly one component, and every addition is a response to a specific failure of the stage before it. Follow the animated request path.</p>
+      <div class="fig">
+        <svg viewBox="0 0 960 560" role="img" aria-label="Diagram: four stages of system growth. Stage 1: client to single server to single database. Stage 2: a load balancer spreads traffic across three stateless servers. Stage 3: a cache sits in front of the database for read-heavy traffic. Stage 4: a read replica joins the database, and a message queue absorbs write spikes.">
+          <defs>
+            <marker id="arr" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+              <path d="M0,0 L8,3 L0,6 Z" fill="#163247"></path>
+            </marker>
+          </defs>
+          <g font-family="Source Sans 3, sans-serif" font-size="14">
+            <text x="20" y="34" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="600" fill="#163247">STAGE 1 &mdash; one box, one database</text>
+            <rect x="20" y="52" width="150" height="60" rx="10" fill="#e3eef4" stroke="#163247" stroke-width="1.5"/>
+            <text x="95" y="88" text-anchor="middle" font-weight="700" fill="#163247">Client</text>
+            <rect x="300" y="52" width="150" height="60" rx="10" fill="#e3eef4" stroke="#163247" stroke-width="1.5"/>
+            <text x="375" y="88" text-anchor="middle" font-weight="700" fill="#163247">Server</text>
+            <rect x="580" y="52" width="150" height="60" rx="10" fill="#e3eef4" stroke="#163247" stroke-width="1.5"/>
+            <text x="655" y="88" text-anchor="middle" font-weight="700" fill="#163247">Database</text>
+            <line x1="170" y1="82" x2="295" y2="82" stroke="#163247" stroke-width="2" class="flow-anim" marker-end="url(#arr)"/>
+            <line x1="450" y1="82" x2="575" y2="82" stroke="#163247" stroke-width="2" class="flow-anim" marker-end="url(#arr)"/>
+            <text x="780" y="88" fill="#b3402e" font-weight="700" class="pulse">&#9888; CPU/RAM runs out</text>
+
+            <text x="20" y="168" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="600" fill="#163247">STAGE 2 &mdash; load balancer + stateless servers</text>
+            <rect x="20" y="186" width="130" height="52" rx="10" fill="#dff2ee" stroke="#0b8174" stroke-width="1.5"/>
+            <text x="85" y="217" text-anchor="middle" font-weight="700" fill="#163247">Load balancer</text>
+            <rect x="220" y="186" width="110" height="52" rx="10" fill="#ffffff" stroke="#163247" stroke-width="1.5"/>
+            <text x="275" y="217" text-anchor="middle" font-weight="600" fill="#163247">app 1</text>
+            <rect x="345" y="186" width="110" height="52" rx="10" fill="#ffffff" stroke="#163247" stroke-width="1.5"/>
+            <text x="400" y="217" text-anchor="middle" font-weight="600" fill="#163247">app 2</text>
+            <rect x="470" y="186" width="110" height="52" rx="10" fill="#ffffff" stroke="#163247" stroke-width="1.5"/>
+            <text x="525" y="217" text-anchor="middle" font-weight="600" fill="#163247">app 3</text>
+            <rect x="660" y="186" width="150" height="52" rx="10" fill="#e3eef4" stroke="#163247" stroke-width="1.5"/>
+            <text x="735" y="217" text-anchor="middle" font-weight="700" fill="#163247">Database</text>
+            <line x1="150" y1="212" x2="215" y2="212" stroke="#0b8174" stroke-width="2" class="flow-anim" marker-end="url(#arr)"/>
+            <line x1="580" y1="212" x2="655" y2="212" stroke="#0b8174" stroke-width="2" class="flow-anim" marker-end="url(#arr)"/>
+            <text x="850" y="217" fill="#b3402e" font-weight="700" class="pulse">&#9888; DB read overload</text>
+
+            <text x="20" y="292" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="600" fill="#163247">STAGE 3 &mdash; cache in front of the database</text>
+            <rect x="20" y="310" width="150" height="52" rx="10" fill="#ffffff" stroke="#163247" stroke-width="1.5"/>
+            <text x="95" y="341" text-anchor="middle" font-weight="600" fill="#163247">app tier (LB&hellip;)</text>
+            <rect x="240" y="310" width="150" height="52" rx="10" fill="#f7edc8" stroke="#d8a524" stroke-width="1.5"/>
+            <text x="315" y="341" text-anchor="middle" font-weight="700" fill="#163247">Cache (Redis)</text>
+            <rect x="460" y="310" width="150" height="52" rx="10" fill="#e3eef4" stroke="#163247" stroke-width="1.5"/>
+            <text x="535" y="341" text-anchor="middle" font-weight="700" fill="#163247">Database</text>
+            <line x1="170" y1="336" x2="235" y2="336" stroke="#d8a524" stroke-width="2" class="flow-anim" marker-end="url(#arr)"/>
+            <line x1="390" y1="336" x2="455" y2="336" stroke="#d8a524" stroke-width="2" class="flow-anim" marker-end="url(#arr)"/>
+            <text x="660" y="341" fill="#b3402e" font-weight="700" class="pulse">&#9888; machine dies &rarr; data lost</text>
+
+            <text x="20" y="416" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="600" fill="#163247">STAGE 4 &mdash; replication + queue for durability and spikes</text>
+            <rect x="20" y="434" width="150" height="52" rx="10" fill="#ffffff" stroke="#163247" stroke-width="1.5"/>
+            <text x="95" y="465" text-anchor="middle" font-weight="600" fill="#163247">app tier + cache</text>
+            <rect x="240" y="434" width="150" height="52" rx="10" fill="#f8e4d8" stroke="#d66332" stroke-width="1.5"/>
+            <text x="315" y="465" text-anchor="middle" font-weight="700" fill="#163247">Queue (Kafka)</text>
+            <rect x="460" y="434" width="150" height="52" rx="10" fill="#e3eef4" stroke="#163247" stroke-width="1.5"/>
+            <text x="535" y="465" text-anchor="middle" font-weight="700" fill="#163247">DB primary</text>
+            <rect x="680" y="434" width="150" height="52" rx="10" fill="#e3eef4" stroke="#163247" stroke-width="1.5"/>
+            <text x="755" y="465" text-anchor="middle" font-weight="700" fill="#163247">read replica</text>
+            <line x1="170" y1="460" x2="235" y2="460" stroke="#d66332" stroke-width="2" class="flow-anim" marker-end="url(#arr)"/>
+            <line x1="390" y1="460" x2="455" y2="460" stroke="#d66332" stroke-width="2" class="flow-anim" marker-end="url(#arr)"/>
+            <line x1="610" y1="460" x2="675" y2="460" stroke="#163247" stroke-width="2" class="flow-anim" marker-end="url(#arr)"/>
+            <text x="20" y="522" fill="#53636f" font-size="13.5">Read this bottom-up in a review: every box must name the failure it fixes, or it gets deleted.</text>
+          </g>
+        </svg>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">04</span> How it works: six mechanics</h2>
+      <p class="sub">Imperative, concrete, no fluff. These are the moves that separate a real design from boxes-and-arrows theater.</p>
+      <div class="mechanics">
+        <div class="mech"><div class="mnum">1</div><div><h3>Requirements come before design</h3><p>Split requirements into <strong>functional</strong> (what it does: post photo, follow user) and <strong>non-functional</strong> (how it must behave: 10k QPS, p99 &lt; 300ms, 99.99% uptime, 5-year retention). The NFRs are the design &mdash; two teams with the same features but different NFRs will build different systems. Ask the five questions first: how many users, how much data, read/write ratio, latency target, consistency target.</p></div></div>
+        <div class="mech"><div class="mnum">2</div><div><h3>Name the quality attributes, in priority order</h3><p><strong>Scalability</strong> (handle growth without proportional cost), <strong>availability</strong> (fraction of time the system responds &mdash; the nines), <strong>reliability</strong> (correctness under stress and failure), <strong>latency</strong> (p95/p99, not averages), <strong>consistency</strong> (do all readers see the same data?), <strong>cost and operability</strong>. Rank them for this workload and make the ranking explicit: a bank ranks reliability first; a social feed ranks availability first. The AWS and Google Cloud Well-Architected Frameworks exist to make this ranking a checklist instead of an argument.</p></div></div>
+        <div class="mech"><div class="mnum">3</div><div><h3>Do the capacity arithmetic on a napkin</h3><p><code>avg QPS = DAU &times; requests/user/day &divide; 86,400</code>; plan for <strong>2&ndash;3&times; peak</strong>. <code>storage = DAU &times; bytes/user/day &times; retention days &times; 3</code> for replication. <code>bandwidth = QPS &times; avg response bytes</code>. Rules of thumb: 1M requests/day &asymp; 12 QPS; a single tuned server handles low-thousands of QPS; replication always triples storage. Do this before choosing anything &mdash; it tells you whether you need one box or ten regions.</p></div></div>
+        <div class="mech"><div class="mnum">4</div><div><h3>Keep the app tier stateless; push state down</h3><p>Stateless servers scale horizontally with a load balancer and survive restarts, because any request can land on any instance. Sessions, carts, and partial progress go into the data layer (cache, database, object store), not process memory. The health check on each instance is what lets the balancer route around a dead one. This one decision buys you most of your scalability and most of your availability.</p></div></div>
+        <div class="mech"><div class="mnum">5</div><div><h3>Scale reads and writes with different tools</h3><p>Read-heavy (&gt;80% reads): <strong>cache</strong> the hot paths, add <strong>read replicas</strong>, push static content to a <strong>CDN</strong>. Write-heavy: scale the app tier horizontally, <strong>shard</strong> the database, and put a <strong>queue</strong> in front of bursty writers so spikes become a backlog, not an outage. Mixed traffic with divergent needs is what <strong>CQRS</strong> (separate read and write paths) is for. Match the tool to the bottleneck &mdash; a cache does nothing for a write storm.</p></div></div>
+        <div class="mech"><div class="mnum">6</div><div><h3>Every partition forces a CAP choice &mdash; make it deliberately</h3><p>When the network splits, a distributed data store can either refuse requests (consistency) or serve possibly-stale answers (availability); it cannot do both. Pick <strong>C for money, inventory, and billing</strong> (banking takes brief downtime over wrong balances) and <strong>A for feeds, counters, and caches</strong> (serve slightly stale, reconcile later). Then <strong>design the degraded mode</strong>: fail gracefully, disable non-critical features, keep the core path up. Availability without a degradation plan is just optimism.</p></div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">05</span> Code sketch: capacity arithmetic</h2>
+      <p class="sub">The entire &ldquo;estimation&rdquo; step of a system design interview, in one function. Run the numbers before drawing boxes.</p>
+      <div class="card" style="padding:0;background:#0f2233;border:none;">
+<pre class="code">DAU = 2_000_000            <span class="c"># daily active users</span>
+REQ_PER_USER_DAY = 50      <span class="c"># actions per user per day</span>
+BYTES_PER_REQ = 20_000     <span class="c"># avg response: 20 KB</span>
+RETENTION_DAYS = 365       <span class="c"># 1 year of data</span>
+
+<span class="k">def</span> capacity(dau, req_day, bytes_req, retention):
+    avg_qps = dau * req_day / 86_400        <span class="c"># 1 day &asymp; 86.4k s</span>
+    peak_qps = avg_qps * 2.5                <span class="c"># plan for 2-3x peak</span>
+    storage_tb = dau * req_day * bytes_req * retention * 3 / 1e12
+    <span class="c"># x3 = replication factor; x5-10 write-cost if write-heavy</span>
+    bandwidth_gbps = peak_qps * bytes_req * 8 / 1e9
+    <span class="k">return</span> <span class="s">f"avg {avg_qps:,.0f} QPS | peak {peak_qps:,.0f} QPS | "</span> \
+           <span class="s">f"storage {storage_tb:,.1f} TB | bandwidth {bandwidth_gbps:,.1f} Gbps"</span>
+
+<span class="k">print</span>(capacity(DAU, REQ_PER_USER_DAY, BYTES_PER_REQ, RETENTION_DAYS))</pre>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">06</span> Failure modes: five ways designs die</h2>
+      <p class="sub">Each one is a named pitfall plus its one-line fix.</p>
+      <div class="mechanics">
+        <div class="mech fail"><div class="mnum">F1</div><div><h3>Designing for nines nobody needs <span class="fix">Fix: budget availability like money &mdash; 99.9% allows 8.8h/yr downtime, 99.99% allows 52min. Price each extra nine before you buy it.</span></h3></div></div>
+        <div class="mech fail"><div class="mnum">F2</div><div><h3>Microservices on day one <span class="fix">Fix: start a modular monolith; split only when a team, a scaling need, or a failure domain demands it. Distribution is a cost, not a feature.</span></h3></div></div>
+        <div class="mech fail"><div class="mnum">F3</div><div><h3>Cache stampede <span class="fix">Fix: a hot key expires and every request hits the database at once. Stagger TTLs with jitter, coalesce identical requests, or serve stale-while-revalidating.</span></h3></div></div>
+        <div class="mech fail"><div class="mnum">F4</div><div><h3>The single database primary with no replica <span class="fix">Fix: one machine is one failure away from data loss. Run a replica with automated promotion and test failover before you need it.</span></h3></div></div>
+        <div class="mech fail"><div class="mnum">F5</div><div><h3>Averaging latency <span class="fix">Fix: a 50ms average hides a 2s p99 that torches user experience. Design, alert, and capacity-plan on p95/p99 per endpoint.</span></h3></div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">07</span> Go deeper: verified references</h2>
+      <p class="sub">Curated and real &mdash; every link opened and verified today. Two official frameworks, one trade-offs deep-dive, two videos.</p>
+      <div class="ref-list">
+        <a class="ref" href="https://docs.aws.amazon.com/wellarchitected/latest/userguide/waf.html" target="_blank" rel="noopener">
+          <span class="badge doc">Docs</span>
+          <span><h3>AWS Well-Architected Framework</h3>
+          <p>Why this one: six pillars (reliability, security, cost, performance, ops, sustainability) with the key rule stated outright &mdash; you trade pillars against each other based on business priorities. Use it as a design checklist.</p></span>
+        </a>
+        <a class="ref" href="https://docs.cloud.google.com/architecture/framework/printable" target="_blank" rel="noopener">
+          <span class="badge doc">Docs</span>
+          <span><h3>Google Cloud Well-Architected Framework &mdash; core principles</h3>
+          <p>Why this one: vendor-neutral fundamentals at the top &mdash; design for change, document the architecture, simplify (start with an MVP), decouple components, prefer stateless. The five habits behind every good diagram.</p></span>
+        </a>
+        <a class="ref" href="https://designgurus.substack.com/p/scalability-vs-reliability-vs-availability" target="_blank" rel="noopener">
+          <span class="badge doc">Article</span>
+          <span><h3>Scalability vs Reliability vs Availability: System Design Trade-offs Explained</h3>
+          <p>Why this one: the clearest plain-language separation of the three pillars (handle growth / correct results / always up), with concrete balancing strategies &mdash; graceful degradation, redundancy, scaling with caution.</p></span>
+        </a>
+        <a class="ref" href="https://www.youtube.com/watch?v=SE2KF-vxvS0" target="_blank" rel="noopener">
+          <span class="badge vid">Video</span>
+          <span><h3>System Design for Beginners (2026) &mdash; KodeKloud</h3>
+          <p>Why this one: builds a real photo-sharing app from a single $10 server, adding load balancers, caching, replication, and sharding only when things fail &mdash; plus four free hands-on labs (load balancer, indexing, Redis, failover).</p></span>
+        </a>
+        <a class="ref" href="https://www.youtube.com/watch?v=sue_g_7fiuo" target="_blank" rel="noopener">
+          <span class="badge vid">Video</span>
+          <span><h3>System Design in 7 Minutes</h3>
+          <p>Why this one: the fastest big-picture pass &mdash; scaling, LB, caching, replicas, sharding, queues, retries, idempotency, observability &mdash; with the right intuition throughout: each component exists because something simpler stopped working.</p></span>
+        </a>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">08</span> Sample prompts</h2>
+      <p class="sub">Copy-paste these into your AI assistant to practice the topic.</p>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>PROMPT 1 &middot; RUN THE NAPKIN MATH</strong><button class="copy-btn" data-copy="pr1">Copy</button></div>
+        <p class="prompt-text" id="pr1">I want to practice capacity estimation. Give me a scenario (e.g. a social feed, a URL shortener, a food-delivery app) with: DAU, average actions per user per day, average response size, and retention requirement. Then ask me to estimate avg QPS, peak QPS, storage over the retention period (with 3x replication), and bandwidth. Check my math, correct my mistakes, and explain which numbers drove the architecture choice.</p>
+      </div>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>PROMPT 2 &middot; GRILL MY DESIGN</strong><button class="copy-btn" data-copy="pr2">Copy</button></div>
+        <p class="prompt-text" id="pr2">Act as a senior staff engineer reviewing my system design. I will describe an architecture (I'll start with a monolith + single Postgres). After each description, ask exactly one question targeting the weakest point: capacity limits, single points of failure, consistency vs availability, or operational cost. Do not propose the fix — make me propose it, then judge whether my fix creates a new problem.</p>
+      </div>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>PROMPT 3 &middot; NAME THE TRADE-OFF</strong><button class="copy-btn" data-copy="pr3">Copy</button></div>
+        <p class="prompt-text" id="pr3">Give me five short design scenarios (one per message): a bank transfer service, a viral short-video feed, an e-commerce checkout on Black Friday, a multiplayer game leaderboard, and a hospital records system. For each, I must name the top-priority quality attribute, the CAP choice, and what I am deliberately sacrificing. Confirm or challenge each answer with one sentence of reasoning.</p>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">09</span> Quiz: test your understanding</h2>
+      <p class="sub">Click an answer &mdash; you get it right or wrong immediately, with the reasoning.</p>
+      <div id="quiz">
+        <div class="quiz-q" data-answer="1">
+          <p class="qq">Q1. A network partition splits your two data centers during a bank transfer. Per CAP, what must the system do &mdash; and what does it sacrifice?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">Keep both sides accepting transfers so no customer waits; sacrifice a little consistency and reconcile later.</button>
+            <button class="qopt" data-i="1">Refuse transfers on the unreachable side to keep balances consistent; sacrifice availability.</button>
+            <button class="qopt" data-i="2">Retry each transfer with exponential backoff until the partition heals; this avoids any trade-off.</button>
+            <button class="qopt" data-i="3">Cache the balance and show it as final; availability and consistency are both preserved.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="2">
+          <p class="qq">Q2. Why do experienced designers insist the app tier be stateless?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">Because stateless code runs faster per request.</button>
+            <button class="qopt" data-i="1">Because it eliminates the need for a database.</button>
+            <button class="qopt" data-i="2">Because any request can land on any instance, so a load balancer can scale out and route around dead servers freely.</button>
+            <button class="qopt" data-i="3">Because stateless servers never fail.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="0">
+          <p class="qq">Q3. Your SLA targets 99.99% uptime instead of 99.9%. Roughly how much downtime does each allow per year?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">99.9% &asymp; 8.8 hours/yr; 99.99% &asymp; 52 minutes/yr &mdash; one extra nine is ~10&times; less downtime.</button>
+            <button class="qopt" data-i="1">99.9% &asymp; 52 minutes/yr; 99.99% &asymp; 8.8 hours/yr &mdash; more nines means more allowed downtime.</button>
+            <button class="qopt" data-i="2">Both allow the same downtime; the nines only describe latency.</button>
+            <button class="qopt" data-i="3">99.99% means zero downtime is permitted by definition.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="3">
+          <p class="qq">Q4. A hot cache key expires at midnight and the database collapses under 50k simultaneous queries. What happened, and what is the cheapest first fix?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">A network partition; add more replicas immediately.</button>
+            <button class="qopt" data-i="1">A cache poisoning attack; rotate all keys.</button>
+            <button class="qopt" data-i="2">Normal traffic; just buy a bigger database machine.</button>
+            <button class="qopt" data-i="3">A cache stampede; stagger TTLs with jitter or coalesce identical requests so only one query refills the key.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="1">
+          <p class="qq">Q5. Your service does 800 QPS, 90% reads, responses ~5 KB. What should you do first?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">Shard the database across 16 partitions &mdash; writes are the bottleneck.</button>
+            <button class="qopt" data-i="1">Estimate: 800 QPS is single-server territory. Cache the hot reads (and push static assets to a CDN) before adding any distributed machinery.</button>
+            <button class="qopt" data-i="2">Split into twelve microservices to spread the load.</button>
+            <button class="qopt" data-i="3">Put a Kafka cluster in front &mdash; queues fix everything.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+      </div>
+      <div id="quiz-score" role="status"></div>
+      <p class="sr-only" id="live-status" aria-live="polite"></p>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">10</span> Flashcards</h2>
+      <p class="sub">Click or press Enter/Space to flip.</p>
+      <div class="fgrid">
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Scalability vs. availability vs. reliability</div>
+          <div class="fface back">Scalability: handle growth without proportional cost. Availability: fraction of time the system responds (the nines). Reliability: correct behavior under stress/failure. A checkout can be up (available) yet broken (unreliable).</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">What the "nines" actually buy</div>
+          <div class="fface back">99% ≈ 3.7 days/yr downtime. 99.9% ≈ 8.8 hrs. 99.99% ≈ 52 min. Each extra nine costs roughly an order of magnitude more — price it before promising it.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">CAP theorem, one sentence</div>
+          <div class="fface back">During a network partition, a distributed data store can guarantee consistency (refuse requests) or availability (serve possibly-stale answers) — not both. Money → C; feeds → A.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Vertical vs. horizontal scaling</div>
+          <div class="fface back">Vertical: bigger machine (simple, hard ceiling, single point of failure). Horizontal: more machines behind a load balancer (no ceiling, needs stateless app tier, more moving parts).</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Why stateless app tiers win</div>
+          <div class="fface back">Any request can hit any instance → the load balancer scales freely and routes around dead servers. Sessions and partial state live in the data layer (cache/DB/store), not process memory.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Read-heavy vs. write-heavy playbook</div>
+          <div class="fface back">Read-heavy (&gt;80% reads): cache + read replicas + CDN. Write-heavy: horizontal app tier + DB sharding + a queue to absorb spikes. Cache the right bottleneck — a cache won't fix a write storm.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Cache stampede</div>
+          <div class="fface back">A hot key expires and every request slams the database at once. Fixes: jitter the TTLs, coalesce identical in-flight requests (request collapsing), or serve stale-while-revalidating.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Graceful degradation</div>
+          <div class="fface back">Plan what to turn off first under failure: shed non-critical features (recommendations, analytics) to keep the core path up. Availability is a design, not an accident.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">p99, not the average</div>
+          <div class="fface back">A 50 ms average can hide a 2 s tail that ruins user experience. Design, alert, and capacity-plan on p95/p99 latency per endpoint.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">The review question that matters</div>
+          <div class="fface back">Every component must name the failure it fixes. A box that can't is deleted. And every trade-off is documented: what you sacrificed and why.</div>
+        </div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">11</span> Reach for this when&hellip;</h2>
+      <div class="triggers">
+        <div class="trigger"><strong>You&rsquo;re about to draw an architecture</strong> &mdash; requirements, NFR ranking, and napkin math happen before any box does.</div>
+        <div class="trigger"><strong>Someone proposes a distributed solution</strong> &mdash; ask what failure it fixes, what it sacrifices (CAP, latency, cost), and whether a bigger box would do.</div>
+        <div class="trigger"><strong>You&rsquo;re in a design review</strong> &mdash; check the trade-off log: each box names its failure, each nine is priced, each partition has a chosen CAP side.</div>
+      </div>
+    </section>
+
+    <a class="back-link" href="../index.html#daily-topics">&larr; Back to daily topics</a>
+  </div>
+  <script>
+    // copy buttons
+    const status = document.getElementById('live-status');
+    document.querySelectorAll('.copy-btn').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const target = document.getElementById(button.dataset.copy);
+        const text = target.innerText;
+        try {
+          await navigator.clipboard.writeText(text);
+          const original = button.textContent;
+          button.textContent = 'Copied';
+          status.textContent = 'Prompt copied to clipboard.';
+          setTimeout(() => button.textContent = original, 1600);
+        } catch {
+          const range = document.createRange();
+          range.selectNodeContents(target);
+          const selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+          status.textContent = 'Prompt selected. Copy it with your device copy command.';
+        }
+      });
+    });
+
+    // quiz
+    const explanations = [
+      ["Keeping both sides accepting transfers doesn't dodge CAP — the two halves will disagree on balances and some transfers will double-spend. Reconciliation after the fact is a business decision, not a consistency guarantee.",
+       "Right. A partition forces the choice: consistency (refuse the unreachable side, lose availability) or availability (accept, lose consistency). Money always picks C — a bank takes brief downtime over wrong balances.",
+       "Retries don't resolve the trade-off: while the partition lasts, accepting the transfer on one side risks an inconsistent ledger. Backoff helps after healing, not during the choice.",
+       "Showing a cached balance as final is exactly the availability-over-consistency choice — it looks correct while being potentially wrong. That is fine for a social counter, fatal for a ledger."],
+      ["Speed per request is unrelated; the win is operational: statelessness is what makes horizontal scaling and failure routing possible at all.",
+       "Backwards: stateless means pushing state into the data layer (cache/DB/store), not eliminating it. The app tier stops owning sessions; the database still does.",
+       "Right. A load balancer can only spread load and route around dead instances if no request depends on which instance it lands on. Stateless is the precondition for the entire stage-2 architecture.",
+       "Stateless servers fail just as often — the difference is that their failure costs nothing: no in-flight sessions are lost, and the balancer simply stops sending them traffic."],
+      ["Right. Downtime/yr ≈ (1 − nines) × 8,760 hours. 99.9% → 0.001 × 8,760 ≈ 8.8 h; 99.99% → 0.0001 × 8,760 ≈ 52.6 min. Every extra nine multiplies the engineering cost — which is why you price the nine before promising it.",
+       "Reversed. More nines means *less* allowed downtime: the zeros shrink the failure budget (8.8 h → 52 min), they don't expand it.",
+       "Wrong on both counts: the nines measure the fraction of time the system responds (availability), and each nine tightens the downtime budget by ~10×.",
+       "Even 99.999% allows ~5 minutes/yr. There is no SLA with a zero-error budget — physics and partitions forbid it."],
+      ["A partition looks different: some nodes can't be reached at all, rather than all nodes suddenly hammering the database. This scenario is a stampede, not a split.",
+       "Poisoning would corrupt cache *contents*, not multiply database load. The failure here is volume — thousands of identical queries racing to refill one key.",
+       "A single tuned box handles low-thousands of QPS; a synchronized stampede of tens of thousands at one instant is a different beast — capacity planning for peaks (mechanic 3) exists precisely because of this.",
+       "Right. Synchronized expiry creates a thundering herd. Jittered TTLs spread expiries over time, and request coalescing lets one query refill the key while the others wait on it."],
+      ["Sharding solves write throughput and cross-shard complexity is the most expensive tool here. With 720 reads/s against 80 writes/s, reads are the bottleneck — shard nothing.",
+       "Right. 800 QPS × 5 KB ≈ 32 Mbps — a single server and a hot-key cache handle this comfortably. The trade-off habit: the cheapest box that survives peak, added only against a named failure.",
+       "Twelve services at 800 QPS is distribution as fashion: twelve deploys, twelve dashboards, twelve failure domains — to move traffic that one process could serve. Split on team/failure-domain boundaries, not vibes.",
+       "A queue absorbs write bursts; 90%-read traffic doesn't have a write-burst problem. Kafka would add latency and ops cost while fixing nothing measured."]
+    ];
+    const questions = [...document.querySelectorAll('.quiz-q')];
+    let score = 0, answered = 0;
+    questions.forEach((q, qi) => {
+      const correct = parseInt(q.dataset.answer, 10);
+      const exp = q.querySelector('.qexp');
+      q.querySelectorAll('.qopt').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          if (q.dataset.done) return;
+          q.dataset.done = "1";
+          const chosen = parseInt(btn.dataset.i, 10);
+          const ok = chosen === correct;
+          q.querySelectorAll('.qopt').forEach((b) => {
+            b.disabled = true;
+            if (parseInt(b.dataset.i, 10) === correct) b.classList.add('correct');
+          });
+          if (!ok) btn.classList.add('wrong');
+          else score++;
+          answered++;
+          exp.hidden = false;
+          exp.innerHTML = ok
+            ? "<strong class=\"ok\">Correct.</strong> " + explanations[qi][chosen]
+            : "<strong class=\"no\">Not quite.</strong> " + explanations[qi][chosen];
+          if (answered === questions.length) {
+            const box = document.getElementById('quiz-score');
+            box.style.display = "block";
+            box.innerHTML = "You scored <strong>" + score + " / " + questions.length + "</strong>." +
+              (score === questions.length ? " Clean sweep — you think in trade-offs now." :
+               score >= 3 ? " Solid — re-read the mechanic you missed." :
+               " Worth a re-read of section 04 before moving on.");
+          }
+        });
+      });
+    });
+
+    // flashcards
+    document.querySelectorAll('.fcard').forEach((card) => {
+      const flip = () => card.classList.toggle('flipped');
+      card.addEventListener('click', flip);
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); }
+      });
+    });
+  </script>
+</body>
+</html>

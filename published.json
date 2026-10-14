@@ -208,5 +208,12 @@
     "date": "2026-10-13",
     "summary": "A crash mid-run must never mean starting over: persist state + resume pointer + idempotency ledger at step boundaries, resume by skipping completed steps, and treat human approvals as checkpoints with a signal.",
     "skill": "checkpointing-resumable-agent-runs"
+  },
+  {
+    "slug": "2026-10-14-system-design-fundamentals",
+    "title": "System design fundamentals: thinking in trade-offs",
+    "date": "2026-10-14",
+    "summary": "No correct architecture, only trade-offs: rank the quality attributes, do the capacity arithmetic, keep the app tier stateless, and add components only when a failure demands them.",
+    "skill": "system-design-fundamentals"
   }
 ]
