@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>API design: contracts that survive contact with clients &middot; AI Learning Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+    :root {
+      --ink: #14212b; --muted: #53636f; --paper: #f6f8f7; --white: #ffffff;
+      --line: #cbd5d8; --navy: #163247; --navy-2: #21465e; --teal: #0b8174;
+      --teal-soft: #dff2ee; --orange: #d66332; --orange-soft: #f8e4d8;
+      --gold: #d8a524; --gold-soft: #f7edc8; --blue-soft: #e3eef4;
+      --red: #b3402e; --red-soft: #f9e3de; --green: #1e7a3c; --green-soft: #e2f2e6;
+      --shadow: 0 18px 45px rgba(20, 33, 43, .09); --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; color: var(--ink);
+      background: linear-gradient(rgba(20,33,43,.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(20,33,43,.035) 1px, transparent 1px), var(--paper);
+      background-size: 28px 28px;
+      font-family: "Source Sans 3", sans-serif; font-size: 17px; line-height: 1.58;
+    }
+    .shell { width: min(960px, calc(100% - 40px)); margin: 0 auto; }
+    .portal-nav{position:sticky;top:0;z-index:50;background:rgba(22,50,71,.97);border-bottom:1px solid rgba(255,255,255,.12)}
+    .portal-nav-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;flex-wrap:wrap}
+    .portal-brand{color:#fff;text-decoration:none;font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:15px}
+    .portal-brand span{color:var(--gold);font-weight:400}
+    .portal-links{display:flex;gap:18px;flex-wrap:wrap}
+    .portal-links a{color:#dbe7ee;text-decoration:none;font-size:14.5px}
+    .portal-links a:hover{color:#fff;text-decoration:underline}
+    .hero { padding: 56px 0 36px; }
+    .chapter-mark { display:inline-flex;align-items:center;gap:10px;color:var(--navy);
+      font:600 12px/1.2 "IBM Plex Mono",monospace;letter-spacing:.09em;text-transform:uppercase;margin-bottom:18px; }
+    .chapter-mark::before { content:"";width:42px;height:3px;background:var(--orange); }
+    h1 { font-size: clamp(36px, 5vw, 58px); line-height: 1.02; letter-spacing:-.03em; margin:0 0 14px; }
+    .lede { color: var(--muted); font-size: clamp(18px,2vw,22px); max-width: 64ch; margin:0 0 8px; }
+    .date-line { font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--muted); }
+    section.block { margin: 44px 0; }
+    h2 { font-size: 26px; letter-spacing:-.02em; margin:0 0 6px; display:flex;align-items:center;gap:12px; }
+    h2 .num { font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:600;color:var(--white);
+      background:var(--navy);border-radius:999px;min-width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center; }
+    .sub { color:var(--muted); margin:0 0 18px; max-width: 68ch; }
+    .card { background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+      padding:24px;box-shadow:var(--shadow); }
+    .skill-card { background:var(--navy);color:#eaf2f7;border-radius:var(--radius);padding:22px 24px;
+      font-family:"IBM Plex Mono",monospace;font-size:14.5px;overflow-x:auto;box-shadow:var(--shadow); }
+    .skill-card .k { color:var(--gold); }
+    .idea { font-size:21px;line-height:1.5;border-left:4px solid var(--teal);padding:6px 0 6px 20px;max-width:62ch; }
+    .idea strong { color:var(--navy); }
+    .mechanics { display:grid;gap:14px; }
+    .mech { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:18px 20px;
+      display:grid;grid-template-columns:44px 1fr;gap:14px;align-items:start; }
+    .mech .mnum { font-family:"IBM Plex Mono",monospace;font-weight:600;color:var(--teal);
+      background:var(--teal-soft);border-radius:10px;width:44px;height:44px;display:flex;align-items:center;justify-content:center; }
+    .mech h3 { margin:0 0 6px;font-size:18px; }
+    .mech p { margin:0;color:var(--muted);font-size:15.5px; }
+    .mech code, .inline-code { font-family:"IBM Plex Mono",monospace;font-size:.88em;background:var(--blue-soft);
+      padding:2px 7px;border-radius:6px;color:var(--navy); }
+    pre.code { background:#0f2233;color:#e8f1f5;border-radius:14px;padding:20px 22px;overflow-x:auto;
+      font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.6;margin:0; }
+    pre.code .c { color:#8ba3b0; } pre.code .s { color:#ffd479; } pre.code .k { color:#7fd6c2; }
+    .fail { border-left:4px solid var(--orange); }
+    .fail h3 .fix { display:block;margin-top:8px;font-size:15px;font-weight:500;color:var(--green); }
+    .ref-list { display:grid;gap:12px; }
+    .ref { display:flex;gap:14px;align-items:flex-start;background:var(--white);border:1px solid var(--line);
+      border-radius:14px;padding:16px 18px;text-decoration:none;color:inherit; }
+    .ref:hover { border-color:var(--teal); }
+    .ref .badge { flex:none;font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;letter-spacing:.06em;
+      padding:5px 10px;border-radius:999px;text-transform:uppercase; }
+    .badge.doc { background:var(--blue-soft);color:var(--navy); }
+    .badge.vid { background:var(--orange-soft);color:var(--orange); }
+    .ref h3 { margin:0 0 4px;font-size:17px; }
+    .ref p { margin:0;color:var(--muted);font-size:14.5px; }
+    .prompt-block { background:#0f2233;border-radius:var(--radius);overflow:hidden;margin-bottom:18px;box-shadow:var(--shadow); }
+    .prompt-top { display:flex;justify-content:space-between;align-items:center;gap:12px;
+      padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.12); }
+    .prompt-top strong { color:#fff;font-size:13px;letter-spacing:.06em;font-family:"IBM Plex Mono",monospace; }
+    .copy-btn { border:1px solid #6c8796;background:transparent;color:#fff;border-radius:6px;padding:7px 11px;
+      cursor:pointer;font-weight:700;font-size:14px; }
+    .copy-btn:hover { background:rgba(255,255,255,.1); }
+    .copy-btn:focus-visible { outline:2px solid var(--gold);outline-offset:2px; }
+    .prompt-text { color:#e8f1f5;font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.65;
+      padding:18px;white-space:pre-wrap;margin:0; }
+    .sr-only { position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0); }
+    .quiz-q { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px; }
+    .quiz-q .qq { font-weight:700;margin:0 0 12px;font-size:18px; }
+    .qopts { display:grid;gap:8px; }
+    .qopt { text-align:left;background:var(--paper);border:1px solid var(--line);border-radius:10px;
+      padding:12px 14px;cursor:pointer;font-size:15.5px;color:var(--ink); }
+    .qopt:hover:not(:disabled) { border-color:var(--navy); }
+    .qopt:disabled { cursor:default;opacity:.85; }
+    .qopt.correct { background:var(--green-soft);border-color:var(--green); }
+    .qopt.wrong { background:var(--red-soft);border-color:var(--red); }
+    .qexp { margin:12px 0 0;font-size:15px;color:var(--muted); }
+    .qexp strong.ok { color:var(--green); } .qexp strong.no { color:var(--red); }
+    #quiz-score { display:none;margin-top:8px;background:var(--navy);color:#fff;border-radius:14px;
+      padding:20px 24px;font-size:19px; }
+    #quiz-score strong { color:var(--gold); }
+    .fgrid { display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px; }
+    .fcard { perspective:900px;cursor:pointer;min-height:170px; }
+    .fcard-inner { position:relative;width:100%;height:100%;min-height:170px;transform-style:preserve-3d;transition:transform .45s; }
+    .fcard.flipped .fcard-inner { transform:rotateY(180deg); }
+    .fface { position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+      border-radius:14px;padding:18px;display:flex;align-items:center;justify-content:center;text-align:center;
+      border:1px solid var(--line);background:var(--white);box-shadow:var(--shadow);font-size:15.5px; }
+    .fface.front { font-weight:700;color:var(--navy); }
+    .fface.back { transform:rotateY(180deg);background:var(--teal-soft);color:var(--ink);font-size:14.5px; }
+    .fcard:focus-visible { outline:2px solid var(--teal);outline-offset:3px;border-radius:14px; }
+    .triggers { display:grid;gap:10px; }
+    .trigger { background:var(--gold-soft);border-radius:12px;padding:14px 18px;font-size:16px; }
+    .trigger strong { color:var(--navy); }
+    .back-link { display:inline-block;margin:8px 0 60px;font-weight:600;color:var(--teal);text-decoration:none;font-size:17px; }
+    .back-link:hover { text-decoration:underline; }
+    .fig { background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+      padding:12px;box-shadow:var(--shadow);overflow-x:auto; }
+    .fig svg { display:block;width:100%;height:auto; }
+    .flow-anim { stroke-dasharray: 8 6; animation: dashmove 1.2s linear infinite; }
+    @keyframes dashmove { to { stroke-dashoffset: -14; } }
+    .pulse { animation: pulse 2.2s ease-in-out infinite; }
+    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.45; } }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior:auto; } .fcard-inner{transition:none;} .flow-anim{animation:none;} .pulse{animation:none;} }
+  </style>
+</head>
+<body><nav class="portal-nav">
+    <div class="shell portal-nav-inner">
+      <a class="portal-brand" href="../index.html">AI Engineering <span>&middot; Learning Portal</span></a>
+      <div class="portal-links">
+        <a href="../index.html#daily-topics">Daily topics</a>
+        <a href="../index.html#loop">Loop</a>
+        <a href="../index.html#graph">Graph</a>
+        <a href="../index.html#harness">Harness</a>
+      </div>
+    </div>
+  </nav>
+  <div class="shell">
+
+    <header class="hero">
+      <div class="chapter-mark">Daily topic &middot; Software engineering</div>
+      <h1>API design: contracts that survive contact with clients</h1>
+      <p class="lede">Code you can refactor on a Tuesday; a <strong>contract</strong> you will be living with in five years, because somebody else&rsquo;s software already depends on it. API design is therefore contract design: <strong>shape</strong>, <strong>semantics</strong>, <strong>representation</strong>, and <strong>change</strong> &mdash; decided in that order, because that is the order of how expensive a mistake gets.</p>
+      <p class="date-line">2026-10-15 &middot; Topic 032</p>
+    </header>
+
+    <section class="block">
+      <h2><span class="num">01</span> The skill card</h2>
+      <p class="sub">Every topic on this portal is designed like a Codex skill: a name, a trigger, and concrete steps.</p>
+      <div class="skill-card"><pre style="margin:0">---
+<span class="k">name:</span> api-design
+<span class="k">description:</span> Reach for this before defining any public endpoint: model resources
+  as nouns (never verbs) with plural collections, use HTTP verbs and status
+  codes honestly (safe/idempotent matrix, 201+Location, 202 for long work),
+  treat every field as a promise (add freely, never remove), return errors as
+  stable machine-readable codes with request IDs, and version evolution
+  explicitly with /v1 in the path plus Deprecation/Sunset headers.
+---</pre></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">02</span> The one-idea version</h2>
+      <p class="idea">An API is a promise, not code. The test that settles every design argument is: <strong>would a client written last year, untouched, still work?</strong> If not, you are not evolving &mdash; you are breaking. So design the contract first, make it boring enough for a stranger to guess, and remember that <strong>every field, status code, and URL you ship is a commitment</strong> you will honor long after the code behind it is rewritten.</p>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">03</span> The contract is four decisions</h2>
+      <p class="sub">Most API advice stops at &ldquo;use nouns, not verbs&rdquo; &mdash; that is the first ten minutes of a job that lasts years. The four decisions below are ordered by how expensive a mistake gets: your code you can rewrite, your contract you live with. Follow the animated request path.</p>
+      <div class="fig">
+        <svg viewBox="0 0 960 560" role="img" aria-label="Diagram: four contract layers between clients and the server. Layer 1: Shape (resources and URLs). Layer 2: Semantics (verbs and status codes). Layer 3: Representation (fields and errors). Layer 4: Change (versioning and evolution). Cost of changing grows from layer 4 to layer 1.">
+          <defs>
+            <marker id="arr2" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+              <path d="M0,0 L8,3 L0,6 Z" fill="#163247"></path>
+            </marker>
+          </defs>
+          <g font-family="Source Sans 3, sans-serif" font-size="14">
+            <text x="20" y="30" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="600" fill="#163247">REQUEST PATH &mdash; every call crosses all four layers</text>
+
+            <!-- clients -->
+            <rect x="20" y="60" width="140" height="380" rx="12" fill="#e3eef4" stroke="#163247" stroke-width="1.5"/>
+            <text x="90" y="92" text-anchor="middle" font-weight="700" fill="#163247">Clients</text>
+            <text x="90" y="116" text-anchor="middle" font-size="12.5" fill="#53636f">mobile app v3</text>
+            <text x="90" y="138" text-anchor="middle" font-size="12.5" fill="#53636f">web dashboard</text>
+            <text x="90" y="160" text-anchor="middle" font-size="12.5" fill="#53636f">partner webhook</text>
+            <text x="90" y="182" text-anchor="middle" font-size="12.5" fill="#53636f">cron job (2024!)</text>
+            <text x="90" y="230" text-anchor="middle" font-size="12.5" fill="#53636f">they all read the</text>
+            <text x="90" y="250" text-anchor="middle" font-size="12.5" fill="#53636f"><strong>contract</strong>, not your code</text>
+
+            <!-- server -->
+            <rect x="800" y="60" width="140" height="380" rx="12" fill="#dff2ee" stroke="#0b8174" stroke-width="1.5"/>
+            <text x="870" y="92" text-anchor="middle" font-weight="700" fill="#163247">Server</text>
+            <text x="870" y="116" text-anchor="middle" font-size="12.5" fill="#53636f">rewritten</text>
+            <text x="870" y="138" text-anchor="middle" font-size="12.5" fill="#53636f">twice since</text>
+            <text x="870" y="160" text-anchor="middle" font-size="12.5" fill="#53636f">2024&hellip;</text>
+            <text x="870" y="230" text-anchor="middle" font-size="12.5" fill="#53636f">code changes</text>
+            <text x="870" y="250" text-anchor="middle" font-size="12.5" fill="#53636f">freely &mdash; the</text>
+            <text x="870" y="270" text-anchor="middle" font-size="12.5" fill="#53636f">contract may not</text>
+
+            <!-- contract layers -->
+            <rect x="250" y="60" width="460" height="76" rx="10" fill="#f8e4d8" stroke="#d66332" stroke-width="1.5"/>
+            <text x="480" y="88" text-anchor="middle" font-weight="700" fill="#163247">LAYER 1 &middot; SHAPE &mdash; resources and URLs</text>
+            <text x="480" y="110" text-anchor="middle" font-size="13" fill="#53636f">nouns not verbs &middot; <tspan font-family="IBM Plex Mono, monospace" font-size="12">/orders/42</tspan> not <tspan font-family="IBM Plex Mono, monospace" font-size="12">/getOrder</tspan> &middot; plural collections</text>
+
+            <rect x="250" y="148" width="460" height="76" rx="10" fill="#f7edc8" stroke="#d8a524" stroke-width="1.5"/>
+            <text x="480" y="176" text-anchor="middle" font-weight="700" fill="#163247">LAYER 2 &middot; SEMANTICS &mdash; verbs and status codes</text>
+            <text x="480" y="198" text-anchor="middle" font-size="13" fill="#53636f">safe vs idempotent &middot; 201 + <tspan font-family="IBM Plex Mono, monospace" font-size="12">Location</tspan> &middot; 202 for long work &middot; honest errors</text>
+
+            <rect x="250" y="236" width="460" height="76" rx="10" fill="#e3eef4" stroke="#163247" stroke-width="1.5"/>
+            <text x="480" y="264" text-anchor="middle" font-weight="700" fill="#163247">LAYER 3 &middot; REPRESENTATION &mdash; fields and errors</text>
+            <text x="480" y="286" text-anchor="middle" font-size="13" fill="#53636f">every field is a promise &middot; stable error codes &middot; request IDs &middot; absent vs null</text>
+
+            <rect x="250" y="324" width="460" height="76" rx="10" fill="#f9e3de" stroke="#b3402e" stroke-width="1.5"/>
+            <text x="480" y="352" text-anchor="middle" font-weight="700" fill="#163247">LAYER 4 &middot; CHANGE &mdash; versioning and evolution</text>
+            <text x="480" y="374" text-anchor="middle" font-size="13" fill="#53636f">add freely, remove never &middot; <tspan font-family="IBM Plex Mono, monospace" font-size="12">/v1</tspan> in path &middot; Deprecation / Sunset headers</text>
+
+            <!-- animated arrows -->
+            <line x1="160" y1="250" x2="245" y2="250" stroke="#163247" stroke-width="2" class="flow-anim" marker-end="url(#arr2)"/>
+            <line x1="710" y1="250" x2="795" y2="250" stroke="#163247" stroke-width="2" class="flow-anim" marker-end="url(#arr2)"/>
+
+            <!-- cost arrow -->
+            <rect x="250" y="430" width="460" height="60" rx="10" fill="#ffffff" stroke="#163247" stroke-width="1.5"/>
+            <text x="270" y="458" font-weight="700" fill="#b3402e">COST OF CHANGING GROWS &uarr;</text>
+            <text x="270" y="480" font-size="13" fill="#53636f">Renaming a URL breaks every client. Rewriting the handler breaks none.</text>
+            <text x="20" y="522" font-size="13.5" fill="#53636f">Design the promise before the handler. A stranger should be able to guess the endpoint and be right.</text>
+          </g>
+        </svg>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">04</span> How it works: six mechanics</h2>
+      <p class="sub">Imperative, concrete, no fluff. These are the moves that turn &ldquo;JSON over POST&rdquo; into an API that survives contact with real clients.</p>
+      <div class="mechanics">
+        <div class="mech"><div class="mnum">1</div><div><h3>Name resources, not actions</h3><p>URLs are nouns: <code>/orders</code> (collection, plural) and <code>/orders/42</code> (item). The verbs already live in HTTP &mdash; <code>GET /orders/42</code> reads, <code>DELETE /orders/42</code> deletes &mdash; so <code>/getOrder</code> and <code>/deleteOrder</code> say the same thing twice. Keep nesting shallow (never deeper than collection/item/collection); beyond that, link related resources in the response body instead. Google&rsquo;s API design guide calls this resource-oriented design: model the nouns, attach a small fixed set of verbs.</p></div></div>
+        <div class="mech"><div class="mnum">2</div><div><h3>Use the HTTP contract honestly</h3><p>Learn the two axes: <strong>safe</strong> (changes nothing: GET, HEAD) and <strong>idempotent</strong> (repeatable without new side effects: GET, PUT, DELETE, PATCH-with-full-replacement). POST is neither &mdash; that is exactly why a lost response causes double charges. Pair creation with <code>201 Created</code> plus a <code>Location</code> header pointing at the new resource; long-running work with <code>202 Accepted</code> and a job resource the client polls. And never return <code>200 OK</code> with an error buried in the body &mdash; caches, retries, and monitoring all read the status line, not your JSON.</p></div></div>
+        <div class="mech"><div class="mnum">3</div><div><h3>Treat every field as a promise</h3><p>The moment a client parses a field, its name, type, and meaning are contractual. <strong>Additive changes are free</strong> &mdash; a new optional field breaks nobody. <strong>Breaking changes cost a version</strong> &mdash; renaming, retyping, removing, or changing the meaning of an existing field. Two traps: <code>null</code> vs absent (absent means &ldquo;unknown/unchanged&rdquo;, <code>null</code> means &ldquo;explicitly empty&rdquo; &mdash; pick one and document it), and mirroring your database schema in the response (exposes internals and turns every migration into a breaking change).</p></div></div>
+        <div class="mech"><div class="mnum">4</div><div><h3>Errors are part of the contract</h3><p>Design the error path with the same care as the success path: a <strong>stable machine-readable code</strong> (e.g. <code>insufficient_funds</code>, never a sentence clients regex-match), a human message, and a <strong>request ID</strong> the client can quote back to you in support tickets. The industry shape is <code>application/problem+json</code> (RFC 9457). Distinguish <code>400</code> (client sent garbage) from <code>422</code> (well-formed but semantically invalid), <code>401</code> (who are you?) from <code>403</code> (you may not), and use <code>429</code> with a <code>Retry-After</code> instead of silently dropping clients at the rate limit.</p></div></div>
+        <div class="mech"><div class="mnum">5</div><div><h3>Design for retries and races</h3><p>The network <em>will</em> retry you, so make retries safe. Non-idempotent POSTs take an <code>Idempotency-Key</code> header: the server stores the key with the first response and replays it for duplicates. Lists use <strong>cursor pagination</strong> (<code>?cursor=abc&limit=50</code> with a stable ordering), never <code>offset</code> &mdash; inserts above the offset silently shift every page and clients skip or duplicate rows. Concurrent writes use <code>ETag</code> + <code>If-Match</code>: a stale writer gets <code>412 Precondition Failed</code> and re-reads instead of silently overwriting.</p></div></div>
+        <div class="mech"><div class="mnum">6</div><div><h3>Version the change, not the conversation</h3><p>For public APIs, put the version in the path (<code>/v1/orders</code>) &mdash; it is visible, cacheable, and unambiguous. A published version is a promise: <strong>never break it in place</strong>; run v1 and v2 side by side and migrate on a timeline. Announce the timeline with the standard headers: <code>Deprecation: true</code> and <code>Sunset: &lt;date&gt;</code>, plus a migration guide. Keep one entrypoint client written last year can still use, and the &ldquo;last-year test&rdquo; passes: would that untouched client still work? If yes, you evolved. If no, it is a new version &mdash; whatever the ticket calls it.</p></div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">05</span> Code sketch: idempotency key + cursor pagination</h2>
+      <p class="sub">The two retry-safety patterns that prevent the most expensive production incidents &mdash; double charges and skipping pages &mdash; in under 30 lines of FastAPI.</p>
+      <div class="card" style="padding:0;background:#0f2233;border:none;">
+<pre class="code"><span class="k">from</span> fastapi <span class="k">import</span> FastAPI, Header
+app = FastAPI()
+idem_store = {}          <span class="c"># key -&gt; first response (persist in Redis/DB)</span>
+ORDERS = [{"id": i, "total": i * 10} <span class="k">for</span> i <span class="k">in</span> <span class="k">range</span>(1, 1000)]
+
+<span class="k">@app</span>.post(<span class="s">"/v1/orders"</span>, status_code=201)
+<span class="k">def</span> create_order(payload: <span class="k">dict</span>, idempotency_key: <span class="k">str</span> = Header(...)):
+    <span class="k">if</span> idempotency_key <span class="k">in</span> idem_store:     <span class="c"># retry -&gt; replay, don't double-charge</span>
+        <span class="k">return</span> idem_store[idempotency_key]
+    order = {"id": len(ORDERS) + 1, **payload}
+    ORDERS.append(order)
+    idem_store[idempotency_key] = order
+    <span class="k">return</span> order                     <span class="c"># 201 + Location: /v1/orders/&lt;id&gt; in prod</span>
+
+<span class="k">@app</span>.get(<span class="s">"/v1/orders"</span>)
+<span class="k">def</span> list_orders(cursor: <span class="k">int</span> = 0, limit: <span class="k">int</span> = 50):
+    page = ORDERS[cursor : cursor + limit]  <span class="c"># cursor = stable offset here</span>
+    nxt = cursor + limit <span class="k">if</span> cursor + limit &lt; len(ORDERS) <span class="k">else</span> None
+    <span class="k">return</span> {"orders": page, "next_cursor": nxt}  <span class="c"># client follows next_cursor</span></pre>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">06</span> Failure modes: five ways APIs die</h2>
+      <p class="sub">Each one is a named pitfall plus its one-line fix.</p>
+      <div class="mechanics">
+        <div class="mech fail"><div class="mnum">F1</div><div><h3>Verbs in URLs <span class="fix">Fix: rename <code>/getOrder/42</code> to <code>GET /orders/42</code>. Nouns name the thing, HTTP names the action &mdash; saying it twice doubles the learning cost for every endpoint.</span></h3></div></div>
+        <div class="mech fail"><div class="mnum">F2</div><div><h3>200 OK with an error in the body <span class="fix">Fix: return the honest status code (400/404/409/422) with a stable machine code and request ID. Everything downstream &mdash; caches, retries, alerts &mdash; reads the status line, not your JSON.</span></h3></div></div>
+        <div class="mech fail"><div class="mnum">F3</div><div><h3>Offset pagination on a moving list <span class="fix">Fix: paginate with an opaque cursor over a stable ordering (e.g. <code>created_at, id</code>). Inserts no longer shift pages out from under the client.</span></h3></div></div>
+        <div class="mech fail"><div class="mnum">F4</div><div><h3>Renaming a field &ldquo;because it&rsquo;s cleaner&rdquo; <span class="fix">Fix: ship the new field additively, keep the old one, and mark it deprecated with a Sunset date. Old mobile clients you cannot force-upgrade are the ones that read your changelog the least.</span></h3></div></div>
+        <div class="mech fail"><div class="mnum">F5</div><div><h3>Last-write-wins concurrency <span class="fix">Fix: return an <code>ETag</code> on GET and require <code>If-Match</code> on writes. A stale writer gets <code>412 Precondition Failed</code> and re-reads &mdash; silent overwrites become explicit retries.</span></h3></div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">07</span> Go deeper: verified references</h2>
+      <p class="sub">Curated and real &mdash; every link opened and verified today. Two vendor API guides, one maturity model, two videos.</p>
+      <div class="ref-list">
+        <a class="ref" href="https://docs.cloud.google.com/apis/design" target="_blank" rel="noopener">
+          <span class="badge doc">Docs</span>
+          <span><h3>Google Cloud API Design Guide</h3>
+          <p>Why this one: the internal guide Google has used since 2014, distilled to resource-oriented design &mdash; model resources first, attach the standard Get/List/Create/Update/Delete methods, reach for custom methods last. The AIP links inside cover versioning, errors, and naming.</p></span>
+        </a>
+        <a class="ref" href="https://learn.microsoft.com/en-us/azure/architecture/best-practices/api-design" target="_blank" rel="noopener">
+          <span class="badge doc">Docs</span>
+          <span><h3>Web API design best practices &mdash; Microsoft Learn</h3>
+          <p>Why this one: the most practical vendor guide &mdash; nouns over verbs, plural collections, shallow nesting, the full HTTP-method table, POST-vs-PUT trade-offs, and why the API must not mirror your database schema.</p></span>
+        </a>
+        <a class="ref" href="https://martinfowler.com/articles/richardsonMaturityModel.html" target="_blank" rel="noopener">
+          <span class="badge doc">Article</span>
+          <span><h3>The Richardson Maturity Model &mdash; Martin Fowler</h3>
+          <p>Why this one: the classic ladder from &ldquo;RPC over HTTP&rdquo; (Level 0) to hypermedia (Level 3), worked through a doctor-appointment booking example. The payoff is the Level 2 lesson: GET is safe (cacheable), errors belong in the status code, and most real-world APIs live at Level 2 &mdash; which is fine.</p></span>
+        </a>
+        <a class="ref" href="https://www.youtube.com/watch?v=H5TGbiqClyk" target="_blank" rel="noopener">
+          <span class="badge vid">Video</span>
+          <span><h3>Advanced API Design: Everything After &ldquo;Use Nouns&rdquo;</h3>
+          <p>Why this one: frames an API as four decisions (shape, semantics, payload, change) ordered by the cost of a mistake, then covers idempotency, problem+json errors, cursor pagination, ETags, and the last-year test &mdash; would a client written last year still work?</p></span>
+        </a>
+        <a class="ref" href="https://www.youtube.com/watch?v=nEMHxdus8xQ" target="_blank" rel="noopener">
+          <span class="badge vid">Video</span>
+          <span><h3>REST API Versioning: Stripe Model, Deprecation &amp; OpenAPI 3.1</h3>
+          <p>Why this one: the versioning deep-dive &mdash; URI vs header vs query versioning, why header versioning corrupts CDN caches without <code>Vary</code>, Stripe&rsquo;s date-based evolution, and the standard Deprecation/Sunset headers for sunsetting on a timeline.</p></span>
+        </a>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">08</span> Sample prompts</h2>
+      <p class="sub">Copy-paste these into your AI assistant to practice the topic.</p>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>PROMPT 1 &middot; REVIEW MY API SHAPE</strong><button class="copy-btn" data-copy="pr1">Copy</button></div>
+        <p class="prompt-text" id="pr1">Act as an API design reviewer. I will paste an endpoint list for a small app (I'll start with a food-delivery service: users, restaurants, orders). For each endpoint, judge: (1) are URLs nouns with plural collections, (2) are HTTP verbs and status codes used honestly (including safe/idempotent), (3) is nesting shallower than collection/item/collection. Flag violations one per message and make me fix them before continuing. Do not redesign it for me.</p>
+      </div>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>PROMPT 2 &middot; BREAKING-CHANGE DRILL</strong><button class="copy-btn" data-copy="pr2">Copy</button></div>
+        <p class="prompt-text" id="pr2">Give me five short API evolution scenarios, one per message: renaming a response field, splitting a money field into amount+currency, changing an enum's values, adding a required request field, changing an error response shape. For each, I must answer: is it additive or breaking? If breaking, what is the migration plan (versioning strategy, Deprecation/Sunset headers, how long v1 runs)? Confirm or challenge each answer in one sentence.</p>
+      </div>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>PROMPT 3 &middot; DESIGN THE ERROR CONTRACT</strong><button class="copy-btn" data-copy="pr3">Copy</button></div>
+        <p class="prompt-text" id="pr3">Help me design the error contract for a payments API. I want: stable machine-readable error codes, human messages, request IDs, and problem+json (RFC 9457) shape. Propose codes for: duplicate order submission, insufficient funds, expired card, rate limit exceeded, and downstream timeout. For each, name the HTTP status code and justify the 4xx vs 5xx choice. Then quiz me: describe five failure situations and I'll return the right code.</p>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">09</span> Quiz: test your understanding</h2>
+      <p class="sub">Click an answer &mdash; you get it right or wrong immediately, with the reasoning.</p>
+      <div id="quiz">
+        <div class="quiz-q" data-answer="2">
+          <p class="qq">Q1. A client&rsquo;s <code>POST /orders</code> times out, so it retries &mdash; and the customer is charged twice. What is the standard fix?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">Make POST idempotent by definition, so retries never create anything new.</button>
+            <button class="qopt" data-i="1">Tell clients to wait longer before retrying; double submits are a client bug.</button>
+            <button class="qopt" data-i="2">Accept an <code>Idempotency-Key</code> header: store the first response against the key and replay it for duplicates instead of creating a second order.</button>
+            <button class="qopt" data-i="3">Switch the endpoint to GET, which is idempotent.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="1">
+          <p class="qq">Q2. You want to rename the response field <code>fullName</code> to <code>name</code>. A mobile app written last year parses <code>fullName</code>. What is the correct move?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">Rename it anyway and bump the minor version; clients should keep up.</button>
+            <button class="qopt" data-i="1">Add <code>name</code> as a new optional field, keep <code>fullName</code> working, and announce its deprecation with a Sunset date and migration guide.</button>
+            <button class="qopt" data-i="2">Rename it silently &mdash; JSON field names are an implementation detail.</button>
+            <button class="qopt" data-i="3">Return both names only for new clients, detected via user-agent sniffing.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="3">
+          <p class="qq">Q3. <code>GET /orders/999</code> for a nonexistent order: why return <code>404</code> with a machine-readable error instead of <code>200 OK</code> with <code>{"error": "not found"}</code>?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">There is no real difference; it is purely a style choice.</button>
+            <button class="qopt" data-i="1">200 is faster because caches skip error responses.</button>
+            <button class="qopt" data-i="2">404 requires a request body, and clients prefer body-less responses.</button>
+            <button class="qopt" data-i="3">Caches, retries, monitoring, and client SDKs all read the status line &mdash; a 200 that means failure lies to every layer that never parses your JSON.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="0">
+          <p class="qq">Q4. You page a live feed with <code>?offset=500&amp;limit=50</code> while new items keep arriving at the top. What breaks, and what is the fix?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">New inserts shift every page: clients silently skip or duplicate rows. Fix: paginate with an opaque cursor over a stable ordering.</button>
+            <button class="qopt" data-i="1">Offset pagination breaks when the total exceeds the limit; fix: raise the limit to 10,000.</button>
+            <button class="qopt" data-i="2">Nothing breaks &mdash; offsets are absolute positions, so inserts cannot affect them.</button>
+            <button class="qopt" data-i="3">The database locks the table; fix: add a bigger index.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="2">
+          <p class="qq">Q5. Two clients read the same record and both write back &mdash; the second silently overwrites the first. What is the standard HTTP answer?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">Use POST instead of PUT so the conflict cannot happen.</button>
+            <button class="qopt" data-i="1">Return 409 Conflict only for JSON bodies; form data is exempt.</button>
+            <button class="qopt" data-i="2">Return an <code>ETag</code> on GET and require <code>If-Match</code> on writes; a stale writer gets <code>412 Precondition Failed</code> and must re-read before retrying.</button>
+            <button class="qopt" data-i="3">Merge the two writes automatically with a JSON deep-merge on the server.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+      </div>
+      <div id="quiz-score" role="status"></div>
+      <p class="sr-only" id="live-status" aria-live="polite"></p>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">10</span> Flashcards</h2>
+      <p class="sub">Click or press Enter/Space to flip.</p>
+      <div class="fgrid">
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Safe vs. idempotent methods</div>
+          <div class="fface back">Safe = changes nothing (GET, HEAD). Idempotent = repeatable without new side effects (GET, PUT, DELETE). POST is neither — the network will retry you, so POST needs an idempotency key.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">POST vs. PUT, correctly</div>
+          <div class="fface back">POST: the server assigns the resource URI; not idempotent; used for creation and processing. PUT: the client supplies the full URI and representation; idempotent — repeating it replaces the same state, creating or updating.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fface front">201 + Location</div>
+          <div class="fface back">The response to a successful POST that creates a resource: 201 Created, with a Location header pointing at the new resource's URI — and ideally the representation of the resource in the body to save the client a round trip.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fface front">400 vs. 422</div>
+          <div class="fface back">400 Bad Request: the request is malformed garbage (bad JSON, wrong types). 422 Unprocessable Entity: well-formed but semantically invalid (a date in the past, an expired card). Both are client errors; 422 says "I understood you, and the answer is no."</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fface front">401 vs. 403</div>
+          <div class="fface back">401 Unauthorized: the server doesn't know who you are — authenticate. 403 Forbidden: it knows exactly who you are, and you may not. 401 = identity problem; 403 = permission problem.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fface front">Cursor vs. offset pagination</div>
+          <div class="fface back">Offset (?offset=500) is a moving target: inserts above it shift every page, so clients skip or duplicate rows. Cursor (?cursor=abc) anchors to a stable ordering, so pages stay consistent while the list grows. Cursors for lists; offsets only for static snapshots.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fface front">Idempotency-Key</div>
+          <div class="fface back">A client-generated header on unsafe requests (POST). The server stores the first response against the key and replays it for retries instead of executing again. Turns "was my order created?" into a safe question. Keys must be unique per operation, not per client.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fface front">problem+json (RFC 9457)</div>
+          <div class="fface back">The standard error shape: type (a URI identifying the error class), title (short human summary), status (the HTTP code), detail (this-instance specifics), instance (the request URI). Stable machine codes clients can switch on, plus a request ID for support.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fface front">ETag / If-Match / 412</div>
+          <div class="fface back">GET returns an ETag (a version fingerprint). The writer sends it back in If-Match. If the resource changed since, the server answers 412 Precondition Failed — the client re-reads and retries instead of silently overwriting someone else's edit.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fface front">"Add freely, remove never"</div>
+          <div class="fface back">The evolution rule: adding an optional field or endpoint breaks nobody; renaming, retyping, removing, or changing meaning breaks every client that parsed it — and requires a new version, both versions running, Deprecation/Sunset headers, and a migration guide.</div>
+        </div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">11</span> Reach for this when&hellip;</h2>
+      <div class="triggers">
+        <div class="trigger"><strong>You&rsquo;re about to define an endpoint</strong> &mdash; shape, semantics, representation, then change: name the resource as a noun, pick the honest verb and status code, and ask what the contract promises before writing the handler.</div>
+        <div class="trigger"><strong>Someone proposes an &ldquo;improvement&rdquo; to a live field or URL</strong> &mdash; run the last-year test: would an untouched client still work? If not, it is a version with a timeline, not a patch.</div>
+        <div class="trigger"><strong>You&rsquo;re reviewing a PR that touches the API surface</strong> &mdash; check the four layers: is anything renamed/removed (shape), does the status line lie (semantics), are errors stable codes with request IDs (representation), is deprecation announced (change).</div>
+      </div>
+    </section>
+
+    <a class="back-link" href="../index.html#daily-topics">&larr; Back to daily topics</a>
+  </div>
+  <script>
+    // copy buttons
+    const status = document.getElementById('live-status');
+    document.querySelectorAll('.copy-btn').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const target = document.getElementById(button.dataset.copy);
+        const text = target.innerText;
+        try {
+          await navigator.clipboard.writeText(text);
+          const original = button.textContent;
+          button.textContent = 'Copied';
+          status.textContent = 'Prompt copied to clipboard.';
+          setTimeout(() => button.textContent = original, 1600);
+        } catch {
+          const range = document.createRange();
+          range.selectNodeContents(target);
+          const selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+          status.textContent = 'Prompt selected. Copy it with your device copy command.';
+        }
+      });
+    });
+
+    // quiz
+    const explanations = [
+      ["POST is not idempotent by definition — retrying it is exactly how double charges happen. The fix is not in the verb's semantics but in the key: the server must recognize the duplicate.",
+       "Wrong direction: the client is behaving correctly (timeouts demand retries), and you cannot fix a contract hole by blaming the caller's patience. The server must make retries safe.",
+       "Right. The Idempotency-Key turns 'did my request land?' into a safe question: same key → replay the first response, never execute twice. This is how payment APIs survive network timeouts.",
+       "GET is idempotent but also safe — it must not create anything. Moving order creation to GET breaks the safe/idempotent matrix and makes the API cacheable in all the wrong ways."],
+      ["A minor bump doesn't soften a breaking change: any client parsing fullName still breaks. SemVer's major version exists precisely for this — and even then, you don't break in place, you run both.",
+       "Right. Add freely, remove never: ship name additively, keep fullName working, and announce its retirement with Deprecation/Sunset headers plus a migration guide. Old mobile clients can't be force-upgraded.",
+       "Field names are the contract, not an implementation detail — the moment a client parses one, its name and meaning are promised. Silent renames are the classic breaking change.",
+       "User-agent sniffing is fragile, untestable, and invisible in the contract. If the shape differs per client, that's two APIs — version them explicitly instead of hiding the fork."],
+      ["It's the opposite: this is the single most load-bearing convention in the HTTP contract. Everything between your server and the user — caches, load balancers, retry logic, SDKs, alerts — reads the status line. Lying there is lying to all of them.",
+       "Caches don't skip error responses reliably — and a cached 'success' that is actually a failure is worse than a slow error. Honest status codes let intermediaries behave correctly.",
+       "404 responses can carry bodies (the problem+json error goes there). The point stands regardless of bodies: the status line is the machine-readable verdict, the body is the explanation.",
+       "Right. Status codes are the API's type system for outcomes. A 200-with-error-body forces every consumer to parse JSON to learn what the wire protocol already told them — and everything that doesn't parse it gets the wrong answer."],
+      ["Right. Offset is a position in a moving list: every insert above the offset shifts all later pages, so rows get skipped or duplicated invisibly. A cursor anchors to a stable ordering (created_at, id), so pages stay correct while the list grows.",
+       "Raising the limit doesn't fix the shift — it just makes the invisible data loss larger per page. The problem is positional addressing on a moving target, not page size.",
+       "Offsets are positions, not identities: 'row 500' changes when 10 rows are inserted before it. That's precisely why they break on live lists.",
+       "No locking is involved — pagination is read-only. The bug is logical, not transactional: the client re-requests 'page 10' of a list whose contents have moved."],
+      ["POST vs PUT doesn't resolve a race — two PUTs to the same URI collide the same way. The fix is concurrency control, not verb choice.",
+       "409 is the right code for a state conflict, but it applies to any content type — form data included. The real question is how the client knows it's stale before writing.",
+       "Right. Optimistic concurrency via ETag/If-Match: the first writer's fingerprint is checked before the write commits; a stale second writer gets 412, re-reads, and retries with fresh data. Silent overwrites become explicit retries.",
+       "Auto-merging is the most dangerous answer here: it hides the conflict from both clients and produces a record neither intended. Conflicts must be visible so a human (or retry logic) resolves them."]
+    ];
+    const questions = [...document.querySelectorAll('.quiz-q')];
+    let score = 0, answered = 0;
+    questions.forEach((q, qi) => {
+      const correct = parseInt(q.dataset.answer, 10);
+      const exp = q.querySelector('.qexp');
+      q.querySelectorAll('.qopt').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          if (q.dataset.done) return;
+          q.dataset.done = "1";
+          const chosen = parseInt(btn.dataset.i, 10);
+          const ok = chosen === correct;
+          q.querySelectorAll('.qopt').forEach((b) => {
+            b.disabled = true;
+            if (parseInt(b.dataset.i, 10) === correct) b.classList.add('correct');
+          });
+          if (!ok) btn.classList.add('wrong');
+          else score++;
+          answered++;
+          exp.hidden = false;
+          exp.innerHTML = ok
+            ? "<strong class=\"ok\">Correct.</strong> " + explanations[qi][chosen]
+            : "<strong class=\"no\">Not quite.</strong> " + explanations[qi][chosen];
+          if (answered === questions.length) {
+            const box = document.getElementById('quiz-score');
+            box.style.display = "block";
+            box.innerHTML = "You scored <strong>" + score + " / " + questions.length + "</strong>." +
+              (score === questions.length ? " Clean sweep — your contracts would survive contact with clients." :
+               score >= 3 ? " Solid — re-read the mechanic you missed." :
+               " Worth a re-read of section 04 before moving on.");
+          }
+        });
+      });
+    });
+
+    // flashcards
+    document.querySelectorAll('.fcard').forEach((card) => {
+      const flip = () => card.classList.toggle('flipped');
+      card.addEventListener('click', flip);
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); }
+      });
+    });
+  </script>
+</body>
+</html>

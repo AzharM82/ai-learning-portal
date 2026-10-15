@@ -215,5 +215,12 @@
     "date": "2026-10-14",
     "summary": "No correct architecture, only trade-offs: rank the quality attributes, do the capacity arithmetic, keep the app tier stateless, and add components only when a failure demands them.",
     "skill": "system-design-fundamentals"
+  },
+  {
+    "slug": "2026-10-15-api-design-contracts-that-survive-contact",
+    "title": "API design: contracts that survive contact with clients",
+    "date": "2026-10-15",
+    "summary": "API design is contract design: resources as nouns, honest HTTP semantics, every field a promise, and evolution by additive change with explicit versioning.",
+    "skill": "api-design"
   }
 ]
