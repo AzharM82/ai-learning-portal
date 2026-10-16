@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Testing strategies: the pyramid in practice &middot; AI Learning Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+    :root {
+      --ink: #14212b; --muted: #53636f; --paper: #f6f8f7; --white: #ffffff;
+      --line: #cbd5d8; --navy: #163247; --navy-2: #21465e; --teal: #0b8174;
+      --teal-soft: #dff2ee; --orange: #d66332; --orange-soft: #f8e4d8;
+      --gold: #d8a524; --gold-soft: #f7edc8; --blue-soft: #e3eef4;
+      --red: #b3402e; --red-soft: #f9e3de; --green: #1e7a3c; --green-soft: #e2f2e6;
+      --shadow: 0 18px 45px rgba(20, 33, 43, .09); --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; color: var(--ink);
+      background: linear-gradient(rgba(20,33,43,.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(20,33,43,.035) 1px, transparent 1px), var(--paper);
+      background-size: 28px 28px;
+      font-family: "Source Sans 3", sans-serif; font-size: 17px; line-height: 1.58;
+    }
+    .shell { width: min(960px, calc(100% - 40px)); margin: 0 auto; }
+    .portal-nav{position:sticky;top:0;z-index:50;background:rgba(22,50,71,.97);border-bottom:1px solid rgba(255,255,255,.12)}
+    .portal-nav-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;flex-wrap:wrap}
+    .portal-brand{color:#fff;text-decoration:none;font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:15px}
+    .portal-brand span{color:var(--gold);font-weight:400}
+    .portal-links{display:flex;gap:18px;flex-wrap:wrap}
+    .portal-links a{color:#dbe7ee;text-decoration:none;font-size:14.5px}
+    .portal-links a:hover{color:#fff;text-decoration:underline}
+    .hero { padding: 56px 0 36px; }
+    .chapter-mark { display:inline-flex;align-items:center;gap:10px;color:var(--navy);
+      font:600 12px/1.2 "IBM Plex Mono",monospace;letter-spacing:.09em;text-transform:uppercase;margin-bottom:18px; }
+    .chapter-mark::before { content:"";width:42px;height:3px;background:var(--orange); }
+    h1 { font-size: clamp(36px, 5vw, 58px); line-height: 1.02; letter-spacing:-.03em; margin:0 0 14px; }
+    .lede { color: var(--muted); font-size: clamp(18px,2vw,22px); max-width: 64ch; margin:0 0 8px; }
+    .date-line { font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--muted); }
+    section.block { margin: 44px 0; }
+    h2 { font-size: 26px; letter-spacing:-.02em; margin:0 0 6px; display:flex;align-items:center;gap:12px; }
+    h2 .num { font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:600;color:var(--white);
+      background:var(--navy);border-radius:999px;min-width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center; }
+    .sub { color:var(--muted); margin:0 0 18px; max-width: 68ch; }
+    .card { background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+      padding:24px;box-shadow:var(--shadow); }
+    .skill-card { background:var(--navy);color:#eaf2f7;border-radius:var(--radius);padding:22px 24px;
+      font-family:"IBM Plex Mono",monospace;font-size:14.5px;overflow-x:auto;box-shadow:var(--shadow); }
+    .skill-card .k { color:var(--gold); }
+    .idea { font-size:21px;line-height:1.5;border-left:4px solid var(--teal);padding:6px 0 6px 20px;max-width:62ch; }
+    .idea strong { color:var(--navy); }
+    .mechanics { display:grid;gap:14px; }
+    .mech { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:18px 20px;
+      display:grid;grid-template-columns:44px 1fr;gap:14px;align-items:start; }
+    .mech .mnum { font-family:"IBM Plex Mono",monospace;font-weight:600;color:var(--teal);
+      background:var(--teal-soft);border-radius:10px;width:44px;height:44px;display:flex;align-items:center;justify-content:center; }
+    .mech h3 { margin:0 0 6px;font-size:18px; }
+    .mech p { margin:0;color:var(--muted);font-size:15.5px; }
+    .mech code, .inline-code { font-family:"IBM Plex Mono",monospace;font-size:.88em;background:var(--blue-soft);
+      padding:2px 7px;border-radius:6px;color:var(--navy); }
+    pre.code { background:#0f2233;color:#e8f1f5;border-radius:14px;padding:20px 22px;overflow-x:auto;
+      font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.6;margin:0; }
+    pre.code .c { color:#8ba3b0; } pre.code .s { color:#ffd479; } pre.code .k { color:#7fd6c2; }
+    .fail { border-left:4px solid var(--orange); }
+    .fail h3 .fix { display:block;margin-top:8px;font-size:15px;font-weight:500;color:var(--green); }
+    .ref-list { display:grid;gap:12px; }
+    .ref { display:flex;gap:14px;align-items:flex-start;background:var(--white);border:1px solid var(--line);
+      border-radius:14px;padding:16px 18px;text-decoration:none;color:inherit; }
+    .ref:hover { border-color:var(--teal); }
+    .ref .badge { flex:none;font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;letter-spacing:.06em;
+      padding:5px 10px;border-radius:999px;text-transform:uppercase; }
+    .badge.doc { background:var(--blue-soft);color:var(--navy); }
+    .badge.vid { background:var(--orange-soft);color:var(--orange); }
+    .ref h3 { margin:0 0 4px;font-size:17px; }
+    .ref p { margin:0;color:var(--muted);font-size:14.5px; }
+    .prompt-block { background:#0f2233;border-radius:var(--radius);overflow:hidden;margin-bottom:18px;box-shadow:var(--shadow); }
+    .prompt-top { display:flex;justify-content:space-between;align-items:center;gap:12px;
+      padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.12); }
+    .prompt-top strong { color:#fff;font-size:13px;letter-spacing:.06em;font-family:"IBM Plex Mono",monospace; }
+    .copy-btn { border:1px solid #6c8796;background:transparent;color:#fff;border-radius:6px;padding:7px 11px;
+      cursor:pointer;font-weight:700;font-size:14px; }
+    .copy-btn:hover { background:rgba(255,255,255,.1); }
+    .copy-btn:focus-visible { outline:2px solid var(--gold);outline-offset:2px; }
+    .prompt-text { color:#e8f1f5;font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.65;
+      padding:18px;white-space:pre-wrap;margin:0; }
+    .sr-only { position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0); }
+    .quiz-q { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px; }
+    .quiz-q .qq { font-weight:700;margin:0 0 12px;font-size:18px; }
+    .qopts { display:grid;gap:8px; }
+    .qopt { text-align:left;background:var(--paper);border:1px solid var(--line);border-radius:10px;
+      padding:12px 14px;cursor:pointer;font-size:15.5px;color:var(--ink); }
+    .qopt:hover:not(:disabled) { border-color:var(--navy); }
+    .qopt:disabled { cursor:default;opacity:.85; }
+    .qopt.correct { background:var(--green-soft);border-color:var(--green); }
+    .qopt.wrong { background:var(--red-soft);border-color:var(--red); }
+    .qexp { margin:12px 0 0;font-size:15px;color:var(--muted); }
+    .qexp strong.ok { color:var(--green); } .qexp strong.no { color:var(--red); }
+    #quiz-score { display:none;margin-top:8px;background:var(--navy);color:#fff;border-radius:14px;
+      padding:20px 24px;font-size:19px; }
+    #quiz-score strong { color:var(--gold); }
+    .fgrid { display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px; }
+    .fcard { perspective:900px;cursor:pointer;min-height:170px; }
+    .fcard-inner { position:relative;width:100%;height:100%;min-height:170px;transform-style:preserve-3d;transition:transform .45s; }
+    .fcard.flipped .fcard-inner { transform:rotateY(180deg); }
+    .fface { position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+      border-radius:14px;padding:18px;display:flex;align-items:center;justify-content:center;text-align:center;
+      border:1px solid var(--line);background:var(--white);box-shadow:var(--shadow);font-size:15.5px; }
+    .fface.front { font-weight:700;color:var(--navy); }
+    .fface.back { transform:rotateY(180deg);background:var(--teal-soft);color:var(--ink);font-size:14.5px; }
+    .fcard:focus-visible { outline:2px solid var(--teal);outline-offset:3px;border-radius:14px; }
+    .triggers { display:grid;gap:10px; }
+    .trigger { background:var(--gold-soft);border-radius:12px;padding:14px 18px;font-size:16px; }
+    .trigger strong { color:var(--navy); }
+    .back-link { display:inline-block;margin:8px 0 60px;font-weight:600;color:var(--teal);text-decoration:none;font-size:17px; }
+    .back-link:hover { text-decoration:underline; }
+    .fig { background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+      padding:12px;box-shadow:var(--shadow);overflow-x:auto; }
+    .fig svg { display:block;width:100%;height:auto; }
+    .flow-anim { stroke-dasharray: 8 6; animation: dashmove 1.2s linear infinite; }
+    @keyframes dashmove { to { stroke-dashoffset: -14; } }
+    .pulse { animation: pulse 2.2s ease-in-out infinite; }
+    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.45; } }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior:auto; } .fcard-inner{transition:none;} .flow-anim{animation:none;} .pulse{animation:none;} }
+  </style>
+</head>
+<body><nav class="portal-nav">
+    <div class="shell portal-nav-inner">
+      <a class="portal-brand" href="../index.html">AI Engineering <span>&middot; Learning Portal</span></a>
+      <div class="portal-links">
+        <a href="../index.html#daily-topics">Daily topics</a>
+        <a href="../index.html#loop">Loop</a>
+        <a href="../index.html#graph">Graph</a>
+        <a href="../index.html#harness">Harness</a>
+      </div>
+    </div>
+  </nav>
+  <div class="shell">
+
+    <header class="hero">
+      <div class="chapter-mark">Daily topic &middot; Software engineering</div>
+      <h1>Testing strategies: the pyramid in practice</h1>
+      <p class="lede">Every test you write buys you <strong>confidence</strong> and costs you <strong>time</strong> &mdash; and you pay the cost on every run while the value caps out at what the test can actually prove. Testing strategy is therefore a budget question: spend most of it where confidence is cheap (fast unit tests), less where it is expensive (slow end-to-end tests). The pyramid is that budget drawn as a shape.</p>
+      <p class="date-line">2026-10-16 &middot; Topic 033</p>
+    </header>
+
+    <section class="block">
+      <h2><span class="num">01</span> The skill card</h2>
+      <p class="sub">Every topic on this portal is designed like a Codex skill: a name, a trigger, and concrete steps.</p>
+      <div class="skill-card"><pre style="margin:0">---
+<span class="k">name:</span> testing-strategies
+<span class="k">description:</span> Reach for this when deciding what kind of test to write:
+  push every test as far down the pyramid as it can go — lots of fast,
+  hermetic unit tests proving behavior through the public interface, some
+  integration tests at the seams (real DB, contract tests, never mocking
+  types you don't own), very few end-to-end tests reserved for critical
+  journeys. Treat flakiness as an incident and coverage as a smoke detector,
+  never a target.
+---</pre></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">02</span> The one-idea version</h2>
+      <p class="idea">The pyramid is a <strong>budget</strong>, not a rule. Each layer trades confidence against cost: unit tests are cheap and fast but prove little about the system; end-to-end tests prove the most but are slow, flaky, and hard to debug. So <strong>push every test as far down the pyramid as it can go</strong> &mdash; the more a layer costs you per run, the fewer tests it deserves.</p>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">03</span> The pyramid is a budget</h2>
+      <p class="sub">Read the triangle like a budget sheet: width is how many tests each layer gets, and the two arrows show why. Cost per run climbs as you go up; feedback speed falls. The animated arrow on the right is the only rule that matters &mdash; push every test down as far as it can go.</p>
+      <div class="fig">
+        <svg viewBox="0 0 960 560" role="img" aria-label="Diagram: the test pyramid as a budget. Base: unit tests, lots, fast and deterministic. Middle: integration tests, some, at the seams. Top: end-to-end tests, a few, for critical journeys. Cost per run rises with height; feedback speed falls. The rule: push every test as far down as it can go.">
+          <defs>
+            <marker id="arr3" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+              <path d="M0,0 L8,3 L0,6 Z" fill="#163247"></path>
+            </marker>
+          </defs>
+          <g font-family="Source Sans 3, sans-serif" font-size="14">
+            <text x="20" y="30" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="600" fill="#163247">THE PYRAMID IS A BUDGET &mdash; width = how many tests each layer gets</text>
+
+            <!-- left annotations -->
+            <text x="20" y="140" font-weight="700" fill="#b3402e">a FEW tests</text>
+            <text x="20" y="162" font-size="12.5" fill="#53636f">highest confidence per test</text>
+            <text x="20" y="180" font-size="12.5" fill="#53636f">slowest &middot; flakiest &middot; hardest to debug</text>
+            <line x1="200" y1="158" x2="360" y2="150" stroke="#b3402e" stroke-width="1.5"/>
+
+            <text x="20" y="252" font-weight="700" fill="#d8a524">SOME tests</text>
+            <text x="20" y="274" font-size="12.5" fill="#53636f">the seams: real DB, contracts,</text>
+            <text x="20" y="292" font-size="12.5" fill="#53636f">message queues, adapters</text>
+            <line x1="200" y1="270" x2="250" y2="262" stroke="#d8a524" stroke-width="1.5"/>
+
+            <text x="20" y="366" font-weight="700" fill="#0b8174">LOTS of tests</text>
+            <text x="20" y="388" font-size="12.5" fill="#53636f">fast (&lt;ms each) &middot; deterministic</text>
+            <text x="20" y="406" font-size="12.5" fill="#53636f">run on every save</text>
+            <line x1="200" y1="384" x2="252" y2="376" stroke="#0b8174" stroke-width="1.5"/>
+
+            <!-- pyramid: apex (480,90), base y=420, half-width slope 1.0303 -->
+            <polygon points="480,90 593,200 367,200" fill="#f9e3de" stroke="#b3402e" stroke-width="2"/>
+            <polygon points="367,200 593,200 707,310 253,310" fill="#f7edc8" stroke="#d8a524" stroke-width="2"/>
+            <polygon points="253,310 707,310 820,420 140,420" fill="#dff2ee" stroke="#0b8174" stroke-width="2"/>
+
+            <text x="480" y="140" text-anchor="middle" font-weight="700" fill="#163247">END-TO-END</text>
+            <text x="480" y="162" text-anchor="middle" font-size="12.5" fill="#53636f">critical journeys only</text>
+            <text x="480" y="248" text-anchor="middle" font-weight="700" fill="#163247">INTEGRATION</text>
+            <text x="480" y="270" text-anchor="middle" font-size="12.5" fill="#53636f">verify the seams</text>
+            <text x="480" y="356" text-anchor="middle" font-weight="700" fill="#163247">UNIT</text>
+            <text x="480" y="378" text-anchor="middle" font-size="12.5" fill="#53636f">behavior via the public interface</text>
+
+            <!-- right: cost / feedback arrows -->
+            <line x1="880" y1="400" x2="880" y2="110" stroke="#163247" stroke-width="2" marker-end="url(#arr3)"/>
+            <text x="898" y="130" font-weight="700" fill="#b3402e">COST PER RUN &uarr;</text>
+            <text x="898" y="152" font-size="12.5" fill="#53636f">runtime, flakiness,</text>
+            <text x="898" y="170" font-size="12.5" fill="#53636f">debug distance</text>
+
+            <line x1="845" y1="110" x2="845" y2="400" stroke="#163247" stroke-width="2" marker-end="url(#arr3)"/>
+            <text x="863" y="420" font-weight="700" fill="#0b8174">FEEDBACK SPEED &darr;</text>
+            <text x="863" y="442" font-size="12.5" fill="#53636f">seconds at the base,</text>
+            <text x="863" y="460" font-size="12.5" fill="#53636f">minutes at the top</text>
+
+            <!-- push-down rule -->
+            <line x1="760" y1="120" x2="760" y2="400" stroke="#d66332" stroke-width="3" class="flow-anim pulse"/>
+            <text x="740" y="265" text-anchor="end" font-family="IBM Plex Mono, monospace" font-size="12" font-weight="600" fill="#d66332">PUSH EVERY TEST DOWN</text>
+
+            <text x="20" y="522" font-size="13.5" fill="#53636f">Direction matters more than any 70/20/10 ratio. And when a top-layer test catches a bug with no failing unit test, that gap belongs in the unit suite &mdash; write it before you fix.</text>
+          </g>
+        </svg>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">04</span> How it works: six mechanics</h2>
+      <p class="sub">Imperative, concrete, no fluff. These are the moves that turn &ldquo;we have tests&rdquo; into a suite that actually ships confidence.</p>
+      <div class="mechanics">
+        <div class="mech"><div class="mnum">1</div><div><h3>Push every test as far down as it can go</h3><p>Ask of every behavior: can a unit test prove this? If yes, it never belongs in an integration test; if an integration test covers it, it never needs an end-to-end test. The 70/20/10 split is folklore &mdash; the direction is the law. And when a top-layer test catches a bug with no corresponding lower-level failure, that is a gap in the lower suite: write the lower test <em>before</em> the fix, so the fast layer owns the regression forever.</p></div></div>
+        <div class="mech"><div class="mnum">2</div><div><h3>Unit tests prove behavior through the public interface</h3><p>A unit test asks &ldquo;if I enter <code>x</code> and <code>y</code>, do I get <code>z</code>?&rdquo; &mdash; never &ldquo;did the method call class A, then class B?&rdquo;. Structure every test as Arrange&ndash;Act&ndash;Assert (or Given&ndash;When&ndash;Then), name it like a spec of the behavior, and keep one behavior per test. The test that breaks when you rename a private method is not a test &mdash; it is a tax on refactoring, and refactoring is the thing tests are supposed to make safe.</p></div></div>
+        <div class="mech"><div class="mnum">3</div><div><h3>Keep units fast and hermetic</h3><p>A unit test touches nothing shared: no network, no filesystem, no real clock, no <code>sleep()</code>, no randomness it does not seed. Push side effects to the edges (functional core, imperative shell) and inject the seams &mdash; clock, RNG, HTTP client &mdash; as parameters so tests control them. Google&rsquo;s size taxonomy makes this the definition: a small test runs in one process with no sleeping, so it is fast and deterministic <em>by construction</em>.</p></div></div>
+        <div class="mech"><div class="mnum">4</div><div><h3>Test the seams with integration tests</h3><p>The database, the queue, the HTTP boundary to a third-party service &mdash; this is where units stop proving things and where the most expensive bugs hide. Use the real collaborator where you can afford it (a local database via testcontainers, an in-memory queue where faithful), and cover external APIs with <strong>contract tests</strong>. Never mock types you do not own: wrap the third-party client in your own interface, mock the seam you own, and let the contract test verify the real one.</p></div></div>
+        <div class="mech"><div class="mnum">5</div><div><h3>Reserve end-to-end for the journeys that must never break</h3><p>E2E is the most expensive layer you have &mdash; slow to run, flaky by nature, and every failure is a debugging expedition. Budget it honestly: one test per critical user journey (sign-up, checkout, payment), plus one per important error class. Own the environment: seeded data, deterministic fixtures, no shared staging that someone else is redeploying mid-run. If an e2e test flakes, that is an incident &mdash; quarantine it the day it appears.</p></div></div>
+        <div class="mech"><div class="mnum">6</div><div><h3>Make the fast loop actually fast</h3><p>A suite nobody runs is decoration. Units run in watch mode on every save; the full fast suite gates every commit; integration runs on the pull request; e2e runs on release candidates. Parallelize by file, split slow lanes out of the commit path, and keep the pre-push suite under ~5 minutes. Then delete low-value tests on sight &mdash; a test that never fails and proves nothing costs runtime on every run while buying zero confidence.</p></div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">05</span> Code sketch: pure core, seamed clock</h2>
+      <p class="sub">Two patterns in 24 lines of pytest: money math as a pure function (trivially testable), and business logic that takes <code>hour</code> as a parameter instead of calling the clock itself &mdash; the seam that keeps the test hermetic.</p>
+      <div class="card" style="padding:0;background:#0f2233;border:none;">
+<pre class="code"><span class="k">import</span> pytest
+
+<span class="k">def</span> total(items, tax_rate):
+    <span class="s">"""Pure function: money math, no I/O — trivially testable."""</span>
+    subtotal = <span class="k">sum</span>(i[<span class="s">"price"</span>] * i[<span class="s">"qty"</span>] <span class="k">for</span> i <span class="k">in</span> items)
+    <span class="k">return</span> <span class="k">round</span>(subtotal * (1 + tax_rate), 2)
+
+@pytest.mark.parametrize(<span class="s">"items,rate,expected"</span>, [
+    ([{<span class="s">"price"</span>: 10, <span class="s">"qty"</span>: 2}], 0.0, 20.0),
+    ([{<span class="s">"price"</span>: 10, <span class="s">"qty"</span>: 2}], 0.1, 22.0),
+    ([], 0.1, 0.0),                       <span class="c"># edge: empty cart</span>
+])
+<span class="k">def</span> test_total(items, rate, expected):
+    <span class="k">assert</span> total(items, rate) == expected
+
+<span class="c"># Seam the clock: logic takes "now" as a parameter, never calls it.</span>
+<span class="k">def</span> greeting(name, hour):
+    <span class="k">return</span> <span class="s">f"Good {'morning' if hour &lt; 12 else 'evening'}, {name}!"</span>
+
+<span class="k">def</span> test_greeting_boundary():
+    <span class="k">assert</span> greeting(<span class="s">"Azhar"</span>, 11) == <span class="s">"Good morning, Azhar!"</span>
+    <span class="k">assert</span> greeting(<span class="s">"Azhar"</span>, 12) == <span class="s">"Good evening, Azhar!"</span></pre>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">06</span> Failure modes: five ways suites die</h2>
+      <p class="sub">Each one is a named pitfall plus its one-line fix.</p>
+      <div class="mechanics">
+        <div class="mech fail"><div class="mnum">F1</div><div><h3>The ice-cream cone <span class="fix">Fix: invert it — for every e2e assertion, ask what lower-level test could own it and push coverage down. Keep e2e only for critical journeys; everything else belongs in unit or integration tests.</span></h3></div></div>
+        <div class="mech fail"><div class="mnum">F2</div><div><h3><code>sleep()</code> waits and real clocks <span class="fix">Fix: inject a clock seam (or virtual time), seed the RNG, and replace fixed sleeps with poll-with-timeout on the real condition. Timing-dependent tests pass on your laptop and flake in CI.</span></h3></div></div>
+        <div class="mech fail"><div class="mnum">F3</div><div><h3>Mocking types you don't own <span class="fix">Fix: wrap the third-party client in your own interface, mock only the seam you own, and verify the real boundary with a contract test. Your mocks drift from reality and keep passing while production breaks.</span></h3></div></div>
+        <div class="mech fail"><div class="mnum">F4</div><div><h3>Coverage as a target <span class="fix">Fix: treat coverage as a smoke detector, not a target. Chasing 100% writes tests for lines instead of behavior, couples tests to implementation, and taxes every refactoring. Diminishing returns set in fast — test what has logic.</span></h3></div></div>
+        <div class="mech fail"><div class="mnum">F5</div><div><h3>The flaky test you "will fix later" <span class="fix">Fix: quarantine or delete it the day it appears. A flaky test is worse than no test — it trains the team that red builds are noise, so real failures get re-run into greenness and trust dies.</span></h3></div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">07</span> Go deeper: verified references</h2>
+      <p class="sub">Curated and real &mdash; every link opened and verified today. Three articles, two videos.</p>
+      <div class="ref-list">
+        <a class="ref" href="https://martinfowler.com/articles/practical-test-pyramid.html" target="_blank" rel="noopener">
+          <span class="badge doc">Article</span>
+          <span><h3>The Practical Test Pyramid &mdash; martinfowler.com</h3>
+          <p>Why this one: Ham Vocke&rsquo;s full playbook &mdash; the three layers rethought for modern services, sociable vs. solitary unit tests, test doubles done right, and the standing rule: push every test as far down the pyramid as you can.</p></span>
+        </a>
+        <a class="ref" href="https://testing.googleblog.com/2015/04/just-say-no-to-more-end-to-end-tests.html" target="_blank" rel="noopener">
+          <span class="badge doc">Article</span>
+          <span><h3>Just Say No to More End-to-End Tests &mdash; Google Testing Blog</h3>
+          <p>Why this one: Mike Wacker&rsquo;s case against e2e-heavy strategies &mdash; slow, unreliable, hard to debug &mdash; with the pyramid shape that survives contact with real CI: a failing test does not benefit the user; only the fix does.</p></span>
+        </a>
+        <a class="ref" href="https://kentcdodds.com/blog/write-tests" target="_blank" rel="noopener">
+          <span class="badge doc">Article</span>
+          <span><h3>Write tests. Not too many. Mostly integration. &mdash; Kent C. Dodds</h3>
+          <p>Why this one: the counterweight &mdash; why integration tests strike the best balance of confidence vs. cost, why you should stop mocking so much, and why chasing 100% coverage has sharply diminishing returns.</p></span>
+        </a>
+        <a class="ref" href="https://www.youtube.com/watch?v=ko4OhflS97s" target="_blank" rel="noopener">
+          <span class="badge vid">Video</span>
+          <span><h3>Testing Pyramid Explained Through a Real System</h3>
+          <p>Why this one: treats the pyramid as trade-off reasoning &mdash; feedback speed, confidence, cost &mdash; applied to a real backend: what each level protects, and why strict count ratios miss the point.</p></span>
+        </a>
+        <a class="ref" href="https://www.youtube.com/watch?v=vRTvXNxgpi0" target="_blank" rel="noopener">
+          <span class="badge vid">Video</span>
+          <span><h3>Testing Overview | Chapter 11 &mdash; Software Engineering at Google</h3>
+          <p>Why this one: Google&rsquo;s size taxonomy &mdash; small, medium, large tests &mdash; and the case for a suite weighted toward fast, deterministic tests: classify tests by what they are allowed to touch.</p></span>
+        </a>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">08</span> Sample prompts</h2>
+      <p class="sub">Copy-paste these into your AI assistant to practice the topic.</p>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>PROMPT 1 &middot; GRADE MY SUITE'S SHAPE</strong><button class="copy-btn" data-copy="pr1">Copy</button></div>
+        <p class="prompt-text" id="pr1">Act as a testing-strategy reviewer. I will paste: my test counts by layer (unit / integration / e2e), total suite runtime, and how often CI flakes per week. Tell me whether my suite looks like a pyramid, an ice-cream cone, or an hourglass, and give me the top 3 highest-leverage moves to fix it — one per message, and make me confirm each before continuing. Do not redesign the suite for me.</p>
+      </div>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>PROMPT 2 &middot; FLAKE-HUNTING DRILL</strong><button class="copy-btn" data-copy="pr2">Copy</button></div>
+        <p class="prompt-text" id="pr2">Give me five short flaky-test scenarios, one per message: a sleep()-based wait, an unseeded random value, a test that depends on execution order, a test hitting a shared database, and a time-of-day-dependent assertion. For each, I must name the source of non-determinism and propose the seam that removes it (injected clock, seeded RNG, test isolation, hermetic fixtures, virtual time). Confirm or challenge each answer in one sentence.</p>
+      </div>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>PROMPT 3 &middot; DESIGN THE SEAM</strong><button class="copy-btn" data-copy="pr3">Copy</button></div>
+        <p class="prompt-text" id="pr3">Help me design the testing seam for a notification service that sends email via a third-party API. I want: the interface I own (so I never mock their client directly), an in-memory fake for unit tests, and a contract test that verifies my adapter against the real provider's behavior. Propose the interface first, then the fake, then the contract test — one step per message, and make me critique each before moving on.</p>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">09</span> Quiz: test your understanding</h2>
+      <p class="sub">Click an answer &mdash; you get it right or wrong immediately, with the reasoning.</p>
+      <div id="quiz">
+        <div class="quiz-q" data-answer="1">
+          <p class="qq">Q1. A high-level test catches a bug, but no lower-level test fails. What do you do first?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">Fix the bug immediately &mdash; the e2e test already proves it, so a unit test adds nothing.</button>
+            <button class="qopt" data-i="1">Write a lower-level test that reproduces the same failure, then fix the bug.</button>
+            <button class="qopt" data-i="2">Delete the e2e test so the suite stays fast.</button>
+            <button class="qopt" data-i="3">Add more e2e tests around the area to lock it in.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="1">
+          <p class="qq">Q2. A test with <code>sleep(5)</code> before its assertion always passes on your laptop but fails intermittently in CI. Root cause and fix?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">CI machines are slower &mdash; bump the sleep to 15 seconds.</button>
+            <button class="qopt" data-i="1">Timing non-determinism: the test depends on wall-clock timing instead of controlling it. Inject a clock seam (or virtual time) and replace the sleep with poll-with-timeout on the real condition.</button>
+            <button class="qopt" data-i="2">The test runner is flaky &mdash; switch to a different runner.</button>
+            <button class="qopt" data-i="3">The assertion is too strict &mdash; relax it.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="2">
+          <p class="qq">Q3. You need to test code that charges a credit card through a third-party API. What is the sound approach?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">Mock the third-party client everywhere and assert the calls it received.</button>
+            <button class="qopt" data-i="1">Call the real API in the test suite with a test card.</button>
+            <button class="qopt" data-i="2">Wrap the provider behind your own interface, use a fake/in-memory implementation in tests (mocking only the seam you own), and verify the real boundary with a contract test.</button>
+            <button class="qopt" data-i="3">Skip automated tests for it &mdash; payment code is too risky to test.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="1">
+          <p class="qq">Q4. Leadership mandates 100% line coverage. Why do experienced teams push back?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">Coverage tools are too slow to run on large codebases.</button>
+            <button class="qopt" data-i="1">Diminishing returns: engineers write tests for lines instead of behavior, couple tests to implementation, and slow every refactoring to feed the metric.</button>
+            <button class="qopt" data-i="2">100% coverage is technically impossible in any language.</button>
+            <button class="qopt" data-i="3">Coverage tools only measure unit tests, not end-to-end tests.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="2">
+          <p class="qq">Q5. A suite is 70% browser end-to-end tests, 20% integration, 10% unit &mdash; the ice-cream cone. CI takes an hour and red builds are normal. What is the repair?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">Throw more machines at CI to parallelize the e2e suite.</button>
+            <button class="qopt" data-i="1">Rewrite the application in a faster language.</button>
+            <button class="qopt" data-i="2">Invert it: for each e2e assertion ask what lower-level test could own it, push coverage down, keep e2e only for critical journeys, and quarantine flakes immediately.</button>
+            <button class="qopt" data-i="3">Delete all e2e tests and rely on unit tests plus manual QA.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+      </div>
+      <div id="quiz-score" role="status"></div>
+      <p class="sr-only" id="live-status" aria-live="polite"></p>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">10</span> Flashcards</h2>
+      <p class="sub">Click or press Enter/Space to flip.</p>
+      <div class="fgrid">
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">The test pyramid, in one line</div>
+          <div class="fface back">Many fast unit tests at the base, fewer integration tests in the middle, a few end-to-end tests at the top. The higher you go, the fewer tests — because cost, runtime, and flakiness all grow with scope.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Push every test down</div>
+          <div class="fface back">If a behavior can be verified at a lower level, it belongs there. Direction matters more than any 70/20/10 ratio — and a bug caught at the top with no failing unit test means the unit suite has a gap to close first.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Unit test: what it proves</div>
+          <div class="fface back">Observable behavior through the public interface: "if I enter x and y, do I get z?" — never the internal call sequence. A test that breaks on a private-method rename is a tax on refactoring.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Sociable vs. solitary unit tests</div>
+          <div class="fface back">Solitary: every collaborator replaced with a test double — perfect isolation. Sociable: real collaborators, doubles only for the awkward ones (slow, nondeterministic, external). Most teams use both.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Hermetic test</div>
+          <div class="fface back">Zero dependence on shared state: no network, no real clock, no shared database, no sleep. Fast and deterministic by construction — Google's small/medium/large test-size axis is built on exactly this idea.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Don't mock types you don't own</div>
+          <div class="fface back">Wrap third-party clients in your own interface, then mock the seam you own. The real boundary gets a contract test — otherwise your mocks drift from reality and keep passing while production breaks.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Arrange–Act–Assert</div>
+          <div class="fface back">The unit-test skeleton: set up the world (arrange), do the one thing (act), check the one outcome (assert). One behavior per test, and the test name reads as a spec of that behavior.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">The ice-cream cone</div>
+          <div class="fface back">The inverted pyramid: a suite that is mostly UI/E2E tests — slow to run, flaky, expensive to maintain, and it trains the team to ignore red builds. The fix is to invert it back into a pyramid.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">A flaky test is…</div>
+          <div class="fface back">Worse than no test. It teaches the team that red builds are noise, so real failures get re-run into greenness and trust dies. Quarantine or delete it the day it appears — never "later."</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Small vs. medium vs. large tests</div>
+          <div class="fface back">Small: single process, no network/disk/sleep — runs on every commit. Medium: localhost, a real database allowed. Large: multi-process or remote services. The size axis predicts flakiness: every capability granted is a way to fail.</div>
+        </div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">11</span> Reach for this when&hellip;</h2>
+      <div class="triggers">
+        <div class="trigger"><strong>You&rsquo;re about to write a new test</strong> &mdash; ask which layer owns this assertion and push it as far down the pyramid as it can go. The cheapest layer that proves the behavior wins.</div>
+        <div class="trigger"><strong>A test flakes in CI</strong> &mdash; treat it as an incident: quarantine it today, hunt the non-determinism (clock, network, sleep, shared state), and fix the seam. Never let a flake teach the team that red is normal.</div>
+        <div class="trigger"><strong>Someone proposes 100% coverage or &ldquo;just test it in the browser&rdquo;</strong> &mdash; reach for the budget: confidence per minute of runtime, not lines per file. Weight the suite toward fast hermetic tests and reserve end-to-end for the journeys that must never break.</div>
+      </div>
+    </section>
+
+    <a class="back-link" href="../index.html#daily-topics">&larr; Back to daily topics</a>
+  </div>
+  <script>
+    // copy buttons
+    const status = document.getElementById('live-status');
+    document.querySelectorAll('.copy-btn').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const target = document.getElementById(button.dataset.copy);
+        const text = target.innerText;
+        try {
+          await navigator.clipboard.writeText(text);
+          const original = button.textContent;
+          button.textContent = 'Copied';
+          status.textContent = 'Prompt copied to clipboard.';
+          setTimeout(() => button.textContent = original, 1600);
+        } catch {
+          const range = document.createRange();
+          range.selectNodeContents(target);
+          const selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+          status.textContent = 'Prompt selected. Copy it with your device copy command.';
+        }
+      });
+    });
+
+    // quiz
+    const explanations = [
+      ["Fixing first leaves the gap where it was: next time the same logic breaks, only the slow, flaky e2e layer will notice, and the regression lands at the top all over again.",
+       "Right. The top-layer test discovered the gap; a lower-level test should own it going forward. Reproduce it at the cheapest layer that can prove it, then fix — the fast suite now guards the regression.",
+       "Deleting the only test that caught the bug destroys the signal instead of pushing it down. Keep the e2e until the lower-level test owns the regression, then consider dropping the duplicate.",
+       "More e2e just deepens the ice-cream cone — slower, flakier, still no fast feedback. The repair is never 'more of the top layer.'"],
+      ["A bigger sleep doesn't remove the race, it just makes the suite slower and the flake rarer — it will still fail on the worst day, now after a longer wait.",
+       "Right. The test depends on timing it doesn't control. Inject the clock (or use virtual time) so the test owns time, and wait on the real condition with poll-with-timeout instead of a fixed sleep.",
+       "The runner didn't write your sleep — blaming tooling hides the non-determinism you own. The flake lives in the test, not the framework.",
+       "Relaxing the assertion trades a flake for a test that proves nothing: the bug now passes silently. Fix the determinism, not the bar."],
+      ["You mocked a type you don't own: if the provider changes its API, your mocks keep passing while production breaks. You've tested your mocks, not the integration.",
+       "Real charges in a test suite are slow, non-deterministic, and side-effectful — every run spends money and leaves state behind. Tests must be hermetic.",
+       "Right. The seam you own gets the fake (fast, deterministic unit tests); the seam you don't own gets a contract test against the real provider's behavior. Never mock types you don't own.",
+       "The riskiest code is exactly what needs the most testing — it just needs the right seams, not no tests. Untested payment code is how 2 AM pages are born."],
+      ["Speed isn't the objection — coverage tools are fast enough. The objection is the incentive: the metric becomes the goal.",
+       "Right. Beyond a point you test lines instead of behavior, couple tests to implementation, and tax every refactoring. Coverage is a smoke detector (uncovered = untested), never a target.",
+       "It's possible — and still a bad target. Possibility isn't the point; the perverse incentive is.",
+       "Coverage tools measure whatever tests run. The problem is the target, not the scope: a target of 100% always fills the last 20% with tests that prove nothing."],
+      ["More parallelism shrinks wall-clock time but not flakiness, debug distance, or maintenance cost. The cone stays a cone — just a faster one.",
+       "The language isn't the bottleneck; the layering is. A fast ice-cream cone is still inverted — the cost structure doesn't change.",
+       "Right. Invert the cone: push each e2e assertion down to the cheapest layer that can prove it, keep e2e for critical journeys only, and treat every flake as an incident on the day it appears.",
+       "Zero e2e loses the only tests that see the whole system wired together. Critical journeys need that lens — the fix is fewer e2e tests, not none."]
+    ];
+    const questions = [...document.querySelectorAll('.quiz-q')];
+    let score = 0, answered = 0;
+    questions.forEach((q, qi) => {
+      const correct = parseInt(q.dataset.answer, 10);
+      const exp = q.querySelector('.qexp');
+      q.querySelectorAll('.qopt').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          if (q.dataset.done) return;
+          q.dataset.done = "1";
+          const chosen = parseInt(btn.dataset.i, 10);
+          const ok = chosen === correct;
+          q.querySelectorAll('.qopt').forEach((b) => {
+            b.disabled = true;
+            if (parseInt(b.dataset.i, 10) === correct) b.classList.add('correct');
+          });
+          if (!ok) btn.classList.add('wrong');
+          else score++;
+          answered++;
+          exp.hidden = false;
+          exp.innerHTML = ok
+            ? "<strong class=\"ok\">Correct.</strong> " + explanations[qi][chosen]
+            : "<strong class=\"no\">Not quite.</strong> " + explanations[qi][chosen];
+          if (answered === questions.length) {
+            const box = document.getElementById('quiz-score');
+            box.style.display = "block";
+            box.innerHTML = "You scored <strong>" + score + " / " + questions.length + "</strong>." +
+              (score === questions.length ? " Clean sweep — your test budget is well spent." :
+               score >= 3 ? " Solid — re-read the mechanic you missed." :
+               " Worth a re-read of section 04 before moving on.");
+          }
+        });
+      });
+    });
+
+    // flashcards
+    document.querySelectorAll('.fcard').forEach((card) => {
+      const flip = () => card.classList.toggle('flipped');
+      card.addEventListener('click', flip);
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); }
+      });
+    });
+  </script>
+</body>
+</html>

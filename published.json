@@ -222,5 +222,12 @@
     "date": "2026-10-15",
     "summary": "API design is contract design: resources as nouns, honest HTTP semantics, every field a promise, and evolution by additive change with explicit versioning.",
     "skill": "api-design"
+  },
+  {
+    "slug": "2026-10-16-testing-strategies-pyramid-in-practice",
+    "title": "Testing strategies: the pyramid in practice",
+    "date": "2026-10-16",
+    "summary": "Testing is a budget: every test buys confidence and costs time on every run. The pyramid shows where confidence is cheap (fast unit tests) and where it is expensive (slow, flaky end-to-end tests) \u2014 and the discipline of pushing every test as far down as it can go.",
+    "skill": "testing-strategies"
   }
 ]
