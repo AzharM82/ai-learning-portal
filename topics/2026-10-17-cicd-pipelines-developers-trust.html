@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CI/CD pipelines that developers trust &middot; AI Learning Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+    :root {
+      --ink: #14212b; --muted: #53636f; --paper: #f6f8f7; --white: #ffffff;
+      --line: #cbd5d8; --navy: #163247; --navy-2: #21465e; --teal: #0b8174;
+      --teal-soft: #dff2ee; --orange: #d66332; --orange-soft: #f8e4d8;
+      --gold: #d8a524; --gold-soft: #f7edc8; --blue-soft: #e3eef4;
+      --red: #b3402e; --red-soft: #f9e3de; --green: #1e7a3c; --green-soft: #e2f2e6;
+      --shadow: 0 18px 45px rgba(20, 33, 43, .09); --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; color: var(--ink);
+      background: linear-gradient(rgba(20,33,43,.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(20,33,43,.035) 1px, transparent 1px), var(--paper);
+      background-size: 28px 28px;
+      font-family: "Source Sans 3", sans-serif; font-size: 17px; line-height: 1.58;
+    }
+    .shell { width: min(960px, calc(100% - 40px)); margin: 0 auto; }
+    .portal-nav{position:sticky;top:0;z-index:50;background:rgba(22,50,71,.97);border-bottom:1px solid rgba(255,255,255,.12)}
+    .portal-nav-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;flex-wrap:wrap}
+    .portal-brand{color:#fff;text-decoration:none;font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:15px}
+    .portal-brand span{color:var(--gold);font-weight:400}
+    .portal-links{display:flex;gap:18px;flex-wrap:wrap}
+    .portal-links a{color:#dbe7ee;text-decoration:none;font-size:14.5px}
+    .portal-links a:hover{color:#fff;text-decoration:underline}
+    .hero { padding: 56px 0 36px; }
+    .chapter-mark { display:inline-flex;align-items:center;gap:10px;color:var(--navy);
+      font:600 12px/1.2 "IBM Plex Mono",monospace;letter-spacing:.09em;text-transform:uppercase;margin-bottom:18px; }
+    .chapter-mark::before { content:"";width:42px;height:3px;background:var(--orange); }
+    h1 { font-size: clamp(36px, 5vw, 58px); line-height: 1.02; letter-spacing:-.03em; margin:0 0 14px; }
+    .lede { color: var(--muted); font-size: clamp(18px,2vw,22px); max-width: 64ch; margin:0 0 8px; }
+    .date-line { font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--muted); }
+    section.block { margin: 44px 0; }
+    h2 { font-size: 26px; letter-spacing:-.02em; margin:0 0 6px; display:flex;align-items:center;gap:12px; }
+    h2 .num { font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:600;color:var(--white);
+      background:var(--navy);border-radius:999px;min-width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center; }
+    .sub { color:var(--muted); margin:0 0 18px; max-width: 68ch; }
+    .card { background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+      padding:24px;box-shadow:var(--shadow); }
+    .skill-card { background:var(--navy);color:#eaf2f7;border-radius:var(--radius);padding:22px 24px;
+      font-family:"IBM Plex Mono",monospace;font-size:14.5px;overflow-x:auto;box-shadow:var(--shadow); }
+    .skill-card .k { color:var(--gold); }
+    .idea { font-size:21px;line-height:1.5;border-left:4px solid var(--teal);padding:6px 0 6px 20px;max-width:62ch; }
+    .idea strong { color:var(--navy); }
+    .mechanics { display:grid;gap:14px; }
+    .mech { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:18px 20px;
+      display:grid;grid-template-columns:44px 1fr;gap:14px;align-items:start; }
+    .mech .mnum { font-family:"IBM Plex Mono",monospace;font-weight:600;color:var(--teal);
+      background:var(--teal-soft);border-radius:10px;width:44px;height:44px;display:flex;align-items:center;justify-content:center; }
+    .mech h3 { margin:0 0 6px;font-size:18px; }
+    .mech p { margin:0;color:var(--muted);font-size:15.5px; }
+    .mech code, .inline-code { font-family:"IBM Plex Mono",monospace;font-size:.88em;background:var(--blue-soft);
+      padding:2px 7px;border-radius:6px;color:var(--navy); }
+    pre.code { background:#0f2233;color:#e8f1f5;border-radius:14px;padding:20px 22px;overflow-x:auto;
+      font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.6;margin:0; }
+    pre.code .c { color:#8ba3b0; } pre.code .s { color:#ffd479; } pre.code .k { color:#7fd6c2; }
+    .fail { border-left:4px solid var(--orange); }
+    .fail h3 .fix { display:block;margin-top:8px;font-size:15px;font-weight:500;color:var(--green); }
+    .ref-list { display:grid;gap:12px; }
+    .ref { display:flex;gap:14px;align-items:flex-start;background:var(--white);border:1px solid var(--line);
+      border-radius:14px;padding:16px 18px;text-decoration:none;color:inherit; }
+    .ref:hover { border-color:var(--teal); }
+    .ref .badge { flex:none;font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;letter-spacing:.06em;
+      padding:5px 10px;border-radius:999px;text-transform:uppercase; }
+    .badge.doc { background:var(--blue-soft);color:var(--navy); }
+    .badge.vid { background:var(--orange-soft);color:var(--orange); }
+    .ref h3 { margin:0 0 4px;font-size:17px; }
+    .ref p { margin:0;color:var(--muted);font-size:14.5px; }
+    .prompt-block { background:#0f2233;border-radius:var(--radius);overflow:hidden;margin-bottom:18px;box-shadow:var(--shadow); }
+    .prompt-top { display:flex;justify-content:space-between;align-items:center;gap:12px;
+      padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.12); }
+    .prompt-top strong { color:#fff;font-size:13px;letter-spacing:.06em;font-family:"IBM Plex Mono",monospace; }
+    .copy-btn { border:1px solid #6c8796;background:transparent;color:#fff;border-radius:6px;padding:7px 11px;
+      cursor:pointer;font-weight:700;font-size:14px; }
+    .copy-btn:hover { background:rgba(255,255,255,.1); }
+    .copy-btn:focus-visible { outline:2px solid var(--gold);outline-offset:2px; }
+    .prompt-text { color:#e8f1f5;font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.65;
+      padding:18px;white-space:pre-wrap;margin:0; }
+    .sr-only { position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0); }
+    .quiz-q { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px; }
+    .quiz-q .qq { font-weight:700;margin:0 0 12px;font-size:18px; }
+    .qopts { display:grid;gap:8px; }
+    .qopt { text-align:left;background:var(--paper);border:1px solid var(--line);border-radius:10px;
+      padding:12px 14px;cursor:pointer;font-size:15.5px;color:var(--ink); }
+    .qopt:hover:not(:disabled) { border-color:var(--navy); }
+    .qopt:disabled { cursor:default;opacity:.85; }
+    .qopt.correct { background:var(--green-soft);border-color:var(--green); }
+    .qopt.wrong { background:var(--red-soft);border-color:var(--red); }
+    .qexp { margin:12px 0 0;font-size:15px;color:var(--muted); }
+    .qexp strong.ok { color:var(--green); } .qexp strong.no { color:var(--red); }
+    #quiz-score { display:none;margin-top:8px;background:var(--navy);color:#fff;border-radius:14px;
+      padding:20px 24px;font-size:19px; }
+    #quiz-score strong { color:var(--gold); }
+    .fgrid { display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px; }
+    .fcard { perspective:900px;cursor:pointer;min-height:170px; }
+    .fcard-inner { position:relative;width:100%;height:100%;min-height:170px;transform-style:preserve-3d;transition:transform .45s; }
+    .fcard.flipped .fcard-inner { transform:rotateY(180deg); }
+    .fface { position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+      border-radius:14px;padding:18px;display:flex;align-items:center;justify-content:center;text-align:center;
+      border:1px solid var(--line);background:var(--white);box-shadow:var(--shadow);font-size:15.5px; }
+    .fface.front { font-weight:700;color:var(--navy); }
+    .fface.back { transform:rotateY(180deg);background:var(--teal-soft);color:var(--ink);font-size:14.5px; }
+    .fcard:focus-visible { outline:2px solid var(--teal);outline-offset:3px;border-radius:14px; }
+    .triggers { display:grid;gap:10px; }
+    .trigger { background:var(--gold-soft);border-radius:12px;padding:14px 18px;font-size:16px; }
+    .trigger strong { color:var(--navy); }
+    .back-link { display:inline-block;margin:8px 0 60px;font-weight:600;color:var(--teal);text-decoration:none;font-size:17px; }
+    .back-link:hover { text-decoration:underline; }
+    .fig { background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+      padding:12px;box-shadow:var(--shadow);overflow-x:auto; }
+    .fig svg { display:block;width:100%;height:auto; }
+    .flow-anim { stroke-dasharray: 8 6; animation: dashmove 1.2s linear infinite; }
+    @keyframes dashmove { to { stroke-dashoffset: -14; } }
+    .pulse { animation: pulse 2.2s ease-in-out infinite; }
+    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.45; } }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior:auto; } .fcard-inner{transition:none;} .flow-anim{animation:none;} .pulse{animation:none;} }
+  </style>
+</head>
+<body><nav class="portal-nav">
+    <div class="shell portal-nav-inner">
+      <a class="portal-brand" href="../index.html">AI Engineering <span>&middot; Learning Portal</span></a>
+      <div class="portal-links">
+        <a href="../index.html#daily-topics">Daily topics</a>
+        <a href="../index.html#loop">Loop</a>
+        <a href="../index.html#graph">Graph</a>
+        <a href="../index.html#harness">Harness</a>
+      </div>
+    </div>
+  </nav>
+  <div class="shell">
+
+    <header class="hero">
+      <div class="chapter-mark">Daily topic &middot; Software engineering</div>
+      <h1>CI/CD pipelines that developers trust</h1>
+      <p class="lede">Nobody trusts a pipeline because it looks impressive. Developers trust a pipeline for one reason: <strong>every green run means the same thing, every time</strong> &mdash; the exact artifact that was built is the exact artifact that passed every gate, and the exact artifact that went live. Trust is earned run by run: fast feedback, deterministic gates, and deploys so boring and reversible that shipping on Friday stops being scary.</p>
+      <p class="date-line">2026-10-17 &middot; Topic 034</p>
+    </header>
+
+    <section class="block">
+      <h2><span class="num">01</span> The skill card</h2>
+      <p class="sub">Every topic on this portal is designed like a Codex skill: a name, a trigger, and concrete steps.</p>
+      <div class="skill-card"><pre style="margin:0">---
+<span class="k">name:</span> cicd-pipelines-developers-trust
+<span class="k">description:</span> Reach for this when designing or repairing a CI/CD pipeline:
+  build once and promote the same immutable artifact through every stage,
+  put the pipeline itself in version control, order stages by speed so
+  failures surface in minutes, make every gate deterministic (quarantine
+  flakes on sight), keep deploys boring and one-click reversible, guard
+  secrets with short-lived scoped credentials, and measure the pipeline
+  with the four DORA metrics.
+---</pre></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">02</span> The one-idea version</h2>
+      <p class="idea">A CI/CD pipeline is a <strong>trust machine</strong>: it converts "did the developer get everything right by hand?" into "did the machine say green?" &mdash; and that conversion only holds if the machine is <strong>deterministic, fast, and boring</strong>. Deterministic means the same commit always gets the same verdict. Fast means a red answer arrives in minutes, not hours. Boring means deploys and rollbacks are routine one-click events, not heroics. If the team merges despite red builds, the pipeline isn't trusted; it is decoration.</p>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">03</span> The trust machine, drawn as one flow</h2>
+      <p class="sub">One commit enters on the left. Every gate the same sealed artifact passes, in speed order, is what earns the deploy button on the right. The artifact identity (its content digest) travels with it &mdash; nothing is ever rebuilt between stages. The four DORA metrics sit underneath as the pipeline's own report card.</p>
+      <div class="fig">
+        <svg viewBox="0 0 960 600" role="img" aria-label="Diagram: a commit flows left to right through lint and unit tests (under 5 minutes), integration and security scans (under 20 minutes), then a staging gate with smoke tests and manual approval, then production deploy with canary and automatic rollback. The same sealed artifact travels every stage; nothing is rebuilt. Below: the four DORA metrics.">
+          <defs>
+            <marker id="arr4" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+              <path d="M0,0 L8,3 L0,6 Z" fill="#163247"></path>
+            </marker>
+          </defs>
+          <g font-family="Source Sans 3, sans-serif" font-size="14">
+            <text x="20" y="30" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="600" fill="#163247">ONE COMMIT &rarr; ONE ARTIFACT &rarr; EVERY GATE &rarr; PROD</text>
+
+            <!-- commit box -->
+            <rect x="20" y="70" width="110" height="70" rx="12" fill="#e3eef4" stroke="#163247" stroke-width="2"/>
+            <text x="75" y="100" text-anchor="middle" font-weight="700" fill="#163247">COMMIT</text>
+            <text x="75" y="122" text-anchor="middle" font-size="12" fill="#53636f">sha: a3f9…</text>
+            <line x1="130" y1="105" x2="180" y2="105" stroke="#163247" stroke-width="2.5" class="flow-anim"/>
+
+            <!-- build -->
+            <rect x="180" y="70" width="130" height="70" rx="12" fill="#e3eef4" stroke="#163247" stroke-width="2"/>
+            <text x="245" y="100" text-anchor="middle" font-weight="700" fill="#163247">BUILD</text>
+            <text x="245" y="122" text-anchor="middle" font-size="12" fill="#53636f">digest: sha256:9c…</text>
+            <line x1="310" y1="105" x2="352" y2="105" stroke="#163247" stroke-width="2.5" class="flow-anim"/>
+
+            <!-- fast gate -->
+            <rect x="352" y="52" width="150" height="106" rx="12" fill="#dff2ee" stroke="#0b8174" stroke-width="2"/>
+            <text x="427" y="78" text-anchor="middle" font-weight="700" fill="#0b8174">FAST GATE</text>
+            <text x="427" y="100" text-anchor="middle" font-size="12.5" fill="#53636f">lint &middot; typecheck</text>
+            <text x="427" y="118" text-anchor="middle" font-size="12.5" fill="#53636f">unit tests</text>
+            <text x="427" y="140" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" font-weight="600" fill="#0b8174">&lt; 5 min</text>
+            <line x1="502" y1="105" x2="544" y2="105" stroke="#163247" stroke-width="2.5" class="flow-anim"/>
+
+            <!-- deep gate -->
+            <rect x="544" y="52" width="170" height="106" rx="12" fill="#f7edc8" stroke="#d8a524" stroke-width="2"/>
+            <text x="629" y="78" text-anchor="middle" font-weight="700" fill="#7a5a00">DEEP GATE</text>
+            <text x="629" y="100" text-anchor="middle" font-size="12.5" fill="#53636f">integration &middot; SCA</text>
+            <text x="629" y="118" text-anchor="middle" font-size="12.5" fill="#53636f">SAST scan</text>
+            <text x="629" y="140" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" font-weight="600" fill="#7a5a00">&lt; 20 min</text>
+            <line x1="714" y1="105" x2="756" y2="105" stroke="#163247" stroke-width="2.5" class="flow-anim"/>
+
+            <!-- staging -->
+            <rect x="756" y="52" width="184" height="106" rx="12" fill="#f8e4d8" stroke="#d66332" stroke-width="2"/>
+            <text x="848" y="78" text-anchor="middle" font-weight="700" fill="#d66332">STAGING</text>
+            <text x="848" y="100" text-anchor="middle" font-size="12.5" fill="#53636f">smoke &middot; contract tests</text>
+            <text x="848" y="118" text-anchor="middle" font-size="12.5" fill="#53636f">approval (if required)</text>
+            <text x="848" y="140" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" font-weight="600" fill="#d66332">same artifact</text>
+
+            <!-- prod row -->
+            <line x1="848" y1="158" x2="848" y2="200" stroke="#163247" stroke-width="2.5" marker-end="url(#arr4)" class="flow-anim"/>
+            <rect x="700" y="200" width="296" height="96" rx="12" fill="#163247" stroke="#163247" stroke-width="2"/>
+            <text x="848" y="230" text-anchor="middle" font-weight="700" fill="#ffffff">PROD &mdash; CANARY / BLUE-GREEN</text>
+            <text x="848" y="252" text-anchor="middle" font-size="12.5" fill="#dbe7ee">automatic rollback on error budget burn</text>
+            <text x="848" y="272" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" font-weight="600" fill="#d8a524">boring &middot; one-click &middot; reversible</text>
+
+            <!-- artifact identity ribbon -->
+            <rect x="20" y="340" width="920" height="66" rx="12" fill="#e3eef4" stroke="#163247" stroke-width="1.5" stroke-dasharray="6 4"/>
+            <text x="480" y="366" text-anchor="middle" font-weight="700" fill="#163247">ARTIFACT IDENTITY TRAVELS: build once, tag sha256:9c&hellip;, promote the same digest</text>
+            <text x="480" y="388" text-anchor="middle" font-size="13" fill="#53636f">never rebuild between stages &mdash; a rebuilt artifact is an untested artifact</text>
+
+            <!-- DORA panel -->
+            <text x="20" y="448" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="600" fill="#163247">THE PIPELINE'S OWN REPORT CARD &mdash; THE FOUR DORA METRICS</text>
+            <g>
+              <rect x="20" y="462" width="222" height="112" rx="12" fill="#ffffff" stroke="#cbd5d8" stroke-width="1.5"/>
+              <text x="131" y="490" text-anchor="middle" font-weight="700" fill="#0b8174">Deploy frequency</text>
+              <text x="131" y="514" text-anchor="middle" font-size="12.5" fill="#53636f">how often we ship to prod</text>
+              <text x="131" y="548" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="600" fill="#163247">elite: on demand</text>
+
+              <rect x="252" y="462" width="222" height="112" rx="12" fill="#ffffff" stroke="#cbd5d8" stroke-width="1.5"/>
+              <text x="363" y="490" text-anchor="middle" font-weight="700" fill="#0b8174">Lead time</text>
+              <text x="363" y="514" text-anchor="middle" font-size="12.5" fill="#53636f">commit &rarr; running in prod</text>
+              <text x="363" y="548" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="600" fill="#163247">elite: &lt; 1 day</text>
+
+              <rect x="484" y="462" width="222" height="112" rx="12" fill="#ffffff" stroke="#cbd5d8" stroke-width="1.5"/>
+              <text x="595" y="490" text-anchor="middle" font-weight="700" fill="#b3402e">Change fail rate</text>
+              <text x="595" y="514" text-anchor="middle" font-size="12.5" fill="#53636f">% of deploys needing remediation</text>
+              <text x="595" y="548" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="600" fill="#163247">elite: 0&ndash;15%</text>
+
+              <rect x="716" y="462" width="222" height="112" rx="12" fill="#ffffff" stroke="#cbd5d8" stroke-width="1.5"/>
+              <text x="827" y="490" text-anchor="middle" font-weight="700" fill="#b3402e">Time to restore</text>
+              <text x="827" y="514" text-anchor="middle" font-size="12.5" fill="#53636f">incident &rarr; service restored</text>
+              <text x="827" y="548" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="600" fill="#163247">elite: &lt; 1 hour</text>
+            </g>
+          </g>
+        </svg>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">04</span> How it works: seven mechanics</h2>
+      <p class="sub">Imperative, concrete, no fluff. These are the moves that turn &ldquo;we have a pipeline&rdquo; into one the team actually trusts.</p>
+      <div class="mechanics">
+        <div class="mech"><div class="mnum">1</div><div><h3>Build once, promote the same immutable artifact</h3><p>Build the container image (or package) exactly once, tag it with its content digest (<code>sha256:9c…</code>), and carry that digest through every stage. Never rebuild between test and prod &mdash; a rebuilt artifact is an untested artifact, because compilers, base images, and lockfiles can shift between runs. The artifact identity is the pipeline's chain of custody.</p></div></div>
+        <div class="mech"><div class="mnum">2</div><div><h3>Put the pipeline itself in version control</h3><p>Pipeline-as-code: the workflow file lives in the same repo, reviewed like any other code, with history and blame. No click-configured pipelines that only one senior engineer understands. If you cannot reproduce the pipeline on a fresh runner from the repo, the pipeline is a single point of failure wearing automation's clothes.</p></div></div>
+        <div class="mech"><div class="mnum">3</div><div><h3>Order stages by speed: fail in minutes, not hours</h3><p>The fast gate runs first: lint, typecheck, unit tests &mdash; under 5 minutes. Only passing commits spend compute on the deep gate: integration tests, dependency (SCA) and security (SAST) scans. A developer should know the cheap answer ("your commit broke a unit test") while the context is still hot, not after a 40-minute run.</p></div></div>
+        <div class="mech"><div class="mnum">4</div><div><h3>Make every gate deterministic; quarantine flakes on sight</h3><p>The same commit must always get the same verdict. A flaky gate teaches the team to re-run until green &mdash; and then every green is suspect. Treat flaky pipeline checks as incidents: quarantine or delete them the day they appear. Retries are allowed only for provably transient infrastructure blips, and a retried job is logged, not silently greened.</p></div></div>
+        <div class="mech"><div class="mnum">5</div><div><h3>Keep deploys boring and one-click reversible</h3><p>Ship in small batches so any single deploy is small enough to understand. Use blue-green or canary rollouts that shift traffic gradually and auto-rollback on error-budget burn; hide incomplete work behind feature flags rather than long-lived branches. Rollback must be one action, rehearsed, that anyone on call can do at 2 AM &mdash; if rolling back is scarier than rolling forward, the pipeline owns that risk.</p></div></div>
+        <div class="mech"><div class="mnum">6</div><div><h3>Guard secrets like the pipeline is a public log</h3><p>Assume every build log is readable. Never print secrets, mask them in output, and never bake them into images. Prefer short-lived, scoped credentials minted per run (OIDC federation against the cloud provider) over long-lived tokens stored in the CI system. A leaked token with a 10-minute TTL and one permission is an incident; a leaked admin token with no expiry is a career event.</p></div></div>
+        <div class="mech"><div class="mnum">7</div><div><h3>Measure the pipeline with the four DORA metrics</h3><p>DORA's research (Google Cloud) gives the report card: <strong>deploy frequency</strong> (how often we ship), <strong>lead time</strong> (commit &rarr; running in prod), <strong>change failure rate</strong> (% of deploys needing remediation), and <strong>time to restore</strong> (incident &rarr; service back). Track them per service, review them like a budget &mdash; and watch the duality: speed and stability are read as one picture, because shipping bugs faster is not an improvement.</p></div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">05</span> Code sketch: a DORA lead-time gate</h2>
+      <p class="sub">24 lines of Python you can run in a pipeline job: read deploy events, compute the two throughput metrics (deploy frequency, commit&rarr;prod lead time), and fail the job when the pipeline's own report card is getting worse. Measure the machine that ships the software.</p>
+      <div class="card" style="padding:0;background:#0f2233;border:none;">
+<pre class="code"><span class="k">import</span> json, sys, statistics
+<span class="k">from</span> datetime <span class="k">import</span> datetime, timedelta
+
+<span class="c"># Each event: {"commit_ts": iso, "deploy_ts": iso, "failed": bool}</span>
+events = [json.loads(l) <span class="k">for</span> l <span class="k">in</span> sys.stdin <span class="k">if</span> l.strip()]
+
+lead_hours = [
+    (datetime.fromisoformat(e[<span class="s">"deploy_ts"</span>]) -
+     datetime.fromisoformat(e[<span class="s">"commit_ts"</span>])).total_seconds() / 3600
+    <span class="k">for</span> e <span class="k">in</span> events
+]
+window = datetime.fromisoformat(events[-1][<span class="s">"deploy_ts"</span>]) - \
+         datetime.fromisoformat(events[0][<span class="s">"deploy_ts"</span>])
+
+freq_per_day = len(events) / max(window.total_seconds() / 86400, 1)
+p95_lead = sorted(lead_hours)[int(len(lead_hours) * 0.95)]
+fail_rate = sum(e[<span class="s">"failed"</span>] <span class="k">for</span> e <span class="k">in</span> events) / len(events)
+
+print(f<span class="s">"deploys/day: {freq_per_day:.1f}  p95 lead: {p95_lead:.1f}h"</span>)
+print(f<span class="s">"change fail rate: {fail_rate:.1%}"</span>)
+
+<span class="c"># The gate: fail the build when the pipeline's report card degrades.</span>
+<span class="k">if</span> p95_lead > 24 <span class="k">or</span> fail_rate > 0.15:
+    print(<span class="s">"GATE FAILED: pipeline is slower or sloppier than target"</span>)
+    sys.exit(1)</pre>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">06</span> Failure modes: five ways pipelines lose trust</h2>
+      <p class="sub">Each one is a named pitfall plus its one-line fix.</p>
+      <div class="mechanics">
+        <div class="mech fail"><div class="mnum">F1</div><div><h3>The 45-minute pipeline nobody waits for <span class="fix">Fix: stage by speed — fail in &lt;5 minutes on lint/unit, push slow suites off the critical path, parallelize by file, and delete tests that buy no confidence. A pipeline nobody waits for is a pipeline nobody trusts.</span></h3></div></div>
+        <div class="mech fail"><div class="mnum">F2</div><div><h3>Rebuilding the artifact between stages <span class="fix">Fix: build once, tag with the content digest, promote the same digest everywhere. "Passed tests" means nothing about the binary that actually ships if the binary was rebuilt afterward.</span></h3></div></div>
+        <div class="mech fail"><div class="mnum">F3</div><div><h3>The merge-despite-red culture <span class="fix">Fix: red builds are incidents, not noise. Quarantine flaky gates the day they appear, and make "main is always green" a team rule — the moment a human must interpret red, trust is already gone.</span></h3></div></div>
+        <div class="mech fail"><div class="mnum">F4</div><div><h3>Deploys that require a hero and a runbook <span class="fix">Fix: automate the deploy end to end (blue-green or canary, auto-rollback on error burn), and make rollback a rehearsed one-click action anyone on call can run. If Friday deploys are banned, the pipeline — not the calendar — is the problem.</span></h3></div></div>
+        <div class="mech fail"><div class="mnum">F5</div><div><h3>Long-lived secrets with broad permissions <span class="fix">Fix: mint short-lived, scoped credentials per run via OIDC federation, mask all secrets in logs, and never bake them into images. A leaked 10-minute token is an incident; a leaked admin key is a breach.</span></h3></div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">07</span> Go deeper: verified references</h2>
+      <p class="sub">Curated and real &mdash; every link opened and verified today. Two articles, two videos.</p>
+      <div class="ref-list">
+        <a class="ref" href="https://cloud.google.com/architecture/devops" target="_blank" rel="noopener">
+          <span class="badge doc">Article</span>
+          <span><h3>DORA DevOps capabilities &mdash; Google Cloud</h3>
+          <p>Why this one: the research-backed source of truth behind the four metrics — how the DORA team defines and measures continuous delivery, continuous integration, deployment automation, and trunk-based development.</p></span>
+        </a>
+        <a class="ref" href="https://www.harness.io/blog/dora-metrics" target="_blank" rel="noopener">
+          <span class="badge doc">Article</span>
+          <span><h3>DORA Metrics: Accelerate DevOps Performance &mdash; Harness</h3>
+          <p>Why this one: the four key metrics explained with practical measurement guidance — lead time, deploy frequency, MTTR, change failure rate — and why speed and stability must be read as one picture, not two.</p></span>
+        </a>
+        <a class="ref" href="https://www.youtube.com/watch?v=ToVRKg8Ua-U" target="_blank" rel="noopener">
+          <span class="badge vid">Video</span>
+          <span><h3>CI/CD Explained Simply: Push One Change, and It Tests, Builds and Goes Live by Itself</h3>
+          <p>Why this one: starts from the problem (releasing by hand gets skipped steps), then a real end-to-end demo: GitHub Actions tests, builds a container, pushes to Azure Container Registry, and deploys to Azure Container Apps automatically.</p></span>
+        </a>
+        <a class="ref" href="https://www.youtube.com/watch?v=oeVwNdb6Mcs" target="_blank" rel="noopener">
+          <span class="badge vid">Video</span>
+          <span><h3>CI/CD Pipeline Explained From Zero | Build, Test, Deploy Automatically</h3>
+          <p>Why this one: a from-zero walkthrough — merge hell and "works on my machine", continuous integration vs delivery vs deployment, the commit&rarr;build&rarr;test&rarr;stage&rarr;deploy&rarr;monitor flow, and the tools teams actually use.</p></span>
+        </a>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">08</span> Sample prompts</h2>
+      <p class="sub">Copy-paste these into your AI assistant to practice the topic.</p>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>PROMPT 1 &middot; AUDIT MY PIPELINE</strong><button class="copy-btn" data-copy="pr1">Copy</button></div>
+        <p class="prompt-text" id="pr1">Act as a CI/CD reviewer. I will paste my pipeline definition (GitHub Actions / Azure DevOps / Jenkinsfile). Grade it against seven trust criteria: (1) build once, promote immutable artifacts, (2) pipeline defined in version control, (3) stages ordered by speed, (4) deterministic gates with flake handling, (5) boring one-click deploys and rollback, (6) secret hygiene, (7) DORA metrics tracked. For each: pass/fail and one concrete fix. Ask me one clarifying question before scoring — do not redesign the pipeline for me.</p>
+      </div>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>PROMPT 2 &middot; DESIGN THE ROLLBACK</strong><button class="copy-btn" data-copy="pr2">Copy</button></div>
+        <p class="prompt-text" id="pr2">Help me design a deployment strategy for a stateless API running on Kubernetes, one step per message: first the rollout mechanism (blue-green vs canary — trade-offs, your recommendation), then the automatic rollback triggers (which signals, what thresholds), then the one-click rollback runbook an on-call engineer can execute at 2 AM. Make me critique each step before moving on.</p>
+      </div>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>PROMPT 3 &middot; TRACK MY DORA FOUR</strong><button class="copy-btn" data-copy="pr3">Copy</button></div>
+        <p class="prompt-text" id="pr3">I will paste the last 20 deploys for one service: commit timestamp, deploy timestamp, and whether each deploy caused an incident or rollback. Compute the four DORA metrics (deploy frequency, lead time, change failure rate, time to restore — state your assumptions for the last one), tell me which performance band (elite/high/medium/low) we sit in, and name the single highest-leverage pipeline change to move up one band. Explain the duality: which metric would get worse if we optimize the others blindly.</p>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">09</span> Quiz: test your understanding</h2>
+      <p class="sub">Click an answer &mdash; you get it right or wrong immediately, with the reasoning.</p>
+      <div id="quiz">
+        <div class="quiz-q" data-answer="1">
+          <p class="qq">Q1. A service's pipeline rebuilds the container image between the test stage and the production deploy, from the same commit. What is the risk?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">No risk — the same commit means the same code, so the rebuild is guaranteed identical.</button>
+            <button class="qopt" data-i="1">The tests prove something about a different binary than the one shipped: base images, lockfiles, and toolchains can shift between builds, so the passing artifact is not the deployed artifact.</button>
+            <button class="qopt" data-i="2">It only wastes compute time — correctness is unaffected.</button>
+            <button class="qopt" data-i="3">The risk is tag naming collisions, nothing functional.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="2">
+          <p class="qq">Q2. The team has a gate that fails about 10% of runs with no code change, so developers re-run the pipeline until it goes green. What does this teach?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">That CI is working as intended — retries eventually find the truth.</button>
+            <button class="qopt" data-i="1">That the team should provision bigger runners to make the flaky gate pass more often.</button>
+            <button class="qopt" data-i="2">That every green is now suspect: re-running until green means the pipeline no longer says "this commit is safe", it says "the pipeline got tired of failing". Quarantine or fix the flake; retries are allowed only for provably transient infra blips.</button>
+            <button class="qopt" data-i="3">That the gate's threshold should be lowered so it passes more often.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="1">
+          <p class="qq">Q3. A pipeline runs the full 35-minute e2e suite before the 3-minute lint and unit tests. Why is this ordering wrong?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">It isn't wrong — e2e catches more bugs, so running it first saves total time.</button>
+            <button class="qopt" data-i="1">Cheap failures should surface first: a developer learns about a broken unit test in 3 minutes while the context is hot instead of 35, and passing commits — not failing ones — should spend the expensive compute.</button>
+            <button class="qopt" data-i="2">It is only wrong if the e2e tests are flaky.</button>
+            <button class="qopt" data-i="3">The order doesn't matter as long as everything runs.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="3">
+          <p class="qq">Q4. Team A deploys 20 times a day with a 12% change failure rate. Team B deploys twice a year with a 2% change failure rate. What does the DORA research say?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">Team B is better — fewer failures means higher quality.</button>
+            <button class="qopt" data-i="1">They are equivalent — Team A's higher rate cancels its frequency.</button>
+            <button class="qopt" data-i="2">DORA says failure rate is the only metric that matters.</button>
+            <button class="qopt" data-i="3">Speed and stability are read as one picture: elite teams achieve high frequency AND low failure rates — you don't have to trade one for the other. Team A is closer to elite (on-demand deploys, 0–15% fail rate), though both should be judged on all four metrics, including time to restore.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="2">
+          <p class="qq">Q5. Friday deploys are banned because rollbacks are scary and manual. What is the real fix?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">Keep the ban — some risks are not worth taking.</button>
+            <button class="qopt" data-i="1">Require two senior approvals for every Friday deploy.</button>
+            <button class="qopt" data-i="2">Make deploys boring and reversible: automate the rollout (canary/blue-green with auto-rollback on error burn), rehearse the one-click rollback until anyone on call can run it. The ban is a symptom — the pipeline owns the risk, not the calendar.</button>
+            <button class="qopt" data-i="3">Deploy only on Monday mornings instead.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+      </div>
+      <div id="quiz-score" role="status"></div>
+      <p class="sr-only" id="live-status" aria-live="polite"></p>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">10</span> Flashcards</h2>
+      <p class="sub">Click or press Enter/Space to flip.</p>
+      <div class="fgrid">
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Continuous integration</div>
+          <div class="fface back">Merge to the shared mainline frequently (at least daily); every integration is verified by an automated build + test that catches integration errors within minutes.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Continuous delivery vs deployment</div>
+          <div class="fface back">Delivery: every commit is deployable, the release itself is a business decision (button press). Deployment: the release happens automatically on green. Delivery is the safer default; deployment requires elite rollback.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Build once, promote everywhere</div>
+          <div class="fface back">Compile and package exactly once, tag the artifact with its content digest, and move that same binary through staging to prod. A rebuilt artifact between stages is an untested artifact.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Pipeline as code</div>
+          <div class="fface back">The workflow definition lives in the repo, reviewed and versioned like application code. If the pipeline can't be rebuilt from the repo on a fresh runner, it's a single point of failure in a trench coat.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Fail fast ordering</div>
+          <div class="fface back">Cheap checks first (lint, typecheck, unit tests in minutes), expensive ones later (integration, scans). A broken commit should be known while the developer's context is still hot — not after a 40-minute run.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Blue-green vs canary</div>
+          <div class="fface back">Blue-green: swap all traffic between two identical environments — instant, simple, instant rollback. Canary: shift a percentage of traffic to the new version, watch, then ramp — slower, but limits blast radius. Both need auto-rollback on error burn.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Feature flags</div>
+          <div class="fface back">Deploy code dark and flip it on for a cohort. Decouples deploy from release: incomplete work ships safely behind the flag, and "rollback" can be flipping the flag — no redeploy needed.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">The four DORA metrics</div>
+          <div class="fface back">Deploy frequency and lead time (throughput) + change failure rate and time to restore (stability). Read as one picture: shipping bugs faster is not an improvement. Elite: on-demand deploys, &lt;1-day lead, 0–15% fail rate, &lt;1-hour restore.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">OIDC federation for secrets</div>
+          <div class="fface back">Instead of storing long-lived tokens in CI, the pipeline mints short-lived, scoped credentials per run by proving its identity to the cloud provider. A leaked 10-minute token is an incident; a leaked admin key is a breach.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Friday-deploy fear is a…</div>
+          <div class="fface back">Pipeline symptom, not a calendar problem. If deploys are automated, gradual (canary/blue-green), and rollback is a rehearsed one-click action, the day of the week stops mattering.</div>
+        </div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">11</span> Reach for this when&hellip;</h2>
+      <div class="triggers">
+        <div class="trigger"><strong>You&rsquo;re designing or reviewing a pipeline</strong> &mdash; walk the seven mechanics: one immutable artifact, pipeline as code, fail-fast ordering, deterministic gates, boring reversible deploys, secret hygiene, DORA metrics. Any one missing is where trust will leak.</div>
+        <div class="trigger"><strong>A red build is blocking a merge</strong> &mdash; the pipeline is doing its job. Don't merge around it; quarantine the flake if the gate is lying, fix the code if it isn't. Main stays green — the team's trust budget lives or dies on that rule.</div>
+        <div class="trigger"><strong>Someone says "we ship fast" or "we never break prod"</strong> &mdash; ask for the four DORA numbers. If nobody can produce them, you don't know either one. Measure deploy frequency, lead time, change failure rate, and time to restore — speed and stability, one picture.</div>
+      </div>
+    </section>
+
+    <a class="back-link" href="../index.html#daily-topics">&larr; Back to daily topics</a>
+  </div>
+  <script>
+    // copy buttons
+    const status = document.getElementById('live-status');
+    document.querySelectorAll('.copy-btn').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const target = document.getElementById(button.dataset.copy);
+        const text = target.innerText;
+        try {
+          await navigator.clipboard.writeText(text);
+          const original = button.textContent;
+          button.textContent = 'Copied';
+          status.textContent = 'Prompt copied to clipboard.';
+          setTimeout(() => button.textContent = original, 1600);
+        } catch {
+          const range = document.createRange();
+          range.selectNodeContents(target);
+          selection.removeAllRanges();
+          selection.addRange(range);
+          status.textContent = 'Prompt selected. Copy it with your device copy command.';
+        }
+      });
+    });
+
+    // quiz
+    const explanations = [
+      ["Same commit does not mean same binary: base image tags resolve differently, registries and lockfiles shift, toolchain versions drift. Only an identical digest is identical.",
+       "Right. Tests passed for build A; build B is a stranger. Promote the same digest from test to prod — that's the whole point of build-once.",
+       "Compute waste is the least of it. The cost is epistemic: you've invalidated every test result.",
+       "Tag naming is a hygiene detail. The functional risk is that the tested binary never actually ships."],
+      ["Retries until green finds nothing — the verdict is now 'the pipeline gave up failing', not 'the commit is safe'.",
+       "Bigger runners don't fix non-determinism; they just fail 10% of the time on more expensive hardware.",
+       "Right. Re-run-until-green converts every green into a suspicion. Quarantine or fix the flaky gate; allow retries only for provably transient infrastructure failures, logged as retries.",
+       "Lowering the threshold hides the failure instead of removing it — the flake still poisons trust at the lower bar."],
+      ["Catching more bugs first costs more when it fails: 35 wasted minutes versus 3, and it burns the expensive suite on commits that cheap checks would have rejected.",
+       "Right. Order stages by speed so cheap failures surface in minutes while the developer's context is hot — expensive compute should only ever be spent on commits that passed the cheap gates.",
+       "Even with zero flakes, the ordering wastes 32 minutes per broken commit and delays the signal. Flakiness is a separate problem.",
+       "Order is feedback economics: every minute of delay between commit and red signal is time the developer's mental model goes stale."],
+      ["A 2% failure rate on two deploys a year is untested luck, not quality — and those rare deploys carry months of accumulated change, so each one is high-risk.",
+       "Frequency and failure rate don't 'cancel'; DORA's finding is that you can be elite at both. 'Equivalent' hides the throughput gap entirely.",
+       "No single metric stands alone — that's the whole point of reading them as one picture. Team B's restore time probably takes weeks, and that matters too.",
+       "Right. Elite is on-demand deploys with a 0–15% change failure rate: speed and stability together. Team A is closer to elite; Team B's low rate comes at the cost of near-zero throughput, and their time-to-restore is the unmeasured risk."],
+      ["The ban treats the symptom. Every Friday you don't deploy, Monday carries a bigger, riskier batch — the ban actually makes deployments MORE dangerous over time.",
+       "More approvals don't make rollback one-click; they make the deploy slower and still scary. Process gates are not automation.",
+       "Right. Friday fear is a pipeline problem: automate the rollout with canary/blue-green and auto-rollback, rehearse rollback until anyone can run it. When deploys are boring, the day of the week stops mattering.",
+       "Moving the ban to Monday doesn't remove the risk — it just concentrates bigger batches earlier in the week. The deploy is still a hero operation."]
+    ];
+    const questions = [...document.querySelectorAll('.quiz-q')];
+    let score = 0, answered = 0;
+    questions.forEach((q, qi) => {
+      const correct = parseInt(q.dataset.answer, 10);
+      const exp = q.querySelector('.qexp');
+      q.querySelectorAll('.qopt').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          if (q.dataset.done) return;
+          q.dataset.done = "1";
+          const chosen = parseInt(btn.dataset.i, 10);
+          const ok = chosen === correct;
+          q.querySelectorAll('.qopt').forEach((b) => {
+            b.disabled = true;
+            if (parseInt(b.dataset.i, 10) === correct) b.classList.add('correct');
+          });
+          if (!ok) btn.classList.add('wrong');
+          else score++;
+          answered++;
+          exp.hidden = false;
+          exp.innerHTML = ok
+            ? "<strong class=\"ok\">Correct.</strong> " + explanations[qi][chosen]
+            : "<strong class=\"no\">Not quite.</strong> " + explanations[qi][chosen];
+          if (answered === questions.length) {
+            const box = document.getElementById('quiz-score');
+            box.style.display = "block";
+            box.innerHTML = "You scored <strong>" + score + " / " + questions.length + "</strong>." +
+              (score === questions.length ? " Clean sweep — your pipeline earned it." :
+               score >= 3 ? " Solid — re-read the mechanic you missed." :
+               " Worth a re-read of section 04 before moving on.");
+          }
+        });
+      });
+    });
+
+    // flashcards
+    document.querySelectorAll('.fcard').forEach((card) => {
+      const flip = () => card.classList.toggle('flipped');
+      card.addEventListener('click', flip);
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); }
+      });
+    });
+  </script>
+</body>
+</html>

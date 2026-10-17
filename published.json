@@ -229,5 +229,12 @@
     "date": "2026-10-16",
     "summary": "Testing is a budget: every test buys confidence and costs time on every run. The pyramid shows where confidence is cheap (fast unit tests) and where it is expensive (slow, flaky end-to-end tests) \u2014 and the discipline of pushing every test as far down as it can go.",
     "skill": "testing-strategies"
+  },
+  {
+    "slug": "2026-10-17-cicd-pipelines-developers-trust",
+    "title": "CI/CD pipelines that developers trust",
+    "date": "2026-10-17",
+    "summary": "Trust isn't a feature \u2014 it's what every green run means: same immutable artifact through every gate, stages ordered by speed, deterministic verdicts, deploys that are boring and one-click reversible, and the four DORA metrics as the pipeline's report card.",
+    "skill": "cicd-pipelines-developers-trust"
   }
 ]
