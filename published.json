@@ -236,5 +236,12 @@
     "date": "2026-10-17",
     "summary": "Trust isn't a feature \u2014 it's what every green run means: same immutable artifact through every gate, stages ordered by speed, deterministic verdicts, deploys that are boring and one-click reversible, and the four DORA metrics as the pipeline's report card.",
     "skill": "cicd-pipelines-developers-trust"
+  },
+  {
+    "slug": "2026-10-18-observability-metrics-logs-traces",
+    "title": "Observability: metrics, logs, traces",
+    "date": "2026-10-18",
+    "summary": "The three signals that let you diagnose any production incident: aggregate behavior with metric histograms, record events as structured logs, and connect the causal chain with distributed traces \u2014 alert on symptoms, not causes.",
+    "skill": "observability-metrics-logs-traces"
   }
 ]

@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observability: metrics, logs, traces &middot; AI Learning Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+    :root {
+      --ink: #14212b; --muted: #53636f; --paper: #f6f8f7; --white: #ffffff;
+      --line: #cbd5d8; --navy: #163247; --navy-2: #21465e; --teal: #0b8174;
+      --teal-soft: #dff2ee; --orange: #d66332; --orange-soft: #f8e4d8;
+      --gold: #d8a524; --gold-soft: #f7edc8; --blue-soft: #e3eef4;
+      --red: #b3402e; --red-soft: #f9e3de; --green: #1e7a3c; --green-soft: #e2f2e6;
+      --shadow: 0 18px 45px rgba(20, 33, 43, .09); --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; color: var(--ink);
+      background: linear-gradient(rgba(20,33,43,.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(20,33,43,.035) 1px, transparent 1px), var(--paper);
+      background-size: 28px 28px;
+      font-family: "Source Sans 3", sans-serif; font-size: 17px; line-height: 1.58;
+    }
+    .shell { width: min(960px, calc(100% - 40px)); margin: 0 auto; }
+    .portal-nav{position:sticky;top:0;z-index:50;background:rgba(22,50,71,.97);border-bottom:1px solid rgba(255,255,255,.12)}
+    .portal-nav-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;flex-wrap:wrap}
+    .portal-brand{color:#fff;text-decoration:none;font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:15px}
+    .portal-brand span{color:var(--gold);font-weight:400}
+    .portal-links{display:flex;gap:18px;flex-wrap:wrap}
+    .portal-links a{color:#dbe7ee;text-decoration:none;font-size:14.5px}
+    .portal-links a:hover{color:#fff;text-decoration:underline}
+    .hero { padding: 56px 0 36px; }
+    .chapter-mark { display:inline-flex;align-items:center;gap:10px;color:var(--navy);
+      font:600 12px/1.2 "IBM Plex Mono",monospace;letter-spacing:.09em;text-transform:uppercase;margin-bottom:18px; }
+    .chapter-mark::before { content:"";width:42px;height:3px;background:var(--orange); }
+    h1 { font-size: clamp(36px, 5vw, 58px); line-height: 1.02; letter-spacing:-.03em; margin:0 0 14px; }
+    .lede { color: var(--muted); font-size: clamp(18px,2vw,22px); max-width: 64ch; margin:0 0 8px; }
+    .date-line { font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--muted); }
+    section.block { margin: 44px 0; }
+    h2 { font-size: 26px; letter-spacing:-.02em; margin:0 0 6px; display:flex;align-items:center;gap:12px; }
+    h2 .num { font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:600;color:var(--white);
+      background:var(--navy);border-radius:999px;min-width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center; }
+    .sub { color:var(--muted); margin:0 0 18px; max-width: 68ch; }
+    .card { background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+      padding:24px;box-shadow:var(--shadow); }
+    .skill-card { background:var(--navy);color:#eaf2f7;border-radius:var(--radius);padding:22px 24px;
+      font-family:"IBM Plex Mono",monospace;font-size:14.5px;overflow-x:auto;box-shadow:var(--shadow); }
+    .skill-card .k { color:var(--gold); }
+    .idea { font-size:21px;line-height:1.5;border-left:4px solid var(--teal);padding:6px 0 6px 20px;max-width:62ch; }
+    .idea strong { color:var(--navy); }
+    .mechanics { display:grid;gap:14px; }
+    .mech { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:18px 20px;
+      display:grid;grid-template-columns:44px 1fr;gap:14px;align-items:start; }
+    .mech .mnum { font-family:"IBM Plex Mono",monospace;font-weight:600;color:var(--teal);
+      background:var(--teal-soft);border-radius:10px;width:44px;height:44px;display:flex;align-items:center;justify-content:center; }
+    .mech h3 { margin:0 0 6px;font-size:18px; }
+    .mech p { margin:0;color:var(--muted);font-size:15.5px; }
+    .mech code, .inline-code { font-family:"IBM Plex Mono",monospace;font-size:.88em;background:var(--blue-soft);
+      padding:2px 7px;border-radius:6px;color:var(--navy); }
+    pre.code { background:#0f2233;color:#e8f1f5;border-radius:14px;padding:20px 22px;overflow-x:auto;
+      font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.6;margin:0; }
+    pre.code .c { color:#8ba3b0; } pre.code .s { color:#ffd479; } pre.code .k { color:#7fd6c2; }
+    .fail { border-left:4px solid var(--orange); }
+    .fail h3 .fix { display:block;margin-top:8px;font-size:15px;font-weight:500;color:var(--green); }
+    .ref-list { display:grid;gap:12px; }
+    .ref { display:flex;gap:14px;align-items:flex-start;background:var(--white);border:1px solid var(--line);
+      border-radius:14px;padding:16px 18px;text-decoration:none;color:inherit; }
+    .ref:hover { border-color:var(--teal); }
+    .ref .badge { flex:none;font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;letter-spacing:.06em;
+      padding:5px 10px;border-radius:999px;text-transform:uppercase; }
+    .badge.doc { background:var(--blue-soft);color:var(--navy); }
+    .badge.vid { background:var(--orange-soft);color:var(--orange); }
+    .ref h3 { margin:0 0 4px;font-size:17px; }
+    .ref p { margin:0;color:var(--muted);font-size:14.5px; }
+    .prompt-block { background:#0f2233;border-radius:var(--radius);overflow:hidden;margin-bottom:18px;box-shadow:var(--shadow); }
+    .prompt-top { display:flex;justify-content:space-between;align-items:center;gap:12px;
+      padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.12); }
+    .prompt-top strong { color:#fff;font-size:13px;letter-spacing:.06em;font-family:"IBM Plex Mono",monospace; }
+    .copy-btn { border:1px solid #6c8796;background:transparent;color:#fff;border-radius:6px;padding:7px 11px;
+      cursor:pointer;font-weight:700;font-size:14px; }
+    .copy-btn:hover { background:rgba(255,255,255,.1); }
+    .copy-btn:focus-visible { outline:2px solid var(--gold);outline-offset:2px; }
+    .prompt-text { color:#e8f1f5;font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.65;
+      padding:18px;white-space:pre-wrap;margin:0; }
+    .sr-only { position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0); }
+    .quiz-q { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px; }
+    .quiz-q .qq { font-weight:700;margin:0 0 12px;font-size:18px; }
+    .qopts { display:grid;gap:8px; }
+    .qopt { text-align:left;background:var(--paper);border:1px solid var(--line);border-radius:10px;
+      padding:12px 14px;cursor:pointer;font-size:15.5px;color:var(--ink); }
+    .qopt:hover:not(:disabled) { border-color:var(--navy); }
+    .qopt:disabled { cursor:default;opacity:.85; }
+    .qopt.correct { background:var(--green-soft);border-color:var(--green); }
+    .qopt.wrong { background:var(--red-soft);border-color:var(--red); }
+    .qexp { margin:12px 0 0;font-size:15px;color:var(--muted); }
+    .qexp strong.ok { color:var(--green); } .qexp strong.no { color:var(--red); }
+    #quiz-score { display:none;margin-top:8px;background:var(--navy);color:#fff;border-radius:14px;
+      padding:20px 24px;font-size:19px; }
+    #quiz-score strong { color:var(--gold); }
+    .fgrid { display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px; }
+    .fcard { perspective:900px;cursor:pointer;min-height:170px; }
+    .fcard-inner { position:relative;width:100%;height:100%;min-height:170px;transform-style:preserve-3d;transition:transform .45s; }
+    .fcard.flipped .fcard-inner { transform:rotateY(180deg); }
+    .fface { position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+      border-radius:14px;padding:18px;display:flex;align-items:center;justify-content:center;text-align:center;
+      border:1px solid var(--line);background:var(--white);box-shadow:var(--shadow);font-size:15.5px; }
+    .fface.front { font-weight:700;color:var(--navy); }
+    .fface.back { transform:rotateY(180deg);background:var(--teal-soft);color:var(--ink);font-size:14.5px; }
+    .fcard:focus-visible { outline:2px solid var(--teal);outline-offset:3px;border-radius:14px; }
+    .triggers { display:grid;gap:10px; }
+    .trigger { background:var(--gold-soft);border-radius:12px;padding:14px 18px;font-size:16px; }
+    .trigger strong { color:var(--navy); }
+    .back-link { display:inline-block;margin:8px 0 60px;font-weight:600;color:var(--teal);text-decoration:none;font-size:17px; }
+    .back-link:hover { text-decoration:underline; }
+    .fig { background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+      padding:12px;box-shadow:var(--shadow);overflow-x:auto; }
+    .fig svg { display:block;width:100%;height:auto; }
+    .flow-anim { stroke-dasharray: 8 6; animation: dashmove 1.2s linear infinite; }
+    @keyframes dashmove { to { stroke-dashoffset: -14; } }
+    .pulse { animation: pulse 2.2s ease-in-out infinite; }
+    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.45; } }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior:auto; } .fcard-inner{transition:none;} .flow-anim{animation:none;} .pulse{animation:none;} }
+  </style>
+</head>
+<body><nav class="portal-nav">
+    <div class="shell portal-nav-inner">
+      <a class="portal-brand" href="../index.html">AI Engineering <span>&middot; Learning Portal</span></a>
+      <div class="portal-links">
+        <a href="../index.html#daily-topics">Daily topics</a>
+        <a href="../index.html#loop">Loop</a>
+        <a href="../index.html#graph">Graph</a>
+        <a href="../index.html#harness">Harness</a>
+      </div>
+    </div>
+  </nav>
+  <div class="shell">
+
+    <header class="hero">
+      <div class="chapter-mark">Daily topic &middot; Software engineering</div>
+      <h1>Observability: metrics, logs, traces</h1>
+      <p class="lede">At 2 AM, nobody reads dashboards &mdash; they interrogate telemetry. Observability is the discipline of emitting the right telemetry ahead of time so that any question about a live system can be answered fast: <strong>metrics</strong> to notice something is wrong, <strong>traces</strong> to find where, and <strong>logs</strong> to see exactly what happened.</p>
+      <p class="date-line">2026-10-18 &middot; Topic 035</p>
+    </header>
+
+    <section class="block">
+      <h2><span class="num">01</span> The skill card</h2>
+      <p class="sub">Every topic on this portal is designed like a Codex skill: a name, a trigger, and concrete steps.</p>
+      <div class="skill-card"><pre style="margin:0">---
+<span class="k">name:</span> observability-metrics-logs-traces
+<span class="k">description:</span> Reach for this when debugging a live system or designing telemetry:
+  emit metrics, structured logs, and distributed traces; aggregate metrics with
+  histograms not averages; log events not strings; propagate trace context across
+  service boundaries; and alert on symptoms (golden signals), not causes.
+---</pre></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">02</span> The one-idea version</h2>
+      <p class="idea">Observability is the ability to <strong>ask any question</strong> about system behavior from the telemetry you emit &mdash; not from the dashboards you pre-built. <strong>Monitoring</strong> tells you a known bad thing happened; <strong>observability</strong> lets you diagnose an unknown bad thing. The mental model: metrics, logs, and traces are three views of the same events &mdash; <strong>metrics</strong> aggregate behavior over time (cheap, coarse, for alerting), <strong>logs</strong> record individual events (rich, expensive, for debugging), and <strong>traces</strong> connect events across service boundaries (causal &mdash; spans plus context propagation).</p>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">03</span> One request, three views</h2>
+      <p class="sub">A single checkout request flows through three services. The <strong>trace-id</strong> travels on every arrow (W3C <code class="inline-code">traceparent</code> header), so all three views join on it. Metrics answer "how many / how slow", logs answer "exactly what happened", traces answer "why slow &mdash; which span".</p>
+      <div class="fig">
+        <svg viewBox="0 0 960 600" role="img" aria-label="Diagram: a request flows from client through checkout, payment, and database services, carrying the same trace-id on every hop. Below, three panels: metrics as a latency histogram with p50 and p99 markers, logs as structured JSON lines joined by trace-id, and traces as a span waterfall showing the slow database query.">
+          <defs>
+            <marker id="arr5" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+              <path d="M0,0 L8,3 L0,6 Z" fill="#163247"></path>
+            </marker>
+          </defs>
+          <g font-family="Source Sans 3, sans-serif" font-size="14">
+            <text x="20" y="30" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="600" fill="#163247">ONE REQUEST &rarr; ONE trace-id &rarr; THREE VIEWS OF THE SAME EVENTS</text>
+
+            <!-- services -->
+            <rect x="20" y="60" width="120" height="80" rx="12" fill="#e3eef4" stroke="#163247" stroke-width="2"/>
+            <text x="80" y="94" text-anchor="middle" font-weight="700" fill="#163247">CLIENT</text>
+            <text x="80" y="118" text-anchor="middle" font-size="12" fill="#53636f">request req_123</text>
+
+            <line x1="140" y1="100" x2="184" y2="100" stroke="#0b8174" stroke-width="2.5" class="flow-anim" marker-end="url(#arr5)"/>
+            <text x="162" y="88" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#0b8174">trace-id</text>
+
+            <rect x="184" y="60" width="150" height="80" rx="12" fill="#dff2ee" stroke="#0b8174" stroke-width="2"/>
+            <text x="259" y="86" text-anchor="middle" font-weight="700" fill="#0b8174">CHECKOUT</text>
+            <text x="259" y="108" text-anchor="middle" font-size="12" fill="#53636f">span: checkout</text>
+            <text x="259" y="128" text-anchor="middle" font-size="12" fill="#53636f">emits latency histogram</text>
+
+            <line x1="334" y1="100" x2="378" y2="100" stroke="#0b8174" stroke-width="2.5" class="flow-anim" marker-end="url(#arr5)"/>
+            <text x="356" y="88" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#0b8174">trace-id</text>
+
+            <rect x="378" y="60" width="150" height="80" rx="12" fill="#f7edc8" stroke="#d8a524" stroke-width="2"/>
+            <text x="453" y="86" text-anchor="middle" font-weight="700" fill="#7a5a00">PAYMENT</text>
+            <text x="453" y="108" text-anchor="middle" font-size="12" fill="#53636f">span: charge-card</text>
+            <text x="453" y="128" text-anchor="middle" font-size="12" fill="#53636f">emits structured logs</text>
+
+            <line x1="528" y1="100" x2="572" y2="100" stroke="#0b8174" stroke-width="2.5" class="flow-anim" marker-end="url(#arr5)"/>
+            <text x="550" y="88" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#0b8174">trace-id</text>
+
+            <rect x="572" y="60" width="150" height="80" rx="12" fill="#f8e4d8" stroke="#d66332" stroke-width="2"/>
+            <text x="647" y="86" text-anchor="middle" font-weight="700" fill="#d66332">DATABASE</text>
+            <text x="647" y="108" text-anchor="middle" font-size="12" fill="#53636f">span: pg.query</text>
+            <text x="647" y="128" text-anchor="middle" font-size="12" fill="#53636f">the 712 ms span</text>
+
+            <rect x="752" y="60" width="188" height="80" rx="12" fill="#163247" stroke="#163247" stroke-width="2"/>
+            <text x="846" y="92" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="600" fill="#ffffff">traceparent: 00-</text>
+            <text x="846" y="112" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="600" fill="#d8a524" class="pulse">4bf92f35c8a44ea8</text>
+            <text x="846" y="130" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#dbe7ee">-01 / W3C header on every hop</text>
+
+            <!-- METRICS panel -->
+            <text x="20" y="192" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="600" fill="#163247">1 &middot; METRICS &mdash; "how many / how slow"</text>
+            <rect x="20" y="202" width="293" height="380" rx="12" fill="#ffffff" stroke="#cbd5d8" stroke-width="1.5"/>
+            <text x="36" y="232" font-weight="700" fill="#0b8174">checkout latency, last hour</text>
+            <g fill="#0b8174" opacity="0.85">
+              <rect x="48" y="470" width="14" height="30"/><rect x="66" y="442" width="14" height="58"/>
+              <rect x="84" y="400" width="14" height="100"/><rect x="102" y="350" width="14" height="150"/>
+              <rect x="120" y="320" width="14" height="180"/><rect x="138" y="290" width="14" height="210"/>
+              <rect x="156" y="320" width="14" height="180"/><rect x="174" y="382" width="14" height="118"/>
+              <rect x="192" y="430" width="14" height="70"/><rect x="210" y="460" width="14" height="40"/>
+              <rect x="228" y="476" width="14" height="24"/><rect x="246" y="484" width="14" height="16"/>
+              <rect x="264" y="490" width="14" height="10"/>
+            </g>
+            <line x1="40" y1="500" x2="292" y2="500" stroke="#163247" stroke-width="1.5"/>
+            <text x="40" y="520" font-size="11" fill="#53636f">50 ms</text>
+            <text x="268" y="520" font-size="11" fill="#53636f">1 s</text>
+            <line x1="145" y1="278" x2="145" y2="500" stroke="#163247" stroke-width="1.5" stroke-dasharray="5 4"/>
+            <text x="150" y="272" font-size="11" font-weight="700" fill="#163247">p50 120 ms</text>
+            <line x1="232" y1="430" x2="232" y2="500" stroke="#d66332" stroke-width="2" stroke-dasharray="5 4"/>
+            <text x="166" y="424" font-size="11" font-weight="700" fill="#d66332">p99 800 ms</text>
+            <text x="36" y="546" font-size="12.5" fill="#53636f">avg = 95 ms &mdash; the average hides</text>
+            <text x="36" y="564" font-size="12.5" fill="#53636f">the 1% of users in pain.</text>
+
+            <!-- LOGS panel -->
+            <text x="327" y="192" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="600" fill="#163247">2 &middot; LOGS &mdash; "exactly what happened"</text>
+            <rect x="327" y="202" width="293" height="380" rx="12" fill="#ffffff" stroke="#cbd5d8" stroke-width="1.5"/>
+            <text x="343" y="232" font-weight="700" fill="#d66332">structured events, joined by trace_id</text>
+            <g font-family="IBM Plex Mono, monospace" font-size="10.5">
+              <text x="343" y="268" fill="#14212b">{"event":"checkout_started",</text>
+              <text x="343" y="286" fill="#14212b"> "trace_id":"<tspan fill="#0b8174" font-weight="600">4bf92f35</tspan>"}</text>
+              <text x="343" y="318" fill="#14212b">{"event":"payment_charged",</text>
+              <text x="343" y="336" fill="#14212b"> "trace_id":"<tspan fill="#0b8174" font-weight="600">4bf92f35</tspan>","amt":49.99}</text>
+              <text x="343" y="368" fill="#14212b">{"event":"db_slow_query",</text>
+              <text x="343" y="386" fill="#14212b"> "trace_id":"<tspan fill="#0b8174" font-weight="600">4bf92f35</tspan>","ms":712}</text>
+              <text x="343" y="418" fill="#14212b">{"event":"checkout_completed",</text>
+              <text x="343" y="436" fill="#14212b"> "trace_id":"<tspan fill="#0b8174" font-weight="600">4bf92f35</tspan>","ok":true}</text>
+            </g>
+            <text x="343" y="500" font-size="12.5" fill="#53636f">query by field, not by grep:</text>
+            <text x="343" y="520" font-family="IBM Plex Mono, monospace" font-size="11" fill="#163247">event=db_slow_query ms&gt;500</text>
+            <text x="343" y="546" font-size="12.5" fill="#53636f">rich &middot; expensive &middot; for debugging</text>
+
+            <!-- TRACES panel -->
+            <text x="634" y="192" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="600" fill="#163247">3 &middot; TRACES &mdash; "why slow — which span"</text>
+            <rect x="634" y="202" width="306" height="380" rx="12" fill="#ffffff" stroke="#cbd5d8" stroke-width="1.5"/>
+            <text x="650" y="232" font-weight="700" fill="#d8a524">span waterfall, one request</text>
+            <g font-family="IBM Plex Mono, monospace" font-size="10.5">
+              <text x="650" y="264" fill="#53636f">checkout</text>
+              <rect x="720" y="254" width="186" height="14" rx="4" fill="#163247" opacity="0.85"/>
+              <text x="650" y="290" fill="#53636f">auth</text>
+              <rect x="725" y="280" width="28" height="14" rx="4" fill="#0b8174"/>
+              <text x="650" y="316" fill="#53636f">inventory</text>
+              <rect x="757" y="306" width="32" height="14" rx="4" fill="#0b8174"/>
+              <text x="650" y="342" fill="#53636f">payment</text>
+              <rect x="793" y="332" width="112" height="14" rx="4" fill="#d66332"/>
+              <text x="650" y="368" fill="#53636f">pg.query</text>
+              <rect x="811" y="358" width="91" height="14" rx="4" fill="#b3402e"/>
+            </g>
+            <line x1="720" y1="390" x2="906" y2="390" stroke="#163247" stroke-width="1.5"/>
+            <text x="720" y="406" font-size="11" fill="#53636f">0</text>
+            <text x="886" y="406" font-size="11" fill="#53636f">900 ms</text>
+            <text x="650" y="436" font-size="12.5" fill="#53636f">the 712 ms <tspan fill="#b3402e" font-weight="700">pg.query</tspan> span —</text>
+            <text x="650" y="456" font-size="12.5" fill="#53636f">the one the 95 ms average hid.</text>
+            <text x="650" y="500" font-size="12.5" fill="#53636f">without the trace-id on every hop,</text>
+            <text x="650" y="520" font-size="12.5" fill="#53636f">this waterfall dies at the boundary.</text>
+            <text x="650" y="546" font-size="12.5" fill="#53636f">causal &middot; spans + context propagation</text>
+            <text x="650" y="566" font-size="12.5" fill="#53636f">cheap enough to always sample.</text>
+          </g>
+        </svg>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">04</span> How it works: six mechanics</h2>
+      <p class="sub">Imperative, concrete, no fluff. These are the moves that turn "we emit telemetry" into "we can diagnose anything".</p>
+      <div class="mechanics">
+        <div class="mech"><div class="mnum">1</div><div><h3>Emit the three signals deliberately — never rely on one</h3><p>Metrics notice that something is wrong, traces locate where, logs explain exactly what happened. A system with only metrics can alert but not diagnose; with only logs it drowns in volume before it notices; with only traces it lacks the long-term aggregates that show trends. Instrument all three for every request path that matters, using the vendor-neutral OpenTelemetry SDK so you are not married to one backend.</p></div></div>
+        <div class="mech"><div class="mnum">2</div><div><h3>Record metrics as histograms; aggregate with percentiles, not averages</h3><p>Record each latency observation into a histogram (buckets computed by the backend) instead of pre-averaging. Alert on <code>p50 / p95 / p99</code>, never on the mean: an average latency of 95 ms can hide a p99 of 800 ms — the 1% of users in real pain — and when a page needs three such backends, that tail becomes the frontend's median. Google's SRE book calls this "worrying about your tail" for a reason.</p></div></div>
+        <div class="mech"><div class="mnum">3</div><div><h3>Log events as structured JSON, not sentences</h3><p>Log <code>{"event":"checkout_completed","trace_id":"4bf92f35","request_id":"req_123","duration_ms":712,"outcome":"success"}</code> — never "User clicked checkout button". Fields are filterable, groupable, and joinable to traces by <code>trace_id</code>; sentences are only greppable, and only by the author who remembers the exact wording. Write for the reader who debugs this at 3 AM three months from now: every log line should answer <em>what happened, to which entity, how long it took</em>.</p></div></div>
+        <div class="mech"><div class="mnum">4</div><div><h3>Propagate trace context across every service boundary</h3><p>A trace is a tree of <strong>spans</strong> — one unit of work each — linked by parent IDs under a shared trace-id. That context rides the W3C <code>traceparent</code> header on every outgoing call: the sending side injects it, the receiving side extracts it and continues the trace. Instrument the HTTP client and server frameworks once (OpenTelemetry auto-instrumentation) rather than hand-rolling headers — one un-instrumented hop kills the waterfall exactly where you need it most.</p></div></div>
+        <div class="mech"><div class="mnum">5</div><div><h3>Keep label cardinality bounded — no unbounded values as labels</h3><p>Every unique label-value combination creates a new time series. <code>user_id</code>, email, or <code>request_id</code> as a Prometheus label means an unbounded series explosion that blows up storage and query cost. Bounded labels: service, endpoint, status code. High-cardinality identity belongs in <strong>logs and traces</strong> (where you query it ad hoc), not in metric labels (which you aggregate forever).</p></div></div>
+        <div class="mech"><div class="mnum">6</div><div><h3>Alert on symptoms, not causes — and name a runbook action</h3><p>The four golden signals — <strong>latency, traffic, errors, saturation</strong> — are symptoms users feel. Page a human when a symptom is bad (p95 checkout latency &gt; 800 ms for 5 minutes); ticket the causes (CPU &gt; 80% on db-03) for investigation during work hours. Every page must name the runbook action the on-call takes; an alert with no action is noise that trains people to ignore the pager — including during the real incident.</p></div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">05</span> Code sketch: instrument one request</h2>
+      <p class="sub">24 lines, stdlib only, in OpenTelemetry style: one span per unit of work, latencies recorded into a histogram (never averaged), and a structured JSON log line carrying the same trace_id the traceparent header would carry downstream.</p>
+      <div class="card" style="padding:0;background:#0f2233;border:none;">
+<pre class="code"><span class="k">import</span> json, logging, time, uuid
+<span class="k">from</span> datetime <span class="k">import</span> datetime, timezone
+
+<span class="c"># OpenTelemetry-style: span = one unit of work; trace_id rides the</span>
+<span class="c"># traceparent header across services; logs carry the same id to join on.</span>
+logger = logging.getLogger(<span class="s">"checkout"</span>)
+
+<span class="k">def</span> handle_checkout(request_id):
+    trace_id = uuid.uuid4().hex       <span class="c"># one id, metrics + logs + traces</span>
+    latencies = []                    <span class="c"># histogram: record, never average</span>
+    start = time.perf_counter()
+    <span class="k">for</span> step <span class="k">in</span> (<span class="s">"auth"</span>, <span class="s">"inventory"</span>, <span class="s">"payment"</span>):
+        s = time.perf_counter()
+        <span class="k">...</span>                       <span class="c"># real work here</span>
+        latencies.append((time.perf_counter() - s) * 1000)
+    p95 = sorted(latencies)[int(len(latencies) * 0.95)]
+    logger.info(json.dumps({
+        <span class="s">"event"</span>: <span class="s">"checkout_completed"</span>, <span class="s">"request_id"</span>: request_id,
+        <span class="s">"trace_id"</span>: trace_id, <span class="s">"duration_ms"</span>: round((time.perf_counter() - start) * 1000, 2),
+        <span class="s">"step_p95_ms"</span>: round(p95, 2), <span class="s">"outcome"</span>: <span class="s">"success"</span>,
+    }))
+    <span class="k">return</span> trace_id   <span class="c"># propagate to the next hop</span>
+
+<span class="k">if</span> __name__ == <span class="s">"__main__"</span>:
+    logging.basicConfig(format=<span class="s">"%(message)s"</span>)
+    handle_checkout(<span class="s">"req_123"</span>)</pre>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">06</span> Failure modes: five ways telemetry lies or dies</h2>
+      <p class="sub">Each one is a named pitfall plus its one-line fix.</p>
+      <div class="mechanics">
+        <div class="mech fail"><div class="mnum">F1</div><div><h3>Averaging latencies <span class="fix">Fix: record histograms and alert on p50/p95/p99. The average hides the 1% of users in pain — and when your page needs three backends, one backend's p99 becomes your frontend's median.</span></h3></div></div>
+        <div class="mech fail"><div class="mnum">F2</div><div><h3>Logging free text ("User clicked checkout") <span class="fix">Fix: emit structured events with fields (trace_id, request_id, duration_ms) so logs are filterable and joinable — greppable sentences are only readable by whoever wrote them.</span></h3></div></div>
+        <div class="mech fail"><div class="mnum">F3</div><div><h3>Trace propagation dying at one hop <span class="fix">Fix: instrument the HTTP clients/servers with the framework's OpenTelemetry integration so the traceparent header rides every boundary — a hand-rolled client that forgets the header splits your waterfall exactly where the bug lives.</span></h3></div></div>
+        <div class="mech fail"><div class="mnum">F4</div><div><h3>Unbounded label cardinality (user_id as a metric label) <span class="fix">Fix: keep metric labels bounded (service, endpoint, status); put unbounded identity in logs and traces where it is queried ad hoc instead of stored as infinite time series.</span></h3></div></div>
+        <div class="mech fail"><div class="mnum">F5</div><div><h3>Alerting on every cause <span class="fix">Fix: page on symptoms (the four golden signals: latency, traffic, errors, saturation), ticket on causes, and require every alert to name a runbook action — otherwise pager fatigue teaches the team to ignore the real incident.</span></h3></div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">07</span> Go deeper: verified references</h2>
+      <p class="sub">Curated and real &mdash; every link opened and verified today. Three articles, two videos.</p>
+      <div class="ref-list">
+        <a class="ref" href="https://opentelemetry.io/docs/" target="_blank" rel="noopener">
+          <span class="badge doc">Docs</span>
+          <span><h3>OpenTelemetry Documentation</h3>
+          <p>Why this one: the vendor-neutral standard for instrumenting metrics, logs, and traces — concepts, language SDKs, and the Collector. This is the reference to reach for before hand-rolling any header or exporter.</p></span>
+        </a>
+        <a class="ref" href="https://sre.google/sre-book/monitoring-distributed-systems" target="_blank" rel="noopener">
+          <span class="badge doc">Article</span>
+          <span><h3>Monitoring Distributed Systems &mdash; Google SRE Book, ch. 6</h3>
+          <p>Why this one: the canonical source for the four golden signals, symptoms-vs-causes, and "worrying about your tail" — why you collect latency buckets instead of averaging. Written by the teams that run Google's production.</p></span>
+        </a>
+        <a class="ref" href="https://sre.google/workbook/alerting-on-slos" target="_blank" rel="noopener">
+          <span class="badge doc">Article</span>
+          <span><h3>Alerting on SLOs &mdash; Google SRE Workbook, ch. 5</h3>
+          <p>Why this one: turns "alert on symptoms" into concrete math — burn-rate alerting that pages fast on real damage and tickets slow leaks, so the pager keeps its signal-to-noise ratio.</p></span>
+        </a>
+        <a class="ref" href="https://www.youtube.com/watch?v=PI7Eb8SyIRg" target="_blank" rel="noopener">
+          <span class="badge vid">Video</span>
+          <span><h3>Cloud Monitoring, Logging and Observability: Metrics, Logs, Traces</h3>
+          <p>Why this one: a compact 8-minute walkthrough of the three pillars, how dashboards visualize them, and the collect &rarr; visualize &rarr; alert &rarr; diagnose workflow — a good sanity check of this page's mental model.</p></span>
+        </a>
+        <a class="ref" href="https://www.youtube.com/watch?v=csCgxDNVFfI" target="_blank" rel="noopener">
+          <span class="badge vid">Video</span>
+          <span><h3>Keynote: Observability is due for a version change — Charity Majors (Honeycomb CTO)</h3>
+          <p>Why this one: the strongest argument that observability ≠ monitoring — the shift from dashboards-of-known-questions to wide events you can interrogate for unknown failures, and why she believes the three-pillars model is doomed as a storage architecture.</p></span>
+        </a>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">08</span> Sample prompts</h2>
+      <p class="sub">Copy-paste these into your AI assistant to practice the topic.</p>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>PROMPT 1 &middot; AUDIT MY TELEMETRY</strong><button class="copy-btn" data-copy="pr1">Copy</button></div>
+        <p class="prompt-text" id="pr1">Act as an observability reviewer. I will describe one service: language, framework, deployment, and what it currently emits. Grade it against six criteria: (1) all three signals emitted on every request path that matters, (2) latencies recorded as histograms with p50/p95/p99 dashboards — no averages, (3) structured JSON logs with trace_id and request_id on every event, (4) trace context propagated across every service boundary via traceparent, (5) bounded metric label cardinality, (6) alerts on the four golden signals with a runbook action each. For each: pass/fail and one concrete fix. Ask me one clarifying question before scoring.</p>
+      </div>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>PROMPT 2 &middot; DESIGN THE GOLDEN-SIGNAL ALERTS</strong><button class="copy-btn" data-copy="pr2">Copy</button></div>
+        <p class="prompt-text" id="pr2">Help me design alerts for my checkout API, one golden signal per message: latency (which percentile, what threshold, over what window), traffic (what counts as demand), errors (explicit vs implicit failures), saturation (which resource is most constrained). For each proposed alert, force me to name the runbook action the on-call engineer takes at 2 AM — no action, no alert. Then review: which of my existing cause-based alerts should become tickets or be deleted.</p>
+      </div>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>PROMPT 3 &middot; FIND THE TAIL</strong><button class="copy-btn" data-copy="pr3">Copy</button></div>
+        <p class="prompt-text" id="pr3">My checkout endpoint shows p50 = 120 ms, average = 95 ms, p99 = 800 ms, and users are complaining. Walk me through the diagnosis: which spans I need to see the waterfall, which structured log fields let me filter to the slow requests, and what histogram data tells me whether the tail is one slow dependency or many. Then propose the instrumentation diff — what spans, labels, and log fields I add — so this never becomes a guessing game again.</p>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">09</span> Quiz: test your understanding</h2>
+      <p class="sub">Click an answer &mdash; you get it right or wrong immediately, with the reasoning.</p>
+      <div id="quiz">
+        <div class="quiz-q" data-answer="1">
+          <p class="qq">Q1. Your checkout endpoint reports average latency 95 ms, p50 120 ms, p99 800 ms. Users complain it feels slow. What is the correct read?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">The average is fine — most requests are fast, so the complainers are statistical noise. Trust the mean.</button>
+            <button class="qopt" data-i="1">The mean hides the tail: 1% of requests take 800 ms or more, and when a page needs several backends, one backend's p99 becomes the frontend's median. Fix the tail, not the average.</button>
+            <button class="qopt" data-i="2">Compute the average more precisely — the sample size is too small for it to be meaningful.</button>
+            <button class="qopt" data-i="3">Delete the p99 dashboard panel; it makes a healthy service look bad.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="2">
+          <p class="qq">Q2. The service logs "User clicked checkout button" and "Payment processed OK" as plain sentences. During an incident you need every failed checkout for user 4417 in the last hour. What is the problem?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">There is no problem — grepping the log file finds both messages quickly.</button>
+            <button class="qopt" data-i="1">The messages are too short; longer sentences would fix it.</button>
+            <button class="qopt" data-i="2">Sentences are not queryable by field: you cannot filter on user_id, duration, or outcome, and you cannot join these lines to the trace. Structured events like {"event":"checkout_completed","trace_id":"…","user_id":4417,"outcome":"failed"} make this a one-line query.</button>
+            <button class="qopt" data-i="3">The problem is log volume, not format — plain text compresses well.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="0">
+          <p class="qq">Q3. Traces show the checkout span and its children, but the payment service's spans never appear in the same waterfall — the trace "dies" at that hop. What is the most likely cause?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">Trace context was not propagated at that boundary: the checkout service's HTTP client did not send the traceparent header, so the payment service started its own separate trace (or none). Fix the instrumentation on the client, don't hand-roll headers.</button>
+            <button class="qopt" data-i="1">The payment service is too slow to be traced — tracing only works for fast services.</button>
+            <button class="qopt" data-i="2">The database span consumed the entire trace budget, leaving no room for payment spans.</button>
+            <button class="qopt" data-i="3">Trace-ids are single-use: each service must generate its own, so split waterfalls are normal and expected.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="3">
+          <p class="qq">Q4. You can page on-call for exactly one condition tonight. Which one matches the SRE "symptoms over causes" rule?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">CPU &gt; 80% on db-03 — it is the root cause of most past incidents.</button>
+            <button class="qopt" data-i="1">Disk &gt; 70% full on any app server — prevention beats cure.</button>
+            <button class="qopt" data-i="2">Deploy count dropped to zero — clearly something is broken.</button>
+            <button class="qopt" data-i="3">p95 checkout latency &gt; 800 ms sustained for 5 minutes — a user-facing symptom (golden signal: latency) that names an action. CPU and disk are causes to investigate during work hours; they page only when they become symptoms.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="1">
+          <p class="qq">Q5. A teammate adds user_id as a label on the http_requests_total Prometheus metric, so "we can break down traffic per user". What happens?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">Nothing bad — Prometheus labels are free, and per-user breakdowns are exactly what labels are for.</button>
+            <button class="qopt" data-i="1">Cardinality explosion: every unique user_id creates new time series, and user IDs are unbounded — storage and query costs blow up. Per-user breakdown belongs in logs/traces (queried ad hoc); metric labels stay bounded (service, endpoint, status).</button>
+            <button class="qopt" data-i="2">The metric stops recording — Prometheus rejects labels with more than 100 values.</button>
+            <button class="qopt" data-i="3">It only affects dashboards; alerts keep working fine.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+      </div>
+      <div id="quiz-score" role="status"></div>
+      <p class="sr-only" id="live-status" aria-live="polite"></p>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">10</span> Flashcards</h2>
+      <p class="sub">Click or press Enter/Space to flip.</p>
+      <div class="fgrid">
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Observability vs monitoring</div>
+          <div class="fface back">Monitoring answers pre-chosen questions (dashboards, known-bad alerts). Observability is the ability to ask ANY question about system behavior from emitted telemetry — diagnosing the unknown bad thing, not just the known ones.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">The three signals</div>
+          <div class="fface back">Metrics aggregate behavior over time (cheap, coarse — for alerting). Logs record individual events (rich, expensive — for debugging). Traces connect events across service boundaries (causal — spans + context propagation). Three views of the same events.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Histogram + p95/p99</div>
+          <div class="fface back">Record each latency observation into buckets; the backend computes percentiles. p99 = the latency only 1% of requests exceed. Never alert on the mean — the average hides the tail, and one backend's p99 becomes the frontend's median.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Structured log</div>
+          <div class="fface back">An event with named fields — {"event":"checkout_completed","trace_id":"…","duration_ms":712} — filterable, groupable, joinable to traces. Sentences like "User clicked checkout" are only greppable by whoever wrote them.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Span and trace</div>
+          <div class="fface back">A span is one unit of work (name, start/end, parent span, attributes). A trace is the tree of spans one request created across services — the waterfall that shows which span burned the time.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">W3C traceparent</div>
+          <div class="fface back">The standard header (trace-id + span-id + flags) that carries trace context across service boundaries. Inject on every outgoing call, extract on every incoming one — one hop that forgets it kills the waterfall exactly where you need it.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Cardinality</div>
+          <div class="fface back">The number of unique label-value combinations a metric produces — each becomes a time series. Unbounded values (user_id, email, request_id) as labels = series explosion and storage death. Keep metric labels bounded; put identity in logs/traces.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">The four golden signals</div>
+          <div class="fface back">Latency, traffic, errors, saturation — the user-facing symptoms. If you can only measure four things and page when one goes bad, your service is at least decently covered. (Google SRE Book, ch. 6.)</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Symptoms vs causes</div>
+          <div class="fface back">Symptoms = what's broken (users feel it: "p95 latency > 800 ms") — page on these. Causes = why ("CPU > 80% on db-03") — ticket and investigate. Paging on causes trains the team to ignore the pager, including during the real incident.</div>
+        </div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">11</span> Reach for this when&hellip;</h2>
+      <div class="triggers">
+        <div class="trigger"><strong>You're debugging a live incident and the averages look fine</strong> &mdash; pull p95/p99, filter structured logs by trace_id, and open the span waterfall. The tail and the slow span are where the incident lives, not the mean.</div>
+        <div class="trigger"><strong>You're designing telemetry or reviewing instrumentation in a PR</strong> &mdash; walk the six mechanics: three signals, histograms not averages, structured events, traceparent on every boundary, bounded labels, symptom alerts with runbook actions.</div>
+        <div class="trigger"><strong>Someone proposes alerting on CPU, disk, or "something seems weird"</strong> &mdash; redirect to the four golden signals and demand a runbook action per alert. A page without an action is noise that will mask the real page at 3 AM.</div>
+      </div>
+    </section>
+
+    <a class="back-link" href="../index.html#daily-topics">&larr; Back to daily topics</a>
+  </div>
+  <script>
+    // copy buttons
+    const status = document.getElementById('live-status');
+    document.querySelectorAll('.copy-btn').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const target = document.getElementById(button.dataset.copy);
+        const text = target.innerText;
+        try {
+          await navigator.clipboard.writeText(text);
+          const original = button.textContent;
+          button.textContent = 'Copied';
+          status.textContent = 'Prompt copied to clipboard.';
+          setTimeout(() => button.textContent = original, 1600);
+        } catch {
+          const range = document.createRange();
+          range.selectNodeContents(target);
+          selection.removeAllRanges();
+          selection.addRange(range);
+          status.textContent = 'Prompt selected. Copy it with your device copy command.';
+        }
+      });
+    });
+
+    // quiz
+    const explanations = [
+      ["The mean is a liar when the distribution has a tail: most requests are fast while 1% suffer 800 ms — and those are the users who complain and churn. 'Noise' is not a diagnosis.",
+       "Right. Percentiles show the tail; the mean buries it. And tail math is brutal: one backend's p99 becomes the frontend's median when a page fans out to several backends.",
+       "A bigger sample just sharpens the same misleading number. The problem is the statistic, not the sample size.",
+       "Hiding the panel hides the pain from you, not from the 1% of users. The p99 is the most honest number on the dashboard."],
+      ["Grep finds the message but cannot answer 'every failed checkout for user 4417': you'd need the text to mention the user, the failure, and the time — and to know the exact wording of every variant.",
+       "Length doesn't help. A 200-character sentence is still one unqueryable blob.",
+       "Right. Structured events are data: filter on fields, aggregate by them, and join to the trace by trace_id. Sentences are for humans skimming; fields are for debugging at 3 AM.",
+       "Plain text compresses well AND stays unqueryable. Volume and format are two separate problems — fix both, but don't confuse them."],
+      ["Right. The W3C traceparent header is what links spans into one trace; an un-instrumented HTTP client drops it, and the downstream service starts a fresh trace. Auto-instrument the framework's client/server instead of hand-rolling headers.",
+       "Tracing has nothing to do with service speed — slow services are the ones that most need their spans visible.",
+       "There is no fixed trace budget that a database span can 'consume'. Spans are just events; the waterfall can hold as many as you emit.",
+       "Wrong on both counts: one trace-id must follow the request across every boundary. Split waterfalls are a bug, and the bug usually hides exactly at the boundary you need to see."],
+      ["CPU > 80% is a cause, not a symptom: it may be harmless headroom or an imminent outage — the metric alone doesn't know. That's a ticket, not a page.",
+       "Disk > 70% is also a cause — often totally fine for weeks. Alerting on it pages people for non-events and trains them to ignore the pager.",
+       "Deploy count dropping is not a symptom users feel and not necessarily broken — it could be a holiday. Symptom-based paging demands a user-facing signal.",
+       "Right. 'p95 checkout latency > 800 ms for 5 min' is a user-facing symptom (golden signal: latency) with a clear action. Page on symptoms, ticket on causes — and every page must name its runbook."],
+      ["Labels are not free: each unique label combination becomes a stored time series. Unbounded cardinality is the classic way to kill a Prometheus server.",
+       "Right. user_id is unbounded, so http_requests_total grows a new series per user — forever. Bounded labels (service, endpoint, status) on metrics; unbounded identity lives in logs and traces, queried ad hoc.",
+       "There is no such rejection rule — Prometheus will happily ingest every series until storage and queries die. That's the danger: it fails expensively, not loudly.",
+       "Dashboards die too — every query over an exploded series set gets slow. Alerts built on it become flaky or time out. Cardinality poisons everything downstream."]
+    ];
+    const questions = [...document.querySelectorAll('.quiz-q')];
+    let score = 0, answered = 0;
+    questions.forEach((q, qi) => {
+      const correct = parseInt(q.dataset.answer, 10);
+      const exp = q.querySelector('.qexp');
+      q.querySelectorAll('.qopt').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          if (q.dataset.done) return;
+          q.dataset.done = "1";
+          const chosen = parseInt(btn.dataset.i, 10);
+          const ok = chosen === correct;
+          q.querySelectorAll('.qopt').forEach((b) => {
+            b.disabled = true;
+            if (parseInt(b.dataset.i, 10) === correct) b.classList.add('correct');
+          });
+          if (!ok) btn.classList.add('wrong');
+          else score++;
+          answered++;
+          exp.hidden = false;
+          exp.innerHTML = ok
+            ? "<strong class=\"ok\">Correct.</strong> " + explanations[qi][chosen]
+            : "<strong class=\"no\">Not quite.</strong> " + explanations[qi][chosen];
+          if (answered === questions.length) {
+            const box = document.getElementById('quiz-score');
+            box.style.display = "block";
+            box.innerHTML = "You scored <strong>" + score + " / " + questions.length + "</strong>." +
+              (score === questions.length ? " Clean sweep — you'll ask the right question at 3 AM instead of staring at a dashboard." :
+               score >= 3 ? " Solid — re-read the mechanic you missed." :
+               " Worth a re-read of section 04 before your next on-call.");
+          }
+        });
+      });
+    });
+
+    // flashcards
+    document.querySelectorAll('.fcard').forEach((card) => {
+      const flip = () => card.classList.toggle('flipped');
+      card.addEventListener('click', flip);
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); }
+      });
+    });
+  </script>
+</body>
+</html>
