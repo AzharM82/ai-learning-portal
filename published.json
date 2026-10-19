@@ -243,5 +243,12 @@
     "date": "2026-10-18",
     "summary": "The three signals that let you diagnose any production incident: aggregate behavior with metric histograms, record events as structured logs, and connect the causal chain with distributed traces \u2014 alert on symptoms, not causes.",
     "skill": "observability-metrics-logs-traces"
+  },
+  {
+    "slug": "2026-10-19-database-indexing-how-queries-get-fast",
+    "title": "Database indexing: how queries get fast",
+    "date": "2026-10-19",
+    "summary": "A B-tree turns the planner's default full-table scan into a 3-4 level descent: index the access pattern (WHERE/JOIN/ORDER BY), design composites left-to-right, verify with EXPLAIN, and remember every index taxes writes.",
+    "skill": "database-indexing-how-queries-get-fast"
   }
 ]

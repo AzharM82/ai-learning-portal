@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Database indexing: how queries get fast &middot; AI Learning Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+    :root {
+      --ink: #14212b; --muted: #53636f; --paper: #f6f8f7; --white: #ffffff;
+      --line: #cbd5d8; --navy: #163247; --navy-2: #21465e; --teal: #0b8174;
+      --teal-soft: #dff2ee; --orange: #d66332; --orange-soft: #f8e4d8;
+      --gold: #d8a524; --gold-soft: #f7edc8; --blue-soft: #e3eef4;
+      --red: #b3402e; --red-soft: #f9e3de; --green: #1e7a3c; --green-soft: #e2f2e6;
+      --shadow: 0 18px 45px rgba(20, 33, 43, .09); --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; color: var(--ink);
+      background: linear-gradient(rgba(20,33,43,.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(20,33,43,.035) 1px, transparent 1px), var(--paper);
+      background-size: 28px 28px;
+      font-family: "Source Sans 3", sans-serif; font-size: 17px; line-height: 1.58;
+    }
+    .shell { width: min(960px, calc(100% - 40px)); margin: 0 auto; }
+    .portal-nav{position:sticky;top:0;z-index:50;background:rgba(22,50,71,.97);border-bottom:1px solid rgba(255,255,255,.12)}
+    .portal-nav-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;flex-wrap:wrap}
+    .portal-brand{color:#fff;text-decoration:none;font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:15px}
+    .portal-brand span{color:var(--gold);font-weight:400}
+    .portal-links{display:flex;gap:18px;flex-wrap:wrap}
+    .portal-links a{color:#dbe7ee;text-decoration:none;font-size:14.5px}
+    .portal-links a:hover{color:#fff;text-decoration:underline}
+    .hero { padding: 56px 0 36px; }
+    .chapter-mark { display:inline-flex;align-items:center;gap:10px;color:var(--navy);
+      font:600 12px/1.2 "IBM Plex Mono",monospace;letter-spacing:.09em;text-transform:uppercase;margin-bottom:18px; }
+    .chapter-mark::before { content:"";width:42px;height:3px;background:var(--orange); }
+    h1 { font-size: clamp(36px, 5vw, 58px); line-height: 1.02; letter-spacing:-.03em; margin:0 0 14px; }
+    .lede { color: var(--muted); font-size: clamp(18px,2vw,22px); max-width: 64ch; margin:0 0 8px; }
+    .date-line { font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--muted); }
+    section.block { margin: 44px 0; }
+    h2 { font-size: 26px; letter-spacing:-.02em; margin:0 0 6px; display:flex;align-items:center;gap:12px; }
+    h2 .num { font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:600;color:var(--white);
+      background:var(--navy);border-radius:999px;min-width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center; }
+    .sub { color:var(--muted); margin:0 0 18px; max-width: 68ch; }
+    .card { background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+      padding:24px;box-shadow:var(--shadow); }
+    .skill-card { background:var(--navy);color:#eaf2f7;border-radius:var(--radius);padding:22px 24px;
+      font-family:"IBM Plex Mono",monospace;font-size:14.5px;overflow-x:auto;box-shadow:var(--shadow); }
+    .skill-card .k { color:var(--gold); }
+    .idea { font-size:21px;line-height:1.5;border-left:4px solid var(--teal);padding:6px 0 6px 20px;max-width:62ch; }
+    .idea strong { color:var(--navy); }
+    .mechanics { display:grid;gap:14px; }
+    .mech { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:18px 20px;
+      display:grid;grid-template-columns:44px 1fr;gap:14px;align-items:start; }
+    .mech .mnum { font-family:"IBM Plex Mono",monospace;font-weight:600;color:var(--teal);
+      background:var(--teal-soft);border-radius:10px;width:44px;height:44px;display:flex;align-items:center;justify-content:center; }
+    .mech h3 { margin:0 0 6px;font-size:18px; }
+    .mech p { margin:0;color:var(--muted);font-size:15.5px; }
+    .mech code, .inline-code { font-family:"IBM Plex Mono",monospace;font-size:.88em;background:var(--blue-soft);
+      padding:2px 7px;border-radius:6px;color:var(--navy); }
+    pre.code { background:#0f2233;color:#e8f1f5;border-radius:14px;padding:20px 22px;overflow-x:auto;
+      font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.6;margin:0; }
+    pre.code .c { color:#8ba3b0; } pre.code .s { color:#ffd479; } pre.code .k { color:#7fd6c2; }
+    .fail { border-left:4px solid var(--orange); }
+    .fail h3 .fix { display:block;margin-top:8px;font-size:15px;font-weight:500;color:var(--green); }
+    .ref-list { display:grid;gap:12px; }
+    .ref { display:flex;gap:14px;align-items:flex-start;background:var(--white);border:1px solid var(--line);
+      border-radius:14px;padding:16px 18px;text-decoration:none;color:inherit; }
+    .ref:hover { border-color:var(--teal); }
+    .ref .badge { flex:none;font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;letter-spacing:.06em;
+      padding:5px 10px;border-radius:999px;text-transform:uppercase; }
+    .badge.doc { background:var(--blue-soft);color:var(--navy); }
+    .badge.vid { background:var(--orange-soft);color:var(--orange); }
+    .ref h3 { margin:0 0 4px;font-size:17px; }
+    .ref p { margin:0;color:var(--muted);font-size:14.5px; }
+    .prompt-block { background:#0f2233;border-radius:var(--radius);overflow:hidden;margin-bottom:18px;box-shadow:var(--shadow); }
+    .prompt-top { display:flex;justify-content:space-between;align-items:center;gap:12px;
+      padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.12); }
+    .prompt-top strong { color:#fff;font-size:13px;letter-spacing:.06em;font-family:"IBM Plex Mono",monospace; }
+    .copy-btn { border:1px solid #6c8796;background:transparent;color:#fff;border-radius:6px;padding:7px 11px;
+      cursor:pointer;font-weight:700;font-size:14px; }
+    .copy-btn:hover { background:rgba(255,255,255,.1); }
+    .copy-btn:focus-visible { outline:2px solid var(--gold);outline-offset:2px; }
+    .prompt-text { color:#e8f1f5;font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.65;
+      padding:18px;white-space:pre-wrap;margin:0; }
+    .sr-only { position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0); }
+    .quiz-q { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px; }
+    .quiz-q .qq { font-weight:700;margin:0 0 12px;font-size:18px; }
+    .qopts { display:grid;gap:8px; }
+    .qopt { text-align:left;background:var(--paper);border:1px solid var(--line);border-radius:10px;
+      padding:12px 14px;cursor:pointer;font-size:15.5px;color:var(--ink); }
+    .qopt:hover:not(:disabled) { border-color:var(--navy); }
+    .qopt:disabled { cursor:default;opacity:.85; }
+    .qopt.correct { background:var(--green-soft);border-color:var(--green); }
+    .qopt.wrong { background:var(--red-soft);border-color:var(--red); }
+    .qexp { margin:12px 0 0;font-size:15px;color:var(--muted); }
+    .qexp strong.ok { color:var(--green); } .qexp strong.no { color:var(--red); }
+    #quiz-score { display:none;margin-top:8px;background:var(--navy);color:#fff;border-radius:14px;
+      padding:20px 24px;font-size:19px; }
+    #quiz-score strong { color:var(--gold); }
+    .fgrid { display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px; }
+    .fcard { perspective:900px;cursor:pointer;min-height:170px; }
+    .fcard-inner { position:relative;width:100%;height:100%;min-height:170px;transform-style:preserve-3d;transition:transform .45s; }
+    .fcard.flipped .fcard-inner { transform:rotateY(180deg); }
+    .fface { position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+      border-radius:14px;padding:18px;display:flex;align-items:center;justify-content:center;text-align:center;
+      border:1px solid var(--line);background:var(--white);box-shadow:var(--shadow);font-size:15.5px; }
+    .fface.front { font-weight:700;color:var(--navy); }
+    .fface.back { transform:rotateY(180deg);background:var(--teal-soft);color:var(--ink);font-size:14.5px; }
+    .fcard:focus-visible { outline:2px solid var(--teal);outline-offset:3px;border-radius:14px; }
+    .triggers { display:grid;gap:10px; }
+    .trigger { background:var(--gold-soft);border-radius:12px;padding:14px 18px;font-size:16px; }
+    .trigger strong { color:var(--navy); }
+    .back-link { display:inline-block;margin:8px 0 60px;font-weight:600;color:var(--teal);text-decoration:none;font-size:17px; }
+    .back-link:hover { text-decoration:underline; }
+    .fig { background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+      padding:12px;box-shadow:var(--shadow);overflow-x:auto; }
+    .fig svg { display:block;width:100%;height:auto; }
+    .flow-anim { stroke-dasharray: 8 6; animation: dashmove 1.2s linear infinite; }
+    @keyframes dashmove { to { stroke-dashoffset: -14; } }
+    .pulse { animation: pulse 2.2s ease-in-out infinite; }
+    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.45; } }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior:auto; } .fcard-inner{transition:none;} .flow-anim{animation:none;} .pulse{animation:none;} }
+  </style>
+</head>
+<body><nav class="portal-nav">
+    <div class="shell portal-nav-inner">
+      <a class="portal-brand" href="../index.html">AI Engineering <span>&middot; Learning Portal</span></a>
+      <div class="portal-links">
+        <a href="../index.html#daily-topics">Daily topics</a>
+        <a href="../index.html#loop">Loop</a>
+        <a href="../index.html#graph">Graph</a>
+        <a href="../index.html#harness">Harness</a>
+      </div>
+    </div>
+  </nav>
+  <div class="shell">
+
+    <header class="hero">
+      <div class="chapter-mark">Daily topic &middot; Software engineering</div>
+      <h1>Database indexing: how queries get fast</h1>
+      <p class="lede">A table with ten million rows answers <code class="inline-code">WHERE email = ?</code> in under a millisecond instead of seconds &mdash; not because of better hardware, but because of a second, sorted data structure built alongside the table. An index turns the database&rsquo;s default move &mdash; reading <strong>every row</strong> &mdash; into a walk down a shallow, balanced tree.</p>
+      <p class="date-line">2026-10-19 &middot; Topic 036</p>
+    </header>
+
+    <section class="block">
+      <h2><span class="num">01</span> The skill card</h2>
+      <p class="sub">Every topic on this portal is designed like a Codex skill: a name, a trigger, and concrete steps.</p>
+      <div class="skill-card"><pre style="margin:0">---
+<span class="k">name:</span> database-indexing-how-queries-get-fast
+<span class="k">description:</span> Reach for this when a query is slow or a table keeps growing:
+  index the columns in WHERE/JOIN/ORDER BY of queries you actually run, design
+  composite indexes left-to-right (equality first, then range), verify with
+  EXPLAIN that the planner picks the index, and remember every index taxes
+  writes and storage &mdash; drop the ones never used.
+---</pre></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">02</span> The one-idea version</h2>
+      <p class="idea">Without an index, a database can find rows only one way: <strong>scan every row and test the predicate</strong> &mdash; O(N) work that doubles when the table doubles. An index is the table&rsquo;s <strong>shadow, sorted the way your queries look it up</strong>: a B-tree mapping searched values to row locations, so the engine descends a few levels (3&ndash;4 page reads even at a billion rows) and fetches only the matching rows. The work stops growing with the table.</p>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">03</span> Same query, two access paths</h2>
+      <p class="sub">One lookup on a 10-million-row table. On the left, the default: every page gets read. On the right, a B-tree index on the search column &mdash; the query descends three levels and lands on the answer. The dashed path is the only work the index does.</p>
+      <div class="fig">
+        <svg viewBox="0 0 960 560" role="img" aria-label="Diagram comparing a sequential scan that reads every page of a table with a B-tree index lookup that descends three levels to the matching row.">
+          <defs>
+            <marker id="arr6" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+              <path d="M0,0 L8,3 L0,6 Z" fill="#163247"></path>
+            </marker>
+            <marker id="arr6t" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+              <path d="M0,0 L8,3 L0,6 Z" fill="#0b8174"></path>
+            </marker>
+          </defs>
+          <g font-family="Source Sans 3, sans-serif" font-size="14">
+            <text x="20" y="30" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="600" fill="#163247">SEQ SCAN vs INDEX SCAN &mdash; 10M ROWS, ONE LOOKUP</text>
+
+            <!-- LEFT: sequential scan -->
+            <text x="60" y="70" font-weight="700" font-size="16" fill="#b3402e">SEQUENTIAL SCAN</text>
+            <text x="60" y="92" font-size="13" fill="#53636f">no index &mdash; test every row</text>
+            <g>
+              <rect x="60" y="110" width="300" height="44" rx="8" fill="#f9e3de" stroke="#b3402e" stroke-width="1.5"/>
+              <rect x="60" y="162" width="300" height="44" rx="8" fill="#f9e3de" stroke="#b3402e" stroke-width="1.5"/>
+              <rect x="60" y="214" width="300" height="44" rx="8" fill="#f9e3de" stroke="#b3402e" stroke-width="1.5"/>
+              <rect x="60" y="266" width="300" height="44" rx="8" fill="#f9e3de" stroke="#b3402e" stroke-width="1.5"/>
+              <rect x="60" y="318" width="300" height="44" rx="8" fill="#f9e3de" stroke="#b3402e" stroke-width="1.5"/>
+              <rect x="60" y="370" width="300" height="44" rx="8" fill="#f3d9d2" stroke="#b3402e" stroke-width="1.5" stroke-dasharray="6 4"/>
+              <text x="210" y="138" text-anchor="middle" font-size="13" fill="#b3402e">page of rows</text>
+              <text x="210" y="190" text-anchor="middle" font-size="13" fill="#b3402e">page of rows</text>
+              <text x="210" y="242" text-anchor="middle" font-size="13" fill="#b3402e">page of rows</text>
+              <text x="210" y="294" text-anchor="middle" font-size="13" fill="#b3402e">page of rows</text>
+              <text x="210" y="346" text-anchor="middle" font-size="13" fill="#b3402e">page of rows</text>
+              <text x="210" y="398" text-anchor="middle" font-size="13" fill="#b3402e">&vellip; 100,000 pages &vellip;</text>
+              <line x1="395" y1="132" x2="395" y2="392" stroke="#b3402e" stroke-width="3" class="flow-anim pulse" marker-end="url(#arr6)"/>
+            </g>
+            <rect x="60" y="430" width="330" height="86" rx="12" fill="#f9e3de" stroke="#b3402e" stroke-width="2"/>
+            <text x="76" y="458" font-weight="700" font-size="15" fill="#b3402e">&asymp; 100,000 page reads</text>
+            <text x="76" y="482" font-size="13.5" fill="#53636f">Cost is O(N): it doubles when</text>
+            <text x="76" y="500" font-size="13.5" fill="#53636f">the table doubles.</text>
+
+            <!-- RIGHT: B-tree index scan -->
+            <text x="500" y="70" font-weight="700" font-size="16" fill="#0b8174">B-TREE INDEX SCAN</text>
+            <text x="500" y="92" font-size="13" fill="#53636f">index on the search column &mdash; descend, don&rsquo;t scan</text>
+            <!-- root -->
+            <rect x="640" y="104" width="180" height="54" rx="10" fill="#dff2ee" stroke="#0b8174" stroke-width="2.5"/>
+            <text x="730" y="126" text-anchor="middle" font-size="11" fill="#53636f" font-family="IBM Plex Mono, monospace">ROOT</text>
+            <text x="730" y="146" text-anchor="middle" font-size="14" font-weight="700" fill="#163247">10 &middot; 50 &middot; 90</text>
+            <!-- branches -->
+            <rect x="520" y="210" width="150" height="54" rx="10" fill="#e3eef4" stroke="#163247" stroke-width="2"/>
+            <text x="595" y="232" text-anchor="middle" font-size="11" fill="#53636f" font-family="IBM Plex Mono, monospace">BRANCH</text>
+            <text x="595" y="252" text-anchor="middle" font-size="14" font-weight="700" fill="#163247">10 &middot; 30</text>
+            <rect x="780" y="210" width="150" height="54" rx="10" fill="#dff2ee" stroke="#0b8174" stroke-width="2.5"/>
+            <text x="855" y="232" text-anchor="middle" font-size="11" fill="#53636f" font-family="IBM Plex Mono, monospace">BRANCH</text>
+            <text x="855" y="252" text-anchor="middle" font-size="14" font-weight="700" fill="#163247">60 &middot; 90</text>
+            <!-- leaves -->
+            <rect x="500" y="316" width="110" height="52" rx="10" fill="#e3eef4" stroke="#163247" stroke-width="1.5"/>
+            <text x="555" y="347" text-anchor="middle" font-size="13" fill="#163247">1 &middot; 5 &middot; 8</text>
+            <rect x="625" y="316" width="110" height="52" rx="10" fill="#e3eef4" stroke="#163247" stroke-width="1.5"/>
+            <text x="680" y="347" text-anchor="middle" font-size="13" fill="#163247">12 &middot; 25</text>
+            <rect x="750" y="316" width="110" height="52" rx="10" fill="#dff2ee" stroke="#0b8174" stroke-width="2.5"/>
+            <text x="805" y="347" text-anchor="middle" font-size="13" font-weight="700" fill="#0b8174">55 &middot; 62 &middot; 70</text>
+            <rect x="875" y="316" width="110" height="52" rx="10" fill="#e3eef4" stroke="#163247" stroke-width="1.5"/>
+            <text x="930" y="347" text-anchor="middle" font-size="13" fill="#163247">92 &middot; 99</text>
+            <text x="805" y="392" text-anchor="middle" font-size="12" fill="#0b8174" font-family="IBM Plex Mono, monospace">&uarr; row found: 62</text>
+            <!-- tree edges -->
+            <line x1="700" y1="158" x2="610" y2="210" stroke="#163247" stroke-width="1.5"/>
+            <line x1="760" y1="158" x2="840" y2="210" stroke="#0b8174" stroke-width="3" class="flow-anim" marker-end="url(#arr6t)"/>
+            <line x1="810" y1="264" x2="770" y2="316" stroke="#163247" stroke-width="1.5"/>
+            <line x1="880" y1="264" x2="810" y2="316" stroke="#0b8174" stroke-width="3" class="flow-anim" marker-end="url(#arr6t)"/>
+            <line x1="585" y1="264" x2="555" y2="316" stroke="#163247" stroke-width="1.5"/>
+            <line x1="610" y1="264" x2="690" y2="316" stroke="#163247" stroke-width="1.5"/>
+            <line x1="905" y1="264" x2="935" y2="316" stroke="#163247" stroke-width="1.5"/>
+            <rect x="500" y="430" width="330" height="86" rx="12" fill="#dff2ee" stroke="#0b8174" stroke-width="2"/>
+            <text x="516" y="458" font-weight="700" font-size="15" fill="#0b8174">3&ndash;4 page reads</text>
+            <text x="516" y="482" font-size="13.5" fill="#53636f">Cost is O(log N): a billion rows</text>
+            <text x="516" y="500" font-size="13.5" fill="#53636f">still need only one more level.</text>
+            <text x="20" y="548" font-size="13" fill="#53636f">The index stores a <tspan font-weight="700" fill="#163247">sorted copy of the searched values</tspan> with pointers to rows &mdash; it never replaces the table, it shadows it.</text>
+          </g>
+        </svg>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">04</span> How it works</h2>
+      <p class="sub">Seven mechanics. Indexing is a design decision you make per query pattern, not per column.</p>
+      <div class="mechanics">
+        <div class="mech"><div class="mnum">1</div><div>
+          <h3>The planner&rsquo;s default move is the sequential scan</h3>
+          <p>With no usable index, the only access path is: read every page, test every row against the predicate. That is <code>Seq Scan</code> in <code>EXPLAIN</code> output. An index doesn&rsquo;t change the query &mdash; it gives the planner a <strong>second access path</strong>, and the planner picks whichever costs less.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">2</div><div>
+          <h3>The B-tree is wide, shallow, and sorted</h3>
+          <p>Each node holds hundreds of keys and fits in one disk page (8 KB in PostgreSQL). A 100-million-row table needs only 3&ndash;4 levels, so any lookup costs 3&ndash;4 page reads. Leaves are linked in sorted order, so a range query (<code>BETWEEN</code>, <code>&gt;</code>, <code>LIKE 'Al%'</code>) finds its start point, then walks sideways &mdash; no re-descending the tree.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">3</div><div>
+          <h3>Index the access pattern, not the column</h3>
+          <p>Start from the queries you actually run: the columns in <code>WHERE</code>, <code>JOIN</code>, and <code>ORDER BY</code> of your slowest and most frequent queries. Indexing a column nothing filters on buys nothing. One <code>CREATE INDEX</code> on the right column is routinely a 100&ndash;1000&times; speedup; one on the wrong column is pure write tax.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">4</div><div>
+          <h3>Composite indexes read left to right</h3>
+          <p>An index on <code>(last_name, first_name)</code> is sorted by last name first, then first name within each last name &mdash; it serves <code>WHERE last_name = ?</code> and <code>WHERE last_name = ? AND first_name = ?</code>, but <strong>never</strong> <code>WHERE first_name = ?</code> alone (the leftmost-prefix rule). Put <strong>equality columns first, the range or sort column last</strong>: <code>(status, created_at)</code>, not <code>(created_at, status)</code>.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">5</div><div>
+          <h3>Covering indexes answer without touching the table</h3>
+          <p>If the index holds every column the query needs, the planner never fetches the table rows &mdash; an <code>Index Only Scan</code>, the fastest access path. In PostgreSQL, <code>CREATE INDEX ON users (email) INCLUDE (user_id)</code> adds payload columns without sorting on them. Use it for your hottest few-column queries, not everywhere: wider indexes mean fewer entries per page.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">6</div><div>
+          <h3>The planner decides from statistics &mdash; verify with EXPLAIN</h3>
+          <p>You don&rsquo;t choose the index; you propose it. The planner estimates selectivity (what fraction of rows a filter keeps) from table statistics and picks index scan vs sequential scan. Run <code>ANALYZE</code> after bulk loads so stats stay fresh, and read <code>EXPLAIN</code>: <code>Seq Scan</code> means your index lost or doesn&rsquo;t exist, <code>Index Scan</code> means it won.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">7</div><div>
+          <h3>Every index taxes writes and space</h3>
+          <p>Each <code>INSERT</code>, <code>UPDATE</code>, and <code>DELETE</code> must maintain every index on the table, and each index consumes disk plus cache memory. A write-heavy table (event logs, telemetry) deserves few indexes; a read-heavy one (dashboards, catalogs) deserves more. Indexes that the planner never uses are pure cost &mdash; find them and drop them.</p>
+        </div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">05</span> Code sketch</h2>
+      <p class="sub">A pocket model of the planner&rsquo;s decision: sequential pages vs. index descent plus one fetch per matching row. Watch the crossover &mdash; selective filters pick the index, unselective ones don&rsquo;t.</p>
+      <div class="card" style="padding:0;overflow:hidden"><pre class="code" style="border-radius:0"><span class="c"># planner_cost.py — why the planner sometimes ignores your index</span>
+<span class="k">import</span> math
+
+ROWS_PER_PAGE = <span class="s">100</span>          <span class="c"># ~8KB pages, modest rows</span>
+FETCH_FACTOR = <span class="s">1.2</span>           <span class="c"># random page fetch &gt; sequential read</span>
+
+<span class="k">def</span> <span class="s">btree_depth</span>(rows):
+    <span class="k">return</span> math.ceil(math.log(max(rows, <span class="s">2</span>), ROWS_PER_PAGE))
+
+<span class="k">def</span> <span class="s">compare</span>(rows, selectivity):
+    seq = rows / ROWS_PER_PAGE
+    idx = btree_depth(rows) + rows * selectivity * FETCH_FACTOR
+    pick = <span class="s">"INDEX SCAN"</span> <span class="k">if</span> idx &lt; seq <span class="k">else</span> <span class="s">"SEQ SCAN"</span>
+    <span class="k">return</span> seq, idx, pick
+
+<span class="k">for</span> sel, label <span class="k">in</span> [(<span class="s">1e-7</span>, <span class="s">"unique email"</span>),
+                   (<span class="s">0.02</span>, <span class="s">"city"</span>),
+                   (<span class="s">0.50</span>, <span class="s">"status flag"</span>)]:
+    seq, idx, pick = compare(<span class="s">10_000_000</span>, sel)
+    <span class="k">print</span>(<span class="s">f"</span>{label:<span class="s">14</span>}<span class="s"> seq=</span>{seq:<span class="s">,.0f</span>}<span class="s">  idx=</span>{idx:<span class="s">,.1f</span>}<span class="s">  -&gt; </span>{pick}<span class="s">"</span>)
+
+<span class="c"># unique email   seq=100,000  idx=5.2        -&gt; INDEX SCAN</span>
+<span class="c"># city           seq=100,000  idx=240,004.0  -&gt; SEQ SCAN  (borderline IRL —</span>
+<span class="c">#                                                 bitmap scans blur the line)</span>
+<span class="c"># status flag    seq=100,000  idx=6,000,003.0 -&gt; SEQ SCAN</span></pre></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">06</span> Failure modes</h2>
+      <p class="sub">Five ways indexing goes wrong &mdash; each with the one-line fix.</p>
+      <div class="mechanics">
+        <div class="mech fail"><div class="mnum">F1</div><div>
+          <h3>Indexing a boolean (or any low-cardinality column)<span class="fix">Fix: drop it. If only the rare value is ever queried, use a partial index instead: <code class="inline-code">CREATE INDEX ... WHERE is_active = true</code>.</span></h3>
+          <p>A filter that keeps half the rows can&rsquo;t win: fetching 5 million rows through random index lookups costs far more than one sequential pass. The planner knows this and ignores the index &mdash; so the index is pure write tax.</p>
+        </div></div>
+        <div class="mech fail"><div class="mnum">F2</div><div>
+          <h3>Wrapping the indexed column in a function<span class="fix">Fix: build an expression index on the same expression, e.g. <code class="inline-code">CREATE INDEX ON users (LOWER(email))</code>, or rewrite the predicate to use the stored form.</span></h3>
+          <p><code>WHERE LOWER(email) = 'a@b.com'</code> can&rsquo;t use an index on <code>email</code> &mdash; the tree stores the original values, not the lowercased ones. Same trap with <code>WHERE DATE(created_at) = ...</code>: rewrite as a range (<code>&gt;= day AND &lt; day+1</code>) instead.</p>
+        </div></div>
+        <div class="mech fail"><div class="mnum">F3</div><div>
+          <h3>Composite with the range column first<span class="fix">Fix: equality columns first, range/sort column last: <code class="inline-code">(status, created_at)</code>, not <code class="inline-code">(created_at, status)</code>.</span></h3>
+          <p>The tree is sorted by the leftmost column. With <code>(created_at, status)</code>, a query filtering <code>status = 'active' AND created_at &gt; X</code> can range-scan on the date but must check status row by row inside that range. Flip the order and the equality pins the start of the scan.</p>
+        </div></div>
+        <div class="mech fail"><div class="mnum">F4</div><div>
+          <h3>Type mismatch in the predicate<span class="fix">Fix: match the column&rsquo;s type exactly &mdash; <code class="inline-code">WHERE user_id = 42</code>, not <code class="inline-code">'42'</code>.</span></h3>
+          <p><code>WHERE int_col = '42'</code> forces the database to cast every row&rsquo;s value before comparing, which disqualifies the index. ORMs generate these silently when a string sneaks into an integer filter &mdash; check the generated SQL, not just the model code.</p>
+        </div></div>
+        <div class="mech fail"><div class="mnum">F5</div><div>
+          <h3>The index graveyard<span class="fix">Fix: query <code class="inline-code">pg_stat_user_indexes</code> for <code class="inline-code">idx_scan = 0</code> and drop the dead weight &mdash; every unused index still taxes every write.</span></h3>
+          <p>Indexes added for one-off investigations or long-deleted features accumulate silently. On a write-heavy table each one slows every insert. Audit quarterly: if the planner hasn&rsquo;t touched it in months, it&rsquo;s not an asset.</p>
+        </div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">07</span> Go deeper</h2>
+      <p class="sub">Curated and verified &mdash; every link opened and checked before publishing.</p>
+      <div class="ref-list">
+        <a class="ref" href="https://www.postgresql.org/docs/current/indexes-intro.html" target="_blank" rel="noopener">
+          <span class="badge doc">Docs</span>
+          <div><h3>PostgreSQL: Indexes (Chapter 11)</h3><p>The canonical reference: index types, multicolumn and partial indexes, covering indexes, and exactly when the planner will &mdash; and won&rsquo;t &mdash; use one.</p></div>
+        </a>
+        <a class="ref" href="http://use-the-index-luke.com/" target="_blank" rel="noopener">
+          <span class="badge doc">Guide</span>
+          <div><h3>Use The Index, Luke! &mdash; Markus Winand</h3><p>The free, vendor-neutral indexing guide (web edition of <em>SQL Performance Explained</em>): B-tree anatomy, the where clause, composite order, and every anti-pattern in F1&ndash;F4 above.</p></div>
+        </a>
+        <a class="ref" href="https://dev.to/apeder/database-performance-for-developers-indexing-query-plans-and-the-queries-that-dont-scale-472e" target="_blank" rel="noopener">
+          <span class="badge doc">Article</span>
+          <div><h3>Database Performance for Developers: Indexing, Query Plans, and the Queries That Don&rsquo;t Scale</h3><p>Selectivity as the deciding number, composite column order, covering indexes, and reading EXPLAIN &mdash; with a worked 360&times; dashboard fix.</p></div>
+        </a>
+        <a class="ref" href="https://www.youtube.com/watch?v=sdnCkl7NwlM" target="_blank" rel="noopener">
+          <span class="badge vid">Video</span>
+          <div><h3>Database Indexing Explained: 1 Line, 2,960x Faster Query</h3><p>A real PostgreSQL benchmark: 228&nbsp;ms &rarr; 0.08&nbsp;ms on 10M rows with one <code>CREATE INDEX</code> &mdash; plus B-tree walk, EXPLAIN ANALYZE, and composite order in 3 minutes.</p></div>
+        </a>
+        <a class="ref" href="https://www.youtube.com/watch?v=jIqXKx881bE" target="_blank" rel="noopener">
+          <span class="badge vid">Video</span>
+          <div><h3>Every Database Index Explained in 8 Minutes</h3><p>The full zoo in one sitting: B-tree, hash, composite, covering, clustered, bitmap, full-text &mdash; what each is for, and which to reach for when.</p></div>
+        </a>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">08</span> Sample prompts</h2>
+      <p class="sub">Copy-paste into your AI assistant, with your schema attached.</p>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>INDEX DESIGN</strong><button class="copy-btn" data-copy="p1">Copy</button></div>
+        <p class="prompt-text" id="p1">Here is my table schema and my three slowest queries (with EXPLAIN output). For each query, propose the index DDL you'd add, explain which part of the query each index serves, and flag any existing index that is now redundant. Prefer fewer, composite indexes over many single-column ones.</p>
+      </div>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>EXPLAIN READER</strong><button class="copy-btn" data-copy="p2">Copy</button></div>
+        <p class="prompt-text" id="p2">Here is EXPLAIN ANALYZE output for a slow query, plus the table's index list. Tell me: (1) which step dominates the cost and why, (2) whether the planner is using an index correctly, and (3) the single highest-leverage change — index, rewrite, or statistics — with the reasoning.</p>
+      </div>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>INDEX AUDIT</strong><button class="copy-btn" data-copy="p3">Copy</button></div>
+        <p class="prompt-text" id="p3">Here is pg_stat_user_indexes output (idx_scan counts) and the index definitions for my database. Identify: indexes never used, indexes that duplicate a leftmost prefix of a composite index, and low-cardinality indexes the planner is likely ignoring. For each, say drop, keep, or replace — with the write-load tradeoff stated explicitly.</p>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">09</span> Quiz</h2>
+      <p class="sub">Five questions on understanding, not trivia. Click an answer &mdash; you get one shot each.</p>
+      <div>
+        <div class="quiz-q" data-answer="1">
+          <p class="qq">Q1. A 10-million-row table, <code class="inline-code">WHERE email = ?</code> on a unique column, no index &mdash; the query takes seconds. Why?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">The query planner is stuck and the database needs a restart to recover.</button>
+            <button class="qopt" data-i="1">Without an index the planner's only access path is a sequential scan: it reads every page and tests every row. A B-tree index would descend ~4 levels and fetch just the matching row.</button>
+            <button class="qopt" data-i="2">Unique columns are always fast; the slowness must be a network problem.</button>
+            <button class="qopt" data-i="3">The table needs VACUUM before any query on it can run fast.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="2">
+          <p class="qq">Q2. There is a composite index on <code class="inline-code">(city, status)</code>. Which query does <strong>not</strong> benefit from it?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0"><code class="inline-code">WHERE city = 'Berlin'</code> &mdash; uses the leftmost column.</button>
+            <button class="qopt" data-i="1"><code class="inline-code">WHERE city = 'Berlin' AND status = 'active'</code> &mdash; uses both columns.</button>
+            <button class="qopt" data-i="2"><code class="inline-code">WHERE status = 'active'</code> &mdash; nothing pins the leftmost column, so the tree can't narrow the search; it's the phone book sorted by last name searched by first name.</button>
+            <button class="qopt" data-i="3"><code class="inline-code">WHERE city = 'Berlin' ORDER BY status</code> &mdash; filter plus in-index sort order.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="0">
+          <p class="qq">Q3. <code class="inline-code">WHERE LOWER(email) = 'a@b.com'</code> ignores the index on <code class="inline-code">email</code>. Why, and what fixes it?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">The index stores the original values, not the function's output, so the predicate can't navigate the tree. Fix: an expression index on <code class="inline-code">LOWER(email)</code>, or rewrite the predicate to use the stored form.</button>
+            <button class="qopt" data-i="1">PostgreSQL cannot build indexes on text columns at all.</button>
+            <button class="qopt" data-i="2">The LOWER function is too slow, so the planner refuses to plan around it.</button>
+            <button class="qopt" data-i="3">The index is corrupted and needs REINDEX.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="0">
+          <p class="qq">Q4. You index a boolean <code class="inline-code">is_active</code> (50/50 split) and the planner still chooses a sequential scan. Why is the scan cheaper?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">The filter keeps half the table: fetching 5M rows through random index lookups costs far more than one sequential pass. Low selectivity = the index can't win, so it's pure write tax.</button>
+            <button class="qopt" data-i="1">Boolean columns cannot be indexed in any database.</button>
+            <button class="qopt" data-i="2">The planner has a known bug and never uses boolean indexes.</button>
+            <button class="qopt" data-i="3">The index needs to be rebuilt with REINDEX before first use.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="1">
+          <p class="qq">Q5. After adding 8 indexes to a write-heavy events table, inserts got 3&times; slower. Best response?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">Add more RAM so the extra indexes fit in cache.</button>
+            <button class="qopt" data-i="1">Every index must be maintained on every write. Keep the indexes that serve real, frequent read queries, and drop the rest &mdash; check <code class="inline-code">pg_stat_user_indexes</code> for <code class="inline-code">idx_scan = 0</code> to find the dead weight.</button>
+            <button class="qopt" data-i="2">Disable autovacuum to free up write throughput.</button>
+            <button class="qopt" data-i="3">Shard the table immediately; indexes can't fix this.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+      </div>
+      <div id="quiz-score" role="status"></div>
+      <p class="sr-only" id="live-status" aria-live="polite"></p>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">10</span> Flashcards</h2>
+      <p class="sub">Click or press Enter/Space to flip.</p>
+      <div class="fgrid">
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Sequential scan</div>
+          <div class="fface back">The planner's default access path: read every page, test every row. Cost is O(N) &mdash; it doubles when the table doubles.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">B-tree</div>
+          <div class="fface back">The default index structure: sorted, balanced, wide-and-shallow. Any lookup costs ~3&ndash;4 page reads even at 100M+ rows; linked leaves make range queries a sideways walk.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Selectivity</div>
+          <div class="fface back">The fraction of rows a filter keeps. The number the planner uses to pick index scan vs sequential scan &mdash; highly selective (few rows) favors the index.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Composite index</div>
+          <div class="fface back">One index on two or more columns, searched left to right. Put equality columns first, the range or sort column last.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Leftmost-prefix rule</div>
+          <div class="fface back">A composite index (a, b, c) serves queries on a, or a+b, or a+b+c &mdash; never on b or c alone. Like a phone book sorted by last name: no good for searching by first name.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Covering index (Index Only Scan)</div>
+          <div class="fface back">An index holding every column the query needs, so the planner never fetches table rows. PostgreSQL's INCLUDE adds payload columns without sorting on them.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">EXPLAIN</div>
+          <div class="fface back">Shows the planner's chosen access path and cost estimates. Seq Scan = full table scan; Index Scan = index plus row fetches; Index Only Scan = answered from the index alone.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Expression index</div>
+          <div class="fface back">An index on a function's output, e.g. CREATE INDEX ON users (LOWER(email)). The fix when a predicate wraps the indexed column in a function.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Partial index</div>
+          <div class="fface back">An index over a subset of rows (CREATE INDEX ... WHERE ...). Small, cheap, and perfect for the hot slice &mdash; e.g. only the active orders.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Write amplification of indexes</div>
+          <div class="fface back">Every INSERT/UPDATE/DELETE must maintain every index on the table. Unused indexes are pure write tax &mdash; find them via pg_stat_user_indexes (idx_scan = 0) and drop them.</div>
+        </div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">11</span> Reach for this when&hellip;</h2>
+      <div class="triggers">
+        <div class="trigger"><strong>A query that was fast in dev is slow in prod, and EXPLAIN shows Seq Scan on a large table</strong> &mdash; design the index for that query's WHERE/JOIN/ORDER BY, then re-run EXPLAIN to confirm the planner picks it.</div>
+        <div class="trigger"><strong>You're adding a filter, join, or sort to a hot query path</strong> &mdash; choose the index together with the query: composite, left-to-right, equality columns first and the range/sort column last.</div>
+        <div class="trigger"><strong>Write latency is climbing on a table with a dozen indexes</strong> &mdash; audit which ones the planner actually uses and drop the dead weight. An index nobody reads is a tax everybody pays.</div>
+      </div>
+    </section>
+
+    <a class="back-link" href="../index.html#daily-topics">&larr; Back to daily topics</a>
+  </div>
+  <script>
+    // copy buttons
+    const status = document.getElementById('live-status');
+    document.querySelectorAll('.copy-btn').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const target = document.getElementById(button.dataset.copy);
+        const text = target.innerText;
+        try {
+          await navigator.clipboard.writeText(text);
+          const original = button.textContent;
+          button.textContent = 'Copied';
+          status.textContent = 'Prompt copied to clipboard.';
+          setTimeout(() => button.textContent = original, 1600);
+        } catch {
+          const range = document.createRange();
+          range.selectNodeContents(target);
+          const selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+          status.textContent = 'Prompt selected. Copy it with your device copy command.';
+        }
+      });
+    });
+
+    // quiz
+    const explanations = [
+      ["The planner isn't broken — without an index it has no other access path. The scan is the honest cost of having no index, and the fix is structural, not a restart.",
+       "Right. No index means no alternative access path: every page read, every row tested — O(N). The B-tree turns that into a ~4-level descent plus fetching only matches.",
+       "Unique columns are not magic. Uniqueness gives you a constraint (and its auto-created index), but a uniqueness property alone doesn't speed anything without the index structure.",
+       "VACUUM reclaims dead rows and updates visibility maps; it doesn't create an access path. The query would still scan the whole table."],
+      ["Correct: the leftmost column pins the search, so the tree narrows immediately. This is the composite index doing exactly its job.",
+       "Correct: both columns used — the tree descends on city, then the status is checked within that slice. The full power of the composite.",
+       "Right. The tree is sorted by city first; with no constraint on city there's no starting point — like searching a phone book by first name. The leftmost-prefix rule is the whole game.",
+       "Correct: city pins the range, and status comes out of the tree in sorted order, so the ORDER BY needs no separate sort step."],
+      ["Right. The index stores email values; LOWER(email) values live nowhere in it. An expression index stores exactly what the predicate computes — or rewrite the predicate to match the stored form.",
+       "PostgreSQL indexes text columns routinely — B-trees on varchar are the most common indexes in existence. The problem is the function, not the type.",
+       "LOWER is cheap; cost isn't the issue. The issue is structural: the tree can't be navigated by a value it doesn't store.",
+       "The index is fine. This is the most common indexing anti-pattern in real codebases, not corruption."],
+      ["Right. Index lookups are random page reads — expensive per row. When the filter keeps half the table, one sequential pass beats 5M random fetches. Selectivity decides, and the planner did the math correctly.",
+       "Boolean columns can absolutely be indexed — the index builds fine. It's just never chosen, because the math never favors it. (Exception: a partial index on the rare value.)",
+       "No bug — the planner correctly estimated that the index path costs more. Trusting this math is what EXPLAIN is for.",
+       "REINDEX rebuilds a damaged or bloated index; it doesn't change the cost math. The planner would still ignore it."],
+      ["More RAM helps caching, not the fundamental cost: every index on the table must be updated on every insert. That's write amplification, and RAM doesn't remove it.",
+       "Right. Each of the 8 indexes is a per-write tax. Keep the ones that serve real read queries (check usage, don't guess), drop the rest — write-heavy tables should be index-stingy.",
+       "Autovacuum cleans dead tuples; disabling it makes everything worse over time. It has nothing to do with index maintenance cost.",
+       "Sharding is a last resort for scale the current design can't serve. Eight indexes slowing inserts is an indexing problem — fix the indexes first."]
+    ];
+    const questions = [...document.querySelectorAll('.quiz-q')];
+    let score = 0, answered = 0;
+    questions.forEach((q, qi) => {
+      const correct = parseInt(q.dataset.answer, 10);
+      const exp = q.querySelector('.qexp');
+      q.querySelectorAll('.qopt').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          if (q.dataset.done) return;
+          q.dataset.done = "1";
+          const chosen = parseInt(btn.dataset.i, 10);
+          const ok = chosen === correct;
+          q.querySelectorAll('.qopt').forEach((b) => {
+            b.disabled = true;
+            if (parseInt(b.dataset.i, 10) === correct) b.classList.add('correct');
+          });
+          if (!ok) btn.classList.add('wrong');
+          else score++;
+          answered++;
+          exp.hidden = false;
+          exp.innerHTML = ok
+            ? "<strong class=\"ok\">Correct.</strong> " + explanations[qi][chosen]
+            : "<strong class=\"no\">Not quite.</strong> " + explanations[qi][chosen];
+          if (answered === questions.length) {
+            const box = document.getElementById('quiz-score');
+            box.style.display = "block";
+            box.innerHTML = "You scored <strong>" + score + " / " + questions.length + "</strong>." +
+              (score === questions.length ? " Clean sweep — you'll read EXPLAIN like a planner and index like one too." :
+               score >= 3 ? " Solid — re-read the failure mode you missed; that's where the real-world points live." :
+               " Worth a re-read of sections 04 and 06 before your next slow query.");
+          }
+        });
+      });
+    });
+
+    // flashcards
+    document.querySelectorAll('.fcard').forEach((card) => {
+      const flip = () => card.classList.toggle('flipped');
+      card.addEventListener('click', flip);
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); }
+      });
+    });
+  </script>
+</body>
+</html>
