@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Caching strategies: layers and invalidation &middot; AI Learning Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+    :root {
+      --ink: #14212b; --muted: #53636f; --paper: #f6f8f7; --white: #ffffff;
+      --line: #cbd5d8; --navy: #163247; --navy-2: #21465e; --teal: #0b8174;
+      --teal-soft: #dff2ee; --orange: #d66332; --orange-soft: #f8e4d8;
+      --gold: #d8a524; --gold-soft: #f7edc8; --blue-soft: #e3eef4;
+      --red: #b3402e; --red-soft: #f9e3de; --green: #1e7a3c; --green-soft: #e2f2e6;
+      --shadow: 0 18px 45px rgba(20, 33, 43, .09); --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; color: var(--ink);
+      background: linear-gradient(rgba(20,33,43,.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(20,33,43,.035) 1px, transparent 1px), var(--paper);
+      background-size: 28px 28px;
+      font-family: "Source Sans 3", sans-serif; font-size: 17px; line-height: 1.58;
+    }
+    .shell { width: min(960px, calc(100% - 40px)); margin: 0 auto; }
+    .portal-nav{position:sticky;top:0;z-index:50;background:rgba(22,50,71,.97);border-bottom:1px solid rgba(255,255,255,.12)}
+    .portal-nav-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;flex-wrap:wrap}
+    .portal-brand{color:#fff;text-decoration:none;font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:15px}
+    .portal-brand span{color:var(--gold);font-weight:400}
+    .portal-links{display:flex;gap:18px;flex-wrap:wrap}
+    .portal-links a{color:#dbe7ee;text-decoration:none;font-size:14.5px}
+    .portal-links a:hover{color:#fff;text-decoration:underline}
+    .hero { padding: 56px 0 36px; }
+    .chapter-mark { display:inline-flex;align-items:center;gap:10px;color:var(--navy);
+      font:600 12px/1.2 "IBM Plex Mono",monospace;letter-spacing:.09em;text-transform:uppercase;margin-bottom:18px; }
+    .chapter-mark::before { content:"";width:42px;height:3px;background:var(--orange); }
+    h1 { font-size: clamp(36px, 5vw, 58px); line-height: 1.02; letter-spacing:-.03em; margin:0 0 14px; }
+    .lede { color: var(--muted); font-size: clamp(18px,2vw,22px); max-width: 64ch; margin:0 0 8px; }
+    .date-line { font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--muted); }
+    section.block { margin: 44px 0; }
+    h2 { font-size: 26px; letter-spacing:-.02em; margin:0 0 6px; display:flex;align-items:center;gap:12px; }
+    h2 .num { font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:600;color:var(--white);
+      background:var(--navy);border-radius:999px;min-width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center; }
+    .sub { color:var(--muted); margin:0 0 18px; max-width: 68ch; }
+    .card { background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+      padding:24px;box-shadow:var(--shadow); }
+    .skill-card { background:var(--navy);color:#eaf2f7;border-radius:var(--radius);padding:22px 24px;
+      font-family:"IBM Plex Mono",monospace;font-size:14.5px;overflow-x:auto;box-shadow:var(--shadow); }
+    .skill-card .k { color:var(--gold); }
+    .idea { font-size:21px;line-height:1.5;border-left:4px solid var(--teal);padding:6px 0 6px 20px;max-width:62ch; }
+    .idea strong { color:var(--navy); }
+    .mechanics { display:grid;gap:14px; }
+    .mech { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:18px 20px;
+      display:grid;grid-template-columns:44px 1fr;gap:14px;align-items:start; }
+    .mech .mnum { font-family:"IBM Plex Mono",monospace;font-weight:600;color:var(--teal);
+      background:var(--teal-soft);border-radius:10px;width:44px;height:44px;display:flex;align-items:center;justify-content:center; }
+    .mech h3 { margin:0 0 6px;font-size:18px; }
+    .mech p { margin:0;color:var(--muted);font-size:15.5px; }
+    .mech code, .inline-code { font-family:"IBM Plex Mono",monospace;font-size:.88em;background:var(--blue-soft);
+      padding:2px 7px;border-radius:6px;color:var(--navy); }
+    pre.code { background:#0f2233;color:#e8f1f5;border-radius:14px;padding:20px 22px;overflow-x:auto;
+      font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.6;margin:0; }
+    pre.code .c { color:#8ba3b0; } pre.code .s { color:#ffd479; } pre.code .k { color:#7fd6c2; }
+    .fail { border-left:4px solid var(--orange); }
+    .fail h3 .fix { display:block;margin-top:8px;font-size:15px;font-weight:500;color:var(--green); }
+    .ref-list { display:grid;gap:12px; }
+    .ref { display:flex;gap:14px;align-items:flex-start;background:var(--white);border:1px solid var(--line);
+      border-radius:14px;padding:16px 18px;text-decoration:none;color:inherit; }
+    .ref:hover { border-color:var(--teal); }
+    .ref .badge { flex:none;font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;letter-spacing:.06em;
+      padding:5px 10px;border-radius:999px;text-transform:uppercase; }
+    .badge.doc { background:var(--blue-soft);color:var(--navy); }
+    .badge.vid { background:var(--orange-soft);color:var(--orange); }
+    .ref h3 { margin:0 0 4px;font-size:17px; }
+    .ref p { margin:0;color:var(--muted);font-size:14.5px; }
+    .prompt-block { background:#0f2233;border-radius:var(--radius);overflow:hidden;margin-bottom:18px;box-shadow:var(--shadow); }
+    .prompt-top { display:flex;justify-content:space-between;align-items:center;gap:12px;
+      padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.12); }
+    .prompt-top strong { color:#fff;font-size:13px;letter-spacing:.06em;font-family:"IBM Plex Mono",monospace; }
+    .copy-btn { border:1px solid #6c8796;background:transparent;color:#fff;border-radius:6px;padding:7px 11px;
+      cursor:pointer;font-weight:700;font-size:14px; }
+    .copy-btn:hover { background:rgba(255,255,255,.1); }
+    .copy-btn:focus-visible { outline:2px solid var(--gold);outline-offset:2px; }
+    .prompt-text { color:#e8f1f5;font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.65;
+      padding:18px;white-space:pre-wrap;margin:0; }
+    .sr-only { position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0); }
+    .quiz-q { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px; }
+    .quiz-q .qq { font-weight:700;margin:0 0 12px;font-size:18px; }
+    .qopts { display:grid;gap:8px; }
+    .qopt { text-align:left;background:var(--paper);border:1px solid var(--line);border-radius:10px;
+      padding:12px 14px;cursor:pointer;font-size:15.5px;color:var(--ink); }
+    .qopt:hover:not(:disabled) { border-color:var(--navy); }
+    .qopt:disabled { cursor:default;opacity:.85; }
+    .qopt.correct { background:var(--green-soft);border-color:var(--green); }
+    .qopt.wrong { background:var(--red-soft);border-color:var(--red); }
+    .qexp { margin:12px 0 0;font-size:15px;color:var(--muted); }
+    .qexp strong.ok { color:var(--green); } .qexp strong.no { color:var(--red); }
+    #quiz-score { display:none;margin-top:8px;background:var(--navy);color:#fff;border-radius:14px;
+      padding:20px 24px;font-size:19px; }
+    #quiz-score strong { color:var(--gold); }
+    .fgrid { display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px; }
+    .fcard { perspective:900px;cursor:pointer;min-height:170px; }
+    .fcard-inner { position:relative;width:100%;height:100%;min-height:170px;transform-style:preserve-3d;transition:transform .45s; }
+    .fcard.flipped .fcard-inner { transform:rotateY(180deg); }
+    .fface { position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+      border-radius:14px;padding:18px;display:flex;align-items:center;justify-content:center;text-align:center;
+      border:1px solid var(--line);background:var(--white);box-shadow:var(--shadow);font-size:15.5px; }
+    .fface.front { font-weight:700;color:var(--navy); }
+    .fface.back { transform:rotateY(180deg);background:var(--teal-soft);color:var(--ink);font-size:14.5px; }
+    .fcard:focus-visible { outline:2px solid var(--teal);outline-offset:3px;border-radius:14px; }
+    .triggers { display:grid;gap:10px; }
+    .trigger { background:var(--gold-soft);border-radius:12px;padding:14px 18px;font-size:16px; }
+    .trigger strong { color:var(--navy); }
+    .back-link { display:inline-block;margin:8px 0 60px;font-weight:600;color:var(--teal);text-decoration:none;font-size:17px; }
+    .back-link:hover { text-decoration:underline; }
+    .fig { background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+      padding:12px;box-shadow:var(--shadow);overflow-x:auto; }
+    .fig svg { display:block;width:100%;height:auto; }
+    .flow-anim { stroke-dasharray: 8 6; animation: dashmove 1.2s linear infinite; }
+    @keyframes dashmove { to { stroke-dashoffset: -14; } }
+    .pulse { animation: pulse 2.2s ease-in-out infinite; }
+    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.45; } }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior:auto; } .fcard-inner{transition:none;} .flow-anim{animation:none;} .pulse{animation:none;} }
+  </style>
+</head>
+<body><nav class="portal-nav">
+    <div class="shell portal-nav-inner">
+      <a class="portal-brand" href="../index.html">AI Engineering <span>&middot; Learning Portal</span></a>
+      <div class="portal-links">
+        <a href="../index.html#daily-topics">Daily topics</a>
+        <a href="../index.html#loop">Loop</a>
+        <a href="../index.html#graph">Graph</a>
+        <a href="../index.html#harness">Harness</a>
+      </div>
+    </div>
+  </nav>
+  <div class="shell">
+    <header class="hero">
+      <div class="chapter-mark">Daily topic &middot; Software engineering</div>
+      <h1>Caching strategies: layers and invalidation</h1>
+      <p class="lede">Every repeated expensive read is a tax you choose to keep paying. A cache pays it once and serves the answer from memory &mdash; but a cached answer is a <strong>copy</strong>, and copies go stale. The whole discipline is one decision per entry: how stale may this be, and what forces it back to fresh?</p>
+      <p class="date-line">2026-10-20 &middot; Topic 037</p>
+    </header>
+
+    <section class="block">
+      <h2><span class="num">01</span> The skill card</h2>
+      <p class="sub">Every topic on this portal is designed like a Codex skill: a name, a trigger, and concrete steps.</p>
+      <div class="skill-card"><pre style="margin:0">---
+<span class="k">name:</span> caching-strategies-layers-and-invalidation
+<span class="k">description:</span> Reach for this when reads are expensive, repeated, and tolerant
+  of bounded staleness: cache at the closest layer that can hold the answer,
+  give every entry a TTL and a versioned key, invalidate by key on the write
+  path (never TTL alone for correctness-critical data), and guard hot keys
+  against stampedes. Measure hit rate before you tune.
+---</pre></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">02</span> The one-idea version</h2>
+      <p class="idea">A cache is a bet that the future looks like the recent past: the same questions get asked again, so you store the answers <strong>where they&rsquo;re cheapest to reach</strong> and accept that they&rsquo;re copies. Speed comes from the copy being close; correctness comes from deciding, per entry, <strong>when the copy must die</strong> &mdash; by TTL, by invalidation, or by versioned keys. Every caching bug is a disagreement between the copy and the truth.</p>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">03</span> The request gauntlet</h2>
+      <p class="sub">One request for <code class="inline-code">/product/42</code>, walking down through the layers. A hit anywhere short-circuits the walk and the answer comes straight back up; a full miss walks the whole gauntlet to the source of truth. The dashed red line is the expensive path &mdash; a stampede is thousands of requests walking it at once.</p>
+      <div class="fig">
+        <svg viewBox="0 0 960 600" role="img" aria-label="Diagram of a request walking down through cache layers: browser cache, CDN edge, Redis app cache, and database. A hit at any layer returns the answer; a miss continues down.">
+          <defs>
+            <marker id="carr" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+              <path d="M0,0 L8,3 L0,6 Z" fill="#b3402e"></path>
+            </marker>
+            <marker id="carrt" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+              <path d="M0,0 L8,3 L0,6 Z" fill="#0b8174"></path>
+            </marker>
+          </defs>
+          <g font-family="Source Sans 3, sans-serif" font-size="14">
+            <text x="20" y="30" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="600" fill="#163247">ONE REQUEST, FIVE LAYERS &mdash; A HIT ANYWHERE SHORT-CIRCUITS THE WALK</text>
+
+            <!-- CLIENT -->
+            <rect x="330" y="64" width="300" height="58" rx="10" fill="#163247"/>
+            <text x="480" y="88" text-anchor="middle" font-weight="700" font-size="15" fill="#ffffff">CLIENT</text>
+            <text x="480" y="108" text-anchor="middle" font-size="13" fill="#dbe7ee" font-family="IBM Plex Mono, monospace">asks for /product/42</text>
+
+            <!-- BROWSER -->
+            <rect x="330" y="144" width="300" height="58" rx="10" fill="#dff2ee" stroke="#0b8174" stroke-width="2"/>
+            <text x="480" y="168" text-anchor="middle" font-weight="700" font-size="15" fill="#163247">BROWSER CACHE</text>
+            <text x="480" y="188" text-anchor="middle" font-size="12.5" fill="#53636f" font-family="IBM Plex Mono, monospace">Cache-Control: max-age=60 &middot; ~0 ms</text>
+
+            <!-- CDN -->
+            <rect x="330" y="224" width="300" height="58" rx="10" fill="#e3eef4" stroke="#163247" stroke-width="2"/>
+            <text x="480" y="248" text-anchor="middle" font-weight="700" font-size="15" fill="#163247">CDN EDGE</text>
+            <text x="480" y="268" text-anchor="middle" font-size="12.5" fill="#53636f" font-family="IBM Plex Mono, monospace">s-maxage=3600 &middot; ~10 ms from user</text>
+
+            <!-- REDIS -->
+            <rect x="330" y="304" width="300" height="58" rx="10" fill="#f7edc8" stroke="#d8a524" stroke-width="2"/>
+            <text x="480" y="328" text-anchor="middle" font-weight="700" font-size="15" fill="#163247">APP CACHE (REDIS)</text>
+            <text x="480" y="348" text-anchor="middle" font-size="12.5" fill="#53636f" font-family="IBM Plex Mono, monospace">TTL 300s + jitter &middot; ~0.5 ms</text>
+
+            <!-- DB -->
+            <rect x="330" y="384" width="300" height="58" rx="10" fill="#f8e4d8" stroke="#d66332" stroke-width="2.5" class="pulse"/>
+            <text x="480" y="408" text-anchor="middle" font-weight="700" font-size="15" fill="#163247">DATABASE</text>
+            <text x="480" y="428" text-anchor="middle" font-size="12.5" fill="#53636f" font-family="IBM Plex Mono, monospace">source of truth &middot; ~50 ms</text>
+
+            <!-- MISS path (right lane) -->
+            <g stroke="#b3402e" stroke-width="2.5" class="flow-anim" fill="none">
+              <line x1="680" y1="122" x2="680" y2="140" marker-end="url(#carr)"/>
+              <line x1="680" y1="202" x2="680" y2="220" marker-end="url(#carr)"/>
+              <line x1="680" y1="282" x2="680" y2="300" marker-end="url(#carr)"/>
+              <line x1="680" y1="362" x2="680" y2="380" marker-end="url(#carr)"/>
+            </g>
+            <g font-family="IBM Plex Mono, monospace" font-size="11" font-weight="600" fill="#b3402e">
+              <text x="692" y="134">MISS</text>
+              <text x="692" y="214">MISS</text>
+              <text x="692" y="294">MISS</text>
+              <text x="692" y="374">MISS</text>
+            </g>
+
+            <!-- HIT path (left lane) -->
+            <line x1="250" y1="413" x2="250" y2="96" stroke="#0b8174" stroke-width="3" marker-end="url(#carrt)"/>
+            <g stroke="#0b8174" stroke-width="2.5" fill="none">
+              <line x1="330" y1="173" x2="258" y2="173" marker-end="url(#carrt)"/>
+              <line x1="330" y1="253" x2="258" y2="253" marker-end="url(#carrt)"/>
+              <line x1="330" y1="333" x2="258" y2="333" marker-end="url(#carrt)"/>
+              <line x1="330" y1="413" x2="258" y2="413" marker-end="url(#carrt)"/>
+            </g>
+            <g font-family="IBM Plex Mono, monospace" font-size="11" font-weight="600" fill="#1e7a3c">
+              <text x="266" y="166">HIT</text>
+              <text x="266" y="246">HIT</text>
+              <text x="266" y="326">HIT</text>
+              <text x="266" y="406">HIT</text>
+            </g>
+            <text x="250" y="52" text-anchor="middle" font-size="12.5" fill="#0b8174" font-weight="600">HIT &rarr; serve the copy, skip everything below</text>
+
+            <!-- caption -->
+            <text x="20" y="492" font-size="14.5" fill="#53636f">Speed comes from the copy being close: a browser hit costs ~0 ms, a database answer ~50 ms.</text>
+            <text x="20" y="516" font-size="14.5" fill="#53636f">Correctness comes from killing copies on time: TTL, invalidation on the write path, versioned keys.</text>
+            <g font-size="13" fill="#53636f">
+              <line x1="20" y1="548" x2="56" y2="548" stroke="#b3402e" stroke-width="2.5" stroke-dasharray="8 6"/>
+              <text x="64" y="552">miss path &mdash; expensive, animated</text>
+              <line x1="330" y1="548" x2="366" y2="548" stroke="#0b8174" stroke-width="3"/>
+              <text x="374" y="552">hit path &mdash; cheap, short-circuits</text>
+            </g>
+          </g>
+        </svg>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">04</span> How it works</h2>
+      <p class="sub">Seven mechanics. Pick the pattern per write path, and the TTL per data contract.</p>
+      <div class="mechanics">
+        <div class="mech"><div class="mnum">1</div><div>
+          <h3>Cache-aside (lazy loading): the default</h3>
+          <p>The application checks the cache; on a miss it queries the database and stores the result with a TTL. Simple, resilient &mdash; if the cache dies the app just reads the database (slow, not broken) &mdash; and it only ever caches data someone actually asked for.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">2</div><div>
+          <h3>Write-through vs write-behind: choose per write path</h3>
+          <p><strong>Write-through</strong> writes the cache and the database together: reads stay fresh, every write pays for two operations. <strong>Write-behind</strong> acknowledges the write on the cache alone and persists to the database later in batches: the fastest writes, but a crash before the flush can lose data the user was told was saved. Reserve it for counters and metrics you can afford to lose.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">3</div><div>
+          <h3>TTL is a staleness budget, not a vibe</h3>
+          <p>Set it from the business rule &mdash; <em>how stale may this be?</em> Minutes for content pages, hours for rarely-changed settings, seconds (or don&rsquo;t cache) for money and inventory at checkout. Every key gets a TTL: it is the safety net that bounds damage when an invalidation is missed.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">4</div><div>
+          <h3>Invalidate by key on the write path: delete, don&rsquo;t overwrite</h3>
+          <p>When a record changes, delete its cache key in the same code path as the write. Deleting can&rsquo;t go wrong under concurrency; overwriting can &mdash; two writers can apply cache updates in the opposite order of their database commits, permanently caching the older value. The next read simply rebuilds from the truth.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">5</div><div>
+          <h3>Version and namespace your keys</h3>
+          <p>A key like <code class="inline-code">prod:v3:product:42</code> carries environment, schema version, entity, and id. Versioning makes deploys safe by construction &mdash; new code reads keys only it could have written &mdash; and a predictable format is what makes &ldquo;delete every affected key&rdquo; possible at all.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">6</div><div>
+          <h3>Layer from closest to farthest</h3>
+          <p>Browser &rarr; CDN edge &rarr; app cache (Redis) &rarr; database. Each layer catches repeats before they reach the next one down. The HTTP layers are coordinated by headers &mdash; <code class="inline-code">Cache-Control</code>, <code class="inline-code">ETag</code>, <code class="inline-code">s-maxage</code> &mdash; not by application code.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">7</div><div>
+          <h3>Guard the hot path against stampedes</h3>
+          <p>A hot key expiring means hundreds of requests miss at once and all run the same slow query. Collapse them with a per-key lock (singleflight) so one request rebuilds while the rest wait, jitter TTLs so keys never expire in lockstep, and cache brief &ldquo;not found&rdquo; results against penetration by bots.</p>
+        </div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">05</span> Code sketch</h2>
+      <p class="sub">Cache-aside with a TTL, per-key locks to collapse stampedes, and delete-on-write. About 25 lines, no dependencies.</p>
+      <pre class="code"><span class="k">import</span> threading, time, random
+
+<span class="k">class</span> Cache:
+    <span class="k">def</span> __init__(self, ttl=300):
+        self.ttl, self.store, self.locks = ttl, {}, {}
+        self._guard = threading.Lock()
+
+    <span class="k">def</span> get(self, key, loader):
+        now = time.monotonic()
+        hit = self.store.get(key)
+        <span class="k">if</span> hit <span class="k">and</span> hit[1] &gt; now:      <span class="c"># fresh hit: serve the copy</span>
+            <span class="k">return</span> hit[0]
+        <span class="k">with</span> self._guard:
+            lock = self.locks.setdefault(key, threading.Lock())
+        <span class="k">with</span> lock:                     <span class="c"># one rebuild per key: no stampede</span>
+            hit = self.store.get(key)  <span class="c"># re-check; a waiter may have filled it</span>
+            <span class="k">if</span> hit <span class="k">and</span> hit[1] &gt; now:
+                <span class="k">return</span> hit[0]
+            value = loader()           <span class="c"># miss: pay for the expensive call</span>
+            jitter = random.uniform(0, self.ttl * 0.2)
+            self.store[key] = (value, now + self.ttl + jitter)
+            <span class="k">return</span> value
+
+    <span class="k">def</span> invalidate(self, key):
+        self.store.pop(key, <span class="k">None</span>)      <span class="c"># delete, don't overwrite</span></pre>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">06</span> Failure modes</h2>
+      <p class="sub">Six ways caches bite, each with its one-line fix.</p>
+      <div class="mechanics">
+        <div class="mech fail"><div class="mnum">1</div><div>
+          <h3>Cache stampede (thundering herd)<span class="fix">Fix: per-key lock (singleflight) so one request rebuilds while the rest wait; jitter TTLs so keys never expire in lockstep.</span></h3>
+          <p>A hot key expires and hundreds of requests miss at the same instant &mdash; all run the same slow query and stall the database.</p>
+        </div></div>
+        <div class="mech fail"><div class="mnum">2</div><div>
+          <h3>Stale reads from TTL-only freshness<span class="fix">Fix: delete the key on the write path. The TTL is the safety net, never the correctness plan.</span></h3>
+          <p>The write path never invalidates, so an updated profile serves the old name until the TTL dies &mdash; minutes of visibly wrong data.</p>
+        </div></div>
+        <div class="mech fail"><div class="mnum">3</div><div>
+          <h3>Hot keys melt one node<span class="fix">Fix: a small in-process cache with a seconds-long TTL in front of Redis; replicate the celebrity key.</span></h3>
+          <p>One key takes most of the traffic and saturates its single cache node &mdash; sharding doesn&rsquo;t help when every request wants the same key.</p>
+        </div></div>
+        <div class="mech fail"><div class="mnum">4</div><div>
+          <h3>Cache penetration<span class="fix">Fix: cache the &ldquo;not found&rdquo; result with a short TTL; a Bloom filter in front for very large key spaces.</span></h3>
+          <p>Bots hammer IDs that don&rsquo;t exist. Nothing is ever cached, so every request reaches the database &mdash; a miss that can&rsquo;t be filled.</p>
+        </div></div>
+        <div class="mech fail"><div class="mnum">5</div><div>
+          <h3>Old shapes poison new deploys<span class="fix">Fix: version the key namespace (<code class="inline-code">v3:product:42</code>) so new code only reads keys it wrote.</span></h3>
+          <p>A deploy changes the serialized JSON; new code reads old entries and breaks. Versioned keys make deploys safe by construction.</p>
+        </div></div>
+        <div class="mech fail"><div class="mnum">6</div><div>
+          <h3>Caching on vibes<span class="fix">Fix: track hit rate and p95 latency before and after. Under ~80% hit rate, the TTL or key strategy is wrong &mdash; or the data shouldn&rsquo;t be cached.</span></h3>
+          <p>A cache gets added, nobody measures, and it quietly adds complexity and stale-data risk for no visible gain.</p>
+        </div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">07</span> Go deeper</h2>
+      <p class="sub">Curated and real &mdash; every link opened and verified before publishing.</p>
+      <div class="ref-list">
+        <a class="ref" href="https://dev.to/prisminfoways/caching-strategies-explained-cache-aside-vs-write-through-vs-write-behind-with-redis-code-1gd0">
+          <span class="badge doc">Article</span>
+          <div><h3>Caching Strategies Explained: Cache-Aside vs Write-Through vs Write-Behind (With Redis Code)</h3>
+          <p>Why this one: the four patterns side by side with real Redis code &mdash; including the delete-don&rsquo;t-update invalidation rule and the stampede / penetration / avalanche failure modes.</p></div>
+        </a>
+        <a class="ref" href="https://dev.to/young_gao/caching-strategies-when-where-and-how-to-cache-1f17">
+          <span class="badge doc">Article</span>
+          <div><h3>Caching Strategies: When, Where, and How to Cache</h3>
+          <p>Why this one: the full cache hierarchy (browser &rarr; CDN &rarr; app &rarr; DB), the three invalidation approaches, HTTP caching headers, and a common-mistakes checklist that maps to this page&rsquo;s failure modes.</p></div>
+        </a>
+        <a class="ref" href="https://www.youtube.com/watch?v=a8zKyCwcMTo">
+          <span class="badge vid">Video</span>
+          <div><h3>Caching Explained: Redis, Cache-Aside, LRU, CDN &mdash; Backend Interview Ep 4</h3>
+          <p>Why this one: a short animated tour of cache-aside, write-through vs write-back, LRU/LFU eviction, and CDNs &mdash; the whole lesson in one quick watch.</p></div>
+        </a>
+        <a class="ref" href="https://www.youtube.com/watch?v=KN81KAQpoiU">
+          <span class="badge vid">Video</span>
+          <div><h3>CDNs Explained: Edge Servers, Push vs Pull and Cache-Control &mdash; System Design Lesson 12</h3>
+          <p>Why this one: a live pull-CDN demo plus the Cache-Control directives (<code class="inline-code">max-age</code>, <code class="inline-code">s-maxage</code>, <code class="inline-code">stale-while-revalidate</code>) that control the browser and edge layers.</p></div>
+        </a>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">08</span> Sample prompts</h2>
+      <p class="sub">Copy-paste into your AI assistant, with your architecture attached.</p>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>CACHE DESIGN</strong><button class="copy-btn" data-copy="p1">Copy</button></div>
+        <p class="prompt-text" id="p1">Here is my read/write pattern for one endpoint (or query): how often it's read, how often it's written, and how stale the answer may be. Recommend a caching strategy (cache-aside / write-through / write-behind), the layer to cache at (browser / CDN / app / DB), a TTL with reasoning, the exact key format, and what the write path must invalidate. Call out anything that must not be cached at all.</p>
+      </div>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>INVALIDATION AUDIT</strong><button class="copy-btn" data-copy="p2">Copy</button></div>
+        <p class="prompt-text" id="p2">Here are my cache keys and the code paths that mutate the underlying data. For each mutation, list the keys that must be invalidated, flag any mutation that misses invalidation, and call out any key with no TTL. Suggest a versioned key format where a deploy could otherwise serve old shapes to new code.</p>
+      </div>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>STAMPEDE REVIEW</strong><button class="copy-btn" data-copy="p3">Copy</button></div>
+        <p class="prompt-text" id="p3">This endpoint serves roughly [requests/min] and caches [key pattern] with TTL [N]. Assess: stampede risk (hot keys, synchronized expiry), penetration risk (uncacheable misses), and hot-key risk (single-node saturation). Propose concrete mitigations — singleflight, TTL jitter, negative caching, or a fronting local cache — with the tradeoff of each.</p>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">09</span> Quiz</h2>
+      <p class="sub">Click an answer &mdash; you&rsquo;ll get the verdict and the why immediately.</p>
+      <div id="quiz">
+        <div class="quiz-q" data-answer="1">
+          <p class="qq">1. In cache-aside, who is responsible for loading data into the cache on a miss?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">The database pushes new rows to the cache automatically.</button>
+            <button class="qopt" data-i="1">The application code: it queries the database itself and stores the result.</button>
+            <button class="qopt" data-i="2">A background worker that pre-warms every key on a schedule.</button>
+            <button class="qopt" data-i="3">The CDN edge, which forwards the miss to the origin and caches the reply.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="1">
+          <p class="qq">2. A service acknowledges each order immediately, then writes orders to the database in batches every few seconds. Which strategy is this, and what&rsquo;s the catch?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">Write-through; writes are slower because cache and DB update together.</button>
+            <button class="qopt" data-i="1">Write-behind; if the cache crashes before the flush, acknowledged orders are lost.</button>
+            <button class="qopt" data-i="2">Cache-aside; the first read after each write always misses.</button>
+            <button class="qopt" data-i="3">Read-through; the cache layer loads from the DB on demand.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="2">
+          <p class="qq">3. Two services update the same product at the same time. Why is &ldquo;delete the cache key on write&rdquo; safer than &ldquo;overwrite the key with the new value&rdquo;?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">Deletes are faster than writes, so the race window is smaller.</button>
+            <button class="qopt" data-i="1">Overwrites are eventually consistent; deletes are strongly consistent.</button>
+            <button class="qopt" data-i="2">Two overwrites can land out of order, permanently caching the older value; a delete just forces the next read to reload the truth.</button>
+            <button class="qopt" data-i="3">Deletes replicate to cache replicas but overwrites don&rsquo;t.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="2">
+          <p class="qq">4. A hot key expires at exactly noon, and 2,000 requests miss at the same moment, all running the same slow query. What fixes this?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">Give the key a longer TTL so it never expires.</button>
+            <button class="qopt" data-i="1">Add a second cache layer in front of the first.</button>
+            <button class="qopt" data-i="2">Let one request rebuild the key (per-key lock / singleflight) while the rest wait; jitter TTLs so keys don&rsquo;t expire together.</button>
+            <button class="qopt" data-i="3">Shard the cache across more nodes.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="1">
+          <p class="qq">5. After a deploy that changes your serialized JSON, new code reads old-shaped entries from the cache and crashes. What prevents this class of bug?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">Shorter TTLs, so old entries expire within minutes of the deploy.</button>
+            <button class="qopt" data-i="1">Version the key namespace (e.g. <code class="inline-code">v3:product:42</code>) so new code only reads keys it wrote.</button>
+            <button class="qopt" data-i="2">Flush the entire cache on every deploy.</button>
+            <button class="qopt" data-i="3">Store the schema version inside the value and migrate it on read.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+      </div>
+      <div id="quiz-score" role="status"></div>
+      <p class="sr-only" id="live-status" aria-live="polite"></p>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">10</span> Flashcards</h2>
+      <p class="sub">Click or press Enter/Space to flip.</p>
+      <div class="fgrid">
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Cache-aside</div>
+          <div class="fface back">App checks the cache; on a miss it reads the DB and fills the cache with a TTL. The default pattern &mdash; the app owns consistency, and a dead cache degrades to slow, not broken.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Read-through</div>
+          <div class="fface back">The cache layer loads from the database itself on a miss &mdash; the app never talks to the DB. Same result as cache-aside, cleaner call sites, needs a supporting library.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Write-through</div>
+          <div class="fface back">Every write updates the cache and the database together, synchronously. Reads almost always hit and stay fresh; every write pays for two operations.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Write-behind</div>
+          <div class="fface back">Writes hit the cache, get acknowledged immediately, and persist to the DB later in batches. Fastest writes &mdash; but a crash before the flush can lose acknowledged data.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">TTL</div>
+          <div class="fface back">The staleness budget: how long a copy may live before it must die. Every key gets one; jitter it so cohorts of keys don&rsquo;t expire in the same second.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Cache stampede</div>
+          <div class="fface back">A hot key expires and hundreds of requests miss at once, all running the same slow query. Fix: per-key lock (singleflight) + jittered TTLs.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Cache penetration</div>
+          <div class="fface back">Requests for IDs that don&rsquo;t exist never get cached, so every one hits the DB. Fix: cache the &ldquo;not found&rdquo; briefly, or a Bloom filter for large key spaces.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Hot key</div>
+          <div class="fface back">One key takes a huge share of traffic and saturates its single cache node. Fix: a small in-process cache with a seconds-long TTL in front of Redis; replicate the key.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Versioned keys</div>
+          <div class="fface back">Key format like v3:product:42: deploys read a new namespace, so old shapes can never poison new code. Old entries expire untouched.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Cache-Control</div>
+          <div class="fface back">HTTP headers (max-age, s-maxage, stale-while-revalidate, ETag) that tell browsers and CDNs how long to keep a copy &mdash; how the outer layers get invalidated without app code.</div>
+        </div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">11</span> Reach for this when&hellip;</h2>
+      <div class="triggers">
+        <div class="trigger"><strong>The same expensive query or endpoint runs hundreds of times a minute with mostly identical results, and the data tolerates being seconds or minutes old</strong> &mdash; cache-aside with a TTL sized to the staleness budget, and delete the key on the write path.</div>
+        <div class="trigger"><strong>Database CPU or origin latency climbs under traffic while a few hot keys would serve most requests</strong> &mdash; add a Redis/app layer, watch the hit rate climb past ~80%, and keep measuring: the cache has to earn its complexity.</div>
+        <div class="trigger"><strong>Static assets or full API responses travel the world on every request</strong> &mdash; CDN edge cache with <code class="inline-code">Cache-Control</code>/<code class="inline-code">s-maxage</code>, and version asset filenames so deploys never need an invalidation request.</div>
+      </div>
+    </section>
+
+    <a class="back-link" href="../index.html#daily-topics">&larr; Back to daily topics</a>
+  </div>
+  <script>
+    // copy buttons
+    const status = document.getElementById('live-status');
+    document.querySelectorAll('.copy-btn').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const target = document.getElementById(button.dataset.copy);
+        const text = target.innerText;
+        try {
+          await navigator.clipboard.writeText(text);
+          const original = button.textContent;
+          button.textContent = 'Copied';
+          status.textContent = 'Prompt copied to clipboard.';
+          setTimeout(() => button.textContent = original, 1600);
+        } catch {
+          const range = document.createRange();
+          range.selectNodeContents(target);
+          const selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+          status.textContent = 'Prompt selected. Copy it with your device copy command.';
+        }
+      });
+    });
+
+    // quiz
+    const explanations = [
+      ["Not quite. In cache-aside there is no push — the database never touches the cache. The app pulls: miss, load, fill. (Push-on-write is write-through.)",
+       "Correct. Cache-aside keeps the app in charge: check the cache, on a miss read the DB, store with a TTL, return. That is why a dead cache degrades to slow, not broken — the app just reads the DB.",
+       "That is pre-warming, a separate technique for cold starts — not what cache-aside does on a miss.",
+       "That is read-through behavior at the cache layer, not application cache-aside. In cache-aside the application code does the load."],
+      ["Wrong strategy: write-through updates cache and database synchronously — no batching, no acknowledged-then-persisted window.",
+       "Correct. Write-behind acknowledges on the cache write and persists later, which is why it is fast — and the only pattern here where a crash before the flush loses data the user was told was saved.",
+       "Cache-aside describes reads, not this write path — and it never acknowledges a write before persistence.",
+       "Read-through is about who loads on a read miss, not about deferring writes."],
+      ["Speed is not the issue — both are single commands. The danger is ordering, not latency.",
+       "Both go through the same cache; the distinction is about write ordering between two writers, not a consistency model.",
+       "Correct. Two writers can apply cache overwrites in the opposite order of their DB commits, permanently caching the older value. A delete cannot be out of order — the next read simply rebuilds from the database.",
+       "Both deletes and overwrites replicate. The race is between the two writers' cache operations, not replication."],
+      ["That only delays the problem — it still expires, and every entry needs an expiry. This is a cache stampede; the fix is to collapse the concurrent rebuilds.",
+       "Another layer does not stop 2,000 misses converging on the same rebuild — they all flow through to the one slow query.",
+       "Correct. This is a cache stampede (thundering herd). A per-key lock means one rebuild and 1,999 waits; TTL jitter spreads expirations so the herd never forms again.",
+       "Sharding spreads keys across nodes, but all 2,000 misses are for the same key — they land on the same shard and the same query."],
+      ["Shorter TTLs shrink the window but do not close it — and TTLs chosen for deploys would be wrong for normal operation. The fix is structural: make old and new shapes different keys.",
+       "Correct. Versioned keys make deploys safe by construction: the new code reads v3 keys, which do not exist yet, and rebuilds them. Old v2 entries expire untouched.",
+       "That works but causes a cold-start avalanche on every deploy — the whole point of versioning is to avoid mass invalidation.",
+       "Read-time migration works but couples every reader to every historical schema. Versioned keys are simpler: old shapes just expire."]
+    ];
+    const questions = [...document.querySelectorAll('.quiz-q')];
+    let score = 0, answered = 0;
+    questions.forEach((q, qi) => {
+      const correct = parseInt(q.dataset.answer, 10);
+      const exp = q.querySelector('.qexp');
+      q.querySelectorAll('.qopt').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          if (q.dataset.done) return;
+          q.dataset.done = "1";
+          const chosen = parseInt(btn.dataset.i, 10);
+          const ok = chosen === correct;
+          q.querySelectorAll('.qopt').forEach((b) => {
+            b.disabled = true;
+            if (parseInt(b.dataset.i, 10) === correct) b.classList.add('correct');
+          });
+          if (!ok) btn.classList.add('wrong');
+          else score++;
+          answered++;
+          exp.hidden = false;
+          exp.innerHTML = ok
+            ? "<strong class=\"ok\">Correct.</strong> " + explanations[qi][chosen]
+            : "<strong class=\"no\">Not quite.</strong> " + explanations[qi][chosen];
+          if (answered === questions.length) {
+            const box = document.getElementById('quiz-score');
+            box.style.display = "block";
+            box.innerHTML = "You scored <strong>" + score + " / " + questions.length + "</strong>." +
+              (score === questions.length ? " Clean sweep — you think in copies, staleness budgets, and invalidation paths. Stampedes will fear you." :
+               score >= 3 ? " Solid — re-read the failure mode you missed; that's where the real-world points live." :
+               " Worth a re-read of sections 04 and 06 before your next hot key expires.");
+          }
+        });
+      });
+    });
+
+    // flashcards
+    document.querySelectorAll('.fcard').forEach((card) => {
+      const flip = () => card.classList.toggle('flipped');
+      card.addEventListener('click', flip);
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); }
+      });
+    });
+  </script>
+</body>
+</html>
