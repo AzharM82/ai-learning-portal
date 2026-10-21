@@ -257,5 +257,12 @@
     "date": "2026-10-20",
     "summary": "A cache trades freshness for speed: store answers where they're cheapest to reach, and decide per entry when the copy must die \u2014 by TTL, invalidation on the write path, or versioned keys. Seven mechanics, six failure modes, and the layer-by-layer request gauntlet.",
     "skill": "caching-strategies-layers-and-invalidation"
+  },
+  {
+    "slug": "2026-10-21-message-queues-and-async-architectures",
+    "title": "Message queues and async architectures",
+    "date": "2026-10-21",
+    "summary": "A queue is a durable buffer between 'work requested' and 'work done': producers hand off and move on while consumers drain at their own speed. Queue vs topic, at-least-once delivery, visibility timeouts, dead-letter queues, and the failure modes that bite.",
+    "skill": "message-queues-and-async-architectures"
   }
 ]
