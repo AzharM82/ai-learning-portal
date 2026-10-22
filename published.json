@@ -264,5 +264,12 @@
     "date": "2026-10-21",
     "summary": "A queue is a durable buffer between 'work requested' and 'work done': producers hand off and move on while consumers drain at their own speed. Queue vs topic, at-least-once delivery, visibility timeouts, dead-letter queues, and the failure modes that bite.",
     "skill": "message-queues-and-async-architectures"
+  },
+  {
+    "slug": "2026-10-22-containerization-and-reproducible-environments",
+    "title": "Containerization and reproducible environments",
+    "date": "2026-10-22",
+    "summary": "Stop shipping 'it works on my machine': freeze the runtime into an image, layer by layer, and run the same bytes on laptop, CI, and prod \u2014 with dev containers for the daily loop.",
+    "skill": "containerization-and-reproducible-environments"
   }
 ]
