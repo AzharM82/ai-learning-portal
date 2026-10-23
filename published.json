@@ -271,5 +271,12 @@
     "date": "2026-10-22",
     "summary": "Stop shipping 'it works on my machine': freeze the runtime into an image, layer by layer, and run the same bytes on laptop, CI, and prod \u2014 with dev containers for the daily loop.",
     "skill": "containerization-and-reproducible-environments"
+  },
+  {
+    "slug": "2026-10-23-git-workflows-for-teams",
+    "title": "Git workflows for teams",
+    "date": "2026-10-23",
+    "summary": "A Git workflow is a team agreement about branch lifetimes: which branches exist, how long they live, and how code moves to production. Trunk-based, GitHub Flow, and Git Flow compared \u2014 plus merge vs rebase, branch protection, and the failure modes that make merges hurt.",
+    "skill": "git-workflows-for-teams"
   }
 ]
