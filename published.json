@@ -278,5 +278,12 @@
     "date": "2026-10-23",
     "summary": "A Git workflow is a team agreement about branch lifetimes: which branches exist, how long they live, and how code moves to production. Trunk-based, GitHub Flow, and Git Flow compared \u2014 plus merge vs rebase, branch protection, and the failure modes that make merges hurt.",
     "skill": "git-workflows-for-teams"
+  },
+  {
+    "slug": "2026-10-24-code-review-craft",
+    "title": "Code review craft: reviewing like a senior",
+    "date": "2026-10-24",
+    "summary": "A senior's approval means something: read intent before code, move general to specific, interrogate the tests, check the invisible failure modes, label every comment, and verify by running the change when it matters.",
+    "skill": "code-review-craft"
   }
 ]
