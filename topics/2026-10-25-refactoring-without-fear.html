@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Refactoring without fear &middot; AI Learning Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+    :root {
+      --ink: #14212b; --muted: #53636f; --paper: #f6f8f7; --white: #ffffff;
+      --line: #cbd5d8; --navy: #163247; --navy-2: #21465e; --teal: #0b8174;
+      --teal-soft: #dff2ee; --orange: #d66332; --orange-soft: #f8e4d8;
+      --gold: #d8a524; --gold-soft: #f7edc8; --blue-soft: #e3eef4;
+      --red: #b3402e; --red-soft: #f9e3de; --green: #1e7a3c; --green-soft: #e2f2e6;
+      --shadow: 0 18px 45px rgba(20, 33, 43, .09); --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; color: var(--ink);
+      background: linear-gradient(rgba(20,33,43,.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(20,33,43,.035) 1px, transparent 1px), var(--paper);
+      background-size: 28px 28px;
+      font-family: "Source Sans 3", sans-serif; font-size: 17px; line-height: 1.58;
+    }
+    .shell { width: min(960px, calc(100% - 40px)); margin: 0 auto; }
+    .portal-nav{position:sticky;top:0;z-index:50;background:rgba(22,50,71,.97);border-bottom:1px solid rgba(255,255,255,.12)}
+    .portal-nav-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;flex-wrap:wrap}
+    .portal-brand{color:#fff;text-decoration:none;font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:15px}
+    .portal-brand span{color:var(--gold);font-weight:400}
+    .portal-links{display:flex;gap:18px;flex-wrap:wrap}
+    .portal-links a{color:#dbe7ee;text-decoration:none;font-size:14.5px}
+    .portal-links a:hover{color:#fff;text-decoration:underline}
+    .hero { padding: 56px 0 36px; }
+    .chapter-mark { display:inline-flex;align-items:center;gap:10px;color:var(--navy);
+      font:600 12px/1.2 "IBM Plex Mono",monospace;letter-spacing:.09em;text-transform:uppercase;margin-bottom:18px; }
+    .chapter-mark::before { content:"";width:42px;height:3px;background:var(--orange); }
+    h1 { font-size: clamp(36px, 5vw, 58px); line-height: 1.02; letter-spacing:-.03em; margin:0 0 14px; }
+    .lede { color: var(--muted); font-size: clamp(18px,2vw,22px); max-width: 64ch; margin:0 0 8px; }
+    .date-line { font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--muted); }
+    section.block { margin: 44px 0; }
+    h2 { font-size: 26px; letter-spacing:-.02em; margin:0 0 6px; display:flex;align-items:center;gap:12px; }
+    h2 .num { font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:600;color:var(--white);
+      background:var(--navy);border-radius:999px;min-width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center; }
+    .sub { color:var(--muted); margin:0 0 18px; max-width: 68ch; }
+    .card { background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+      padding:24px;box-shadow:var(--shadow); }
+    .skill-card { background:var(--navy);color:#eaf2f7;border-radius:var(--radius);padding:22px 24px;
+      font-family:"IBM Plex Mono",monospace;font-size:14.5px;overflow-x:auto;box-shadow:var(--shadow); }
+    .skill-card .k { color:var(--gold); }
+    .idea { font-size:21px;line-height:1.5;border-left:4px solid var(--teal);padding:6px 0 6px 20px;max-width:62ch; }
+    .idea strong { color:var(--navy); }
+    .mechanics { display:grid;gap:14px; }
+    .mech { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:18px 20px;
+      display:grid;grid-template-columns:44px 1fr;gap:14px;align-items:start; }
+    .mech .mnum { font-family:"IBM Plex Mono",monospace;font-weight:600;color:var(--teal);
+      background:var(--teal-soft);border-radius:10px;width:44px;height:44px;display:flex;align-items:center;justify-content:center; }
+    .mech h3 { margin:0 0 6px;font-size:18px; }
+    .mech p { margin:0;color:var(--muted);font-size:15.5px; }
+    .mech code, .inline-code { font-family:"IBM Plex Mono",monospace;font-size:.88em;background:var(--blue-soft);
+      padding:2px 7px;border-radius:6px;color:var(--navy); }
+    pre.code { background:#0f2233;color:#e8f1f5;border-radius:14px;padding:20px 22px;overflow-x:auto;
+      font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.6;margin:0; }
+    pre.code .c { color:#8ba3b0; } pre.code .s { color:#ffd479; } pre.code .k { color:#7fd6c2; }
+    .fail { border-left:4px solid var(--orange); }
+    .fail h3 .fix { display:block;margin-top:8px;font-size:15px;font-weight:500;color:var(--green); }
+    .ref-list { display:grid;gap:12px; }
+    .ref { display:flex;gap:14px;align-items:flex-start;background:var(--white);border:1px solid var(--line);
+      border-radius:14px;padding:16px 18px;text-decoration:none;color:inherit; }
+    .ref:hover { border-color:var(--teal); }
+    .ref .badge { flex:none;font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;letter-spacing:.06em;
+      padding:5px 10px;border-radius:999px;text-transform:uppercase; }
+    .badge.doc { background:var(--blue-soft);color:var(--navy); }
+    .badge.vid { background:var(--orange-soft);color:var(--orange); }
+    .ref h3 { margin:0 0 4px;font-size:17px; }
+    .ref p { margin:0;color:var(--muted);font-size:14.5px; }
+    .prompt-block { background:#0f2233;border-radius:var(--radius);overflow:hidden;margin-bottom:18px;box-shadow:var(--shadow); }
+    .prompt-top { display:flex;justify-content:space-between;align-items:center;gap:12px;
+      padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.12); }
+    .prompt-top strong { color:#fff;font-size:13px;letter-spacing:.06em;font-family:"IBM Plex Mono",monospace; }
+    .copy-btn { border:1px solid #6c8796;background:transparent;color:#fff;border-radius:6px;padding:7px 11px;
+      cursor:pointer;font-weight:700;font-size:14px; }
+    .copy-btn:hover { background:rgba(255,255,255,.1); }
+    .copy-btn:focus-visible { outline:2px solid var(--gold);outline-offset:2px; }
+    .prompt-text { color:#e8f1f5;font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.65;
+      padding:18px;white-space:pre-wrap;margin:0; }
+    .sr-only { position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0); }
+    .quiz-q { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px; }
+    .quiz-q .qq { font-weight:700;margin:0 0 12px;font-size:18px; }
+    .qopts { display:grid;gap:8px; }
+    .qopt { text-align:left;background:var(--paper);border:1px solid var(--line);border-radius:10px;
+      padding:12px 14px;cursor:pointer;font-size:15.5px;color:var(--ink); }
+    .qopt:hover:not(:disabled) { border-color:var(--navy); }
+    .qopt:disabled { cursor:default;opacity:.85; }
+    .qopt.correct { background:var(--green-soft);border-color:var(--green); }
+    .qopt.wrong { background:var(--red-soft);border-color:var(--red); }
+    .qexp { margin:12px 0 0;font-size:15px;color:var(--muted); }
+    .qexp strong.ok { color:var(--green); } .qexp strong.no { color:var(--red); }
+    #quiz-score { display:none;margin-top:8px;background:var(--navy);color:#fff;border-radius:14px;
+      padding:20px 24px;font-size:19px; }
+    #quiz-score strong { color:var(--gold); }
+    .fgrid { display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px; }
+    .fcard { perspective:900px;cursor:pointer;min-height:170px; }
+    .fcard-inner { position:relative;width:100%;height:100%;min-height:170px;transform-style:preserve-3d;transition:transform .45s; }
+    .fcard.flipped .fcard-inner { transform:rotateY(180deg); }
+    .fface { position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+      border-radius:14px;padding:18px;display:flex;align-items:center;justify-content:center;text-align:center;
+      border:1px solid var(--line);background:var(--white);box-shadow:var(--shadow);font-size:15.5px; }
+    .fface.front { font-weight:700;color:var(--navy); }
+    .fface.back { transform:rotateY(180deg);background:var(--teal-soft);color:var(--ink);font-size:14.5px; }
+    .fcard:focus-visible { outline:2px solid var(--teal);outline-offset:3px;border-radius:14px; }
+    .triggers { display:grid;gap:10px; }
+    .trigger { background:var(--gold-soft);border-radius:12px;padding:14px 18px;font-size:16px; }
+    .trigger strong { color:var(--navy); }
+    .back-link { display:inline-block;margin:8px 0 60px;font-weight:600;color:var(--teal);text-decoration:none;font-size:17px; }
+    .back-link:hover { text-decoration:underline; }
+    .fig { background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+      padding:12px;box-shadow:var(--shadow);overflow-x:auto; }
+    .fig svg { display:block;width:100%;height:auto; }
+    .flow-anim { stroke-dasharray: 8 6; animation: dashmove 1.2s linear infinite; }
+    @keyframes dashmove { to { stroke-dashoffset: -14; } }
+    .pulse { animation: pulse 2.2s ease-in-out infinite; }
+    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.45; } }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior:auto; } .fcard-inner{transition:none;} .flow-anim{animation:none;} .pulse{animation:none;} }
+  </style>
+</head>
+<body><nav class="portal-nav">
+    <div class="shell portal-nav-inner">
+      <a class="portal-brand" href="../index.html">AI Engineering <span>&middot; Learning Portal</span></a>
+      <div class="portal-links">
+        <a href="../index.html#daily-topics">Daily topics</a>
+        <a href="../index.html#loop">Loop</a>
+        <a href="../index.html#graph">Graph</a>
+        <a href="../index.html#harness">Harness</a>
+      </div>
+    </div>
+  </nav>
+  <div class="shell">
+    <header class="hero">
+      <div class="chapter-mark">Daily topic &middot; Software engineering</div>
+      <h1>Refactoring without fear</h1>
+      <p class="lede">Fear of touching old code is not a personality trait &mdash; it is a missing safety net. Refactoring is the discipline of changing a program&rsquo;s internal structure <em>without changing what it does</em>, in steps so small that each one is almost too small to go wrong. Pin the behavior, take one step, prove it still works, commit &mdash; and repeat until the code you were afraid of is code you understand.</p>
+      <p class="date-line">2026-10-25 &middot; Topic 042</p>
+    </header>
+
+    <section class="block">
+      <h2><span class="num">01</span> The skill card</h2>
+      <p class="sub">Every topic on this portal is designed like a Codex skill: a name, a trigger, and concrete steps.</p>
+      <div class="skill-card"><pre style="margin:0">---
+<span class="k">name:</span> refactoring-without-fear
+<span class="k">description:</span> Reach for this when code needs restructuring but you are afraid to
+  touch it: pin observable behavior with characterization tests, take one
+  small behavior-preserving step at a time, keep the tests green, commit
+  after each step, never mix a behavior change into a refactoring step, and
+  use expand-and-contract for interface changes — so the system stays
+  working at every step and any bad step is a one-command revert.
+---</pre></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">02</span> The one-idea version</h2>
+      <p class="idea">Refactoring is not cleaning up &mdash; it is <strong>a sequence of tiny, behavior-preserving steps, each verified before the next begins</strong>. If the system is never broken for more than a few minutes, there is nothing to be afraid of: a bad step is found immediately, by a test, and undone in one revert. The courage does not come from confidence in your memory. It comes from a safety net you build first.</p>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">03</span> The safe refactoring loop</h2>
+      <p class="sub">One loop, repeated until the code is in the shape you need. Never skip the green check &mdash; it is the whole point.</p>
+      <div class="fig">
+        <svg viewBox="0 0 960 400" role="img" aria-label="Diagram of the safe refactoring loop: pin behavior, take one small step, run tests, commit, repeat; revert on red.">
+          <g font-family="Source Sans 3, sans-serif" font-size="14">
+            <text x="20" y="26" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="600" fill="#163247">THE SAFE REFACTORING LOOP — NEVER BROKEN FOR LONG</text>
+            <g font-family="IBM Plex Mono, monospace" font-size="12" font-weight="600">
+              <rect x="20" y="60" width="150" height="90" rx="12" fill="#e3eef4" stroke="#163247" stroke-width="2"/><text x="95" y="100" text-anchor="middle" fill="#163247">1 · PIN</text><text x="95" y="122" text-anchor="middle" font-size="11" font-weight="400" fill="#53636f">Characterization</text><text x="95" y="138" text-anchor="middle" font-size="11" font-weight="400" fill="#53636f">tests: lock behavior</text>
+              <rect x="195" y="60" width="150" height="90" rx="12" fill="#dff2ee" stroke="#0b8174" stroke-width="2"/><text x="270" y="100" text-anchor="middle" fill="#163247">2 · ONE STEP</text><text x="270" y="122" text-anchor="middle" font-size="11" font-weight="400" fill="#53636f">Extract, rename,</text><text x="270" y="138" text-anchor="middle" font-size="11" font-weight="400" fill="#53636f">move — one only</text>
+              <rect x="370" y="60" width="150" height="90" rx="12" fill="#f7edc8" stroke="#d8a524" stroke-width="2"/><text x="445" y="100" text-anchor="middle" fill="#163247">3 · PROVE IT</text><text x="445" y="122" text-anchor="middle" font-size="11" font-weight="400" fill="#53636f">Tests green?</text><text x="445" y="138" text-anchor="middle" font-size="11" font-weight="400" fill="#53636f">Compiler quiet?</text>
+              <rect x="545" y="60" width="150" height="90" rx="12" fill="#f8e4d8" stroke="#d66332" stroke-width="2"/><text x="620" y="100" text-anchor="middle" fill="#163247">4 · COMMIT</text><text x="620" y="122" text-anchor="middle" font-size="11" font-weight="400" fill="#53636f">Small commit,</text><text x="620" y="138" text-anchor="middle" font-size="11" font-weight="400" fill="#53636f">revertable alone</text>
+              <rect x="720" y="60" width="150" height="90" rx="12" fill="#163247"/><text x="795" y="100" text-anchor="middle" fill="#ffffff">5 · REPEAT</text><text x="795" y="122" text-anchor="middle" font-size="11" font-weight="400" fill="#dbe7ee">Until the change</text><text x="795" y="138" text-anchor="middle" font-size="11" font-weight="400" fill="#dbe7ee">is easy, then do it</text>
+            </g>
+            <g stroke="#0b8174" stroke-width="3" fill="none" class="flow-anim">
+              <path d="M170,105 L195,105"/><path d="M345,105 L370,105"/><path d="M520,105 L545,105"/><path d="M695,105 L720,105"/>
+            </g>
+            <path d="M795,150 L795,190 L445,190 L445,150" stroke="#b3402e" stroke-width="3" fill="none" stroke-dasharray="8 6"/>
+            <text x="20" y="230" font-size="15" fill="#53636f"><tspan font-weight="700" fill="#b3402e">On red, do not debug forward:</tspan> revert the one step, shrink it, try again. A revert is not failure — it is the safety net working.</text>
+            <text x="20" y="256" font-size="15" fill="#53636f"><tspan font-weight="700" fill="#163247">Kent Beck&rsquo;s rule:</tspan> “Make the change easy, then make the easy change.” The refactoring is the first half of the work, not a detour from it.</text>
+            <rect x="20" y="282" width="920" height="88" rx="12" fill="#f6f8f7" stroke="#cbd5d8"/>
+            <text x="40" y="312" font-family="IBM Plex Mono, monospace" font-size="12" font-weight="600" fill="#163247">TWO HATS — NEVER WEAR BOTH AT ONCE</text>
+            <text x="40" y="338" font-size="15" fill="#53636f">Refactoring hat: change structure, keep behavior identical. &nbsp;·&nbsp; Feature hat: change behavior, keep structure mostly still.</text>
+            <text x="40" y="362" font-size="15" fill="#53636f">A commit that does both is unreviewable: a reviewer cannot tell which lines are safe and which are new behavior.</text>
+          </g>
+        </svg>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">04</span> How it works</h2>
+      <p class="sub">Seven mechanics. The first two are the safety net; the rest are how you move fast inside it.</p>
+      <div class="mechanics">
+        <div class="mech"><div class="mnum">1</div><div>
+          <h3>Pin the behavior before you touch anything</h3>
+          <p>With no tests, write <em>characterization tests</em> first: run the code on real inputs, record what it actually does (not what you think it should do), and assert that. These tests are your tripwire. If legacy code has no seams to test through, start at the edges &mdash; the public function, the CLI output, the HTTP response &mdash; and pin that.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">2</div><div>
+          <h3>Take one behavior-preserving step at a time</h3>
+          <p>Each step &mdash; extract a method, rename a variable, move a function, replace a temp with a query &mdash; must be small enough that you can see it cannot change behavior, and then you prove it with the tests. A step that is &ldquo;too small to be worth doing&rdquo; is exactly the right size: a sequence of them produces a significant restructuring, and any single one is trivial to revert.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">3</div><div>
+          <h3>Never mix a behavior change into a refactoring step</h3>
+          <p>Wear one hat at a time. Refactor in one commit, change behavior in the next &mdash; or at least in separate, clearly labelled commits. Mixed commits hide real bugs: when a test fails, nobody can tell whether the refactoring broke something or the new behavior is wrong. This separation is what makes refactoring reviewable.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">4</div><div>
+          <h3>Let tools and the compiler carry the risk</h3>
+          <p>Use your IDE&rsquo;s automated rename, extract, and move refactorings instead of editing by hand: the tool updates every call site, including ones you forgot existed. A type checker and compiler are a second safety net &mdash; a rename that the compiler accepts everywhere is a rename that did not silently miss a caller. Hand-editing a 40-file rename is where fear is rational.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">5</div><div>
+          <h3>Commit after every green step, and stay green</h3>
+          <p>The system should be fully working after each step, not just at the end. Commit each green step separately so any one of them can be reverted alone. If a step goes red, revert it instead of debugging forward into a half-refactored state &mdash; then retry with a smaller step. Green-to-green is what makes a week-long restructuring boring instead of terrifying.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">6</div><div>
+          <h3>Refactor opportunistically, in three flavors</h3>
+          <p><em>Preparatory refactoring</em> makes a hard change easy first (Beck&rsquo;s rule). <em>Comprehension refactoring</em> cleans up code you had to struggle to understand, so the next reader does not. <em>Litter-pickup refactoring</em> fixes a small smell you pass on the way &mdash; a bad name, a duplicated line &mdash; in minutes, and only when it is safe. No &ldquo;refactoring sprint&rdquo; is needed when the habit is daily.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">7</div><div>
+          <h3>Change interfaces with expand and contract</h3>
+          <p>For a breaking interface change, do not edit all callers at once. <em>Expand:</em> add the new interface alongside the old. <em>Migrate:</em> move callers over one at a time, tests green throughout. <em>Contract:</em> delete the old interface only when nothing uses it. This parallel-change pattern is how you refactor an interface with many clients &mdash; or clients you do not control &mdash; without a flag day.</p>
+        </div></div>
+      </div>
+    </section>
+    <section class="block">
+      <h2><span class="num">05</span> Code sketch</h2>
+      <p class="sub">Extract method, with the behavior pinned first: the assertion is written against the old behavior, then the extraction must keep it green.</p>
+      <div class="card" style="padding:0;overflow:hidden"><pre class="code" style="border-radius:0"><span class="c"># 1. Pin the behavior FIRST (characterization test, from real output)</span>
+<span class="k">def</span> <span class="s">order_total</span>(items):
+    <span class="k">return</span> sum(<span class="s">line_total</span>(i) <span class="k">for</span> i <span class="k">in</span> items)
+
+<span class="c"># 2. One small step: extract the per-line arithmetic into a named function</span>
+<span class="k">def</span> <span class="s">line_total</span>(item):
+    price, qty = item[<span class="s">"price"</span>], item[<span class="s">"qty"</span>]
+    discount = item.get(<span class="s">"discount"</span>, 0)
+    <span class="k">return</span> price * qty * (1 - discount)
+
+<span class="c"># 3. The pinned behavior must still hold, exactly — or revert the step</span>
+items = [{<span class="s">"price"</span>: 100, <span class="s">"qty"</span>: 2, <span class="s">"discount"</span>: 0.10},
+         {<span class="s">"price"</span>: 99, <span class="s">"qty"</span>: 1}]
+<span class="k">assert</span> order_total(items) == 279.0, <span class="s">"behavior changed — revert!"</span>
+<span class="k">print</span>(<span class="s">"green:"</span>, order_total(items))</pre></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">06</span> Failure modes</h2>
+      <p class="sub">Five ways refactoring goes wrong, each with the fix.</p>
+      <div class="mechanics">
+        <div class="mech fail"><div class="mnum">!</div><div>
+          <h3>The big-bang rewrite<span class="fix">Fix: refactor in small green steps instead; if the change is truly too big for steps, use the strangler-fig pattern — build the new path alongside and migrate traffic gradually.</span></h3>
+          <p>A month-long branch that rewrites a module is not refactoring: the system is broken for weeks, merges become wars, and nobody can review it. Fowler&rsquo;s test is blunt — if the system is broken for days while you &ldquo;refactor,&rdquo; you are restructuring, not refactoring.</p>
+        </div></div>
+        <div class="mech fail"><div class="mnum">!</div><div>
+          <h3>Refactoring with no safety net<span class="fix">Fix: write characterization tests before the first step. No tests, no refactoring — or refactor only the smallest, tool-assisted steps (pure renames) until tests exist.</span></h3>
+          <p>Without a test that fails when behavior changes, &ldquo;behavior-preserving&rdquo; is a hope, not a fact. This is the single most common reason experienced engineers refuse to touch old code — and they are right to refuse, until the net is built.</p>
+        </div></div>
+        <div class="mech fail"><div class="mnum">!</div><div>
+          <h3>Mixing a feature into the cleanup<span class="fix">Fix: split the work into two commits — refactor first, feature second. If a test fails, you then know exactly which hat was on.</span></h3>
+          <p>The commit that &ldquo;cleans up the handler and adds the discount rule&rdquo; is unreviewable and undebuggable. When it breaks, the team reverts the whole thing, including the good cleanup, and learns that refactoring is dangerous.</p>
+        </div></div>
+        <div class="mech fail"><div class="mnum">!</div><div>
+          <h3>Refactoring for its own sake<span class="fix">Fix: refactor toward a concrete goal — the next feature, a bug fix, or a readability problem you actually hit. A smell with no pain is a note for later, not a ticket now.</span></h3>
+          <p>Gold-plating and premature abstraction are real: every abstraction you add is a thing the next reader must learn. Refactoring without a reason produces cleverer code, not better code, and it churns the codebase for no return.</p>
+        </div></div>
+        <div class="mech fail"><div class="mnum">!</div><div>
+          <h3>The half-finished, uncommitted refactor<span class="fix">Fix: commit after every green step, and never end the day red. A revertable history turns a bad afternoon into a one-command undo.</span></h3>
+          <p>Ten uncommitted steps in a broken tree cannot be bisected, reviewed, or safely handed over. The fear is not the code — it is the state: nobody knows which of the ten steps broke it, so the whole effort gets thrown away.</p>
+        </div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">07</span> Go deeper</h2>
+      <p class="sub">Curated and real &mdash; every link verified. Start with Fowler&rsquo;s guide, then the case against the &ldquo;cleanup project,&rdquo; then the two videos.</p>
+      <div class="ref-list">
+        <a class="ref" href="https://refactoring.com/" target="_blank" rel="noopener">
+          <span class="badge doc">docs</span>
+          <div><h3>Refactoring — Martin Fowler&rsquo;s guide and catalog</h3><p>The canonical definition (small behavior-preserving transformations, system kept working after each), why refactoring lowers the cost of enhancements, and the full online catalog of refactorings from the second edition.</p></div>
+        </a>
+        <a class="ref" href="https://blog.ndepend.com/refactoring-is-a-development-technique-not-a-project/" target="_blank" rel="noopener">
+          <span class="badge doc">docs</span>
+          <div><h3>Refactoring is a development technique, not a project (NDepend)</h3><p>The all-or-nothing fallacy: refactoring is not a three-month cleanup break. It is a series of tiny daily decisions — rename a variable, break apart a method — that compound into a clean codebase.</p></div>
+        </a>
+        <a class="ref" href="https://martinfowler.com/tags/refactoring.html" target="_blank" rel="noopener">
+          <span class="badge doc">docs</span>
+          <div><h3>Martin Fowler&rsquo;s refactoring essays</h3><p>The index of Fowler&rsquo;s longer refactoring writing: preparatory refactoring, refactoring workflows (litter-pickup, comprehension, preparatory), parallel change, and worked examples from real codebases.</p></div>
+        </a>
+        <a class="ref" href="https://www.youtube.com/watch?v=xN8z9kcwDnM" target="_blank" rel="noopener">
+          <span class="badge vid">video</span>
+          <div><h3>Successive Refinement: Live Refactoring Teardown</h3><p>A live teardown of a 400-line monster handler: Beck&rsquo;s maxim (make the change easy, then make the easy change), characterization tests first, then extraction into pure pipelines — plus the strangler-fig pattern and a micro-commit safety checklist.</p></div>
+        </a>
+        <a class="ref" href="https://www.youtube.com/watch?v=MY1_uLm7IP0" target="_blank" rel="noopener">
+          <span class="badge vid">video</span>
+          <div><h3>Refactoring Spaghetti Code to Clean Architecture in Python</h3><p>A brittle, tightly-coupled script refactored step by step into hexagonal architecture: pure domain entities, ports as protocols, use cases, and adapters — a full before-and-after in Python.</p></div>
+        </a>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">08</span> Sample prompts</h2>
+      <p class="sub">Copy-paste these into your AI assistant when you&rsquo;re about to refactor — or asking it to refactor — a piece of code.</p>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>PLAN: SAFE REFACTORING</strong><button class="copy-btn" data-copy="p1">Copy</button></div>
+        <p class="prompt-text" id="p1">Plan a safe refactoring of this code: [paste the code].
+Rules: do not change any observable behavior. First, tell me what characterization tests I should write to pin the current behavior. Then give me a sequence of small steps (extract / rename / move, one per step), each verifiable by running the tests, with a commit point after each step. Flag any step that risks changing behavior, and tell me how to make it smaller.</p>
+      </div>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>SEPARATE: REFACTOR VS FEATURE</strong><button class="copy-btn" data-copy="p2">Copy</button></div>
+        <p class="prompt-text" id="p2">I need to change this code and add a feature: [describe the feature, paste the code].
+Split the work into two phases: (1) preparatory refactoring only — steps that change structure but not behavior, so the feature becomes easy; (2) the feature change itself. Do not mix them. For phase 1, give me the smallest step sequence and the tests that prove each step preserved behavior.</p>
+      </div>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>REVIEW: DID IT STAY SAFE?</strong><button class="copy-btn" data-copy="p3">Copy</button></div>
+        <p class="prompt-text" id="p3">Review this refactoring diff for safety: [paste the diff].
+For each hunk, say whether it is behavior-preserving or a behavior change. Flag: mixed behavior changes hiding inside the refactor, renames or moves done by hand that may have missed a call site, tests that were changed to match new behavior instead of pinning old behavior, and any step too large to verify. Give me a verdict: safe to merge, or split and redo — and how.</p>
+      </div>
+    </section>
+    <section class="block">
+      <h2><span class="num">09</span> Quiz</h2>
+      <p class="sub">Click an answer &mdash; you&rsquo;ll see immediately whether you&rsquo;re right and why.</p>
+      <div id="quiz">
+        <div class="quiz-q" data-answer="1">
+          <p class="qq">1. What is refactoring, in Fowler&rsquo;s precise sense?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">Any cleanup of messy code, including adding features and fixing bugs along the way.</button>
+            <button class="qopt" data-i="1">Restructuring code through a series of small behavior-preserving transformations, without changing its observable behavior.</button>
+            <button class="qopt" data-i="2">Rewriting a module from scratch in a cleaner style.</button>
+            <button class="qopt" data-i="3">Deleting dead code and commented-out code only.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="2">
+          <p class="qq">2. You need to add a feature, but the code is structured so the change would be painful. What do you do first?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">Force the feature in as-is, and clean up later if there is time.</button>
+            <button class="qopt" data-i="1">Rewrite the module so the feature fits naturally.</button>
+            <button class="qopt" data-i="2">Preparatory refactoring: restructure the code (without changing behavior) so the change becomes easy — then make the easy change.</button>
+            <button class="qopt" data-i="3">Add the feature and the cleanup in one commit, to keep the history short.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="0">
+          <p class="qq">3. An interface used by many clients needs a breaking change. What is the safest sequence?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">Expand and contract: add the new interface alongside the old, migrate callers one at a time, then delete the old one.</button>
+            <button class="qopt" data-i="1">Change the interface and all callers in one big commit, then fix whatever breaks.</button>
+            <button class="qopt" data-i="2">Deprecate the old interface but keep both forever, to avoid breaking anyone.</button>
+            <button class="qopt" data-i="3">Delete the old interface first, so callers are forced to migrate.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="3">
+          <p class="qq">4. You just took one small refactoring step and a test went red. What should you do first?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">Update the test to match the new code, so the suite is green again.</button>
+            <button class="qopt" data-i="1">Keep going — the test will probably pass again after the next few steps.</button>
+            <button class="qopt" data-i="2">Debug forward until the test passes, however long that takes.</button>
+            <button class="qopt" data-i="3">Revert that one step, then retry it smaller — the step was supposed to preserve behavior, so a red test means the step itself was wrong.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="1">
+          <p class="qq">5. Which of these is NOT refactoring?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">Extracting a 60-line function into three named helpers, with all tests still green.</button>
+            <button class="qopt" data-i="1">Renaming variables throughout a module while also changing how discounts are calculated.</button>
+            <button class="qopt" data-i="2">Moving a method to the class that uses it most, verified by the existing test suite.</button>
+            <button class="qopt" data-i="3">Replacing a temporary variable with a query method that computes the same value.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+      </div>
+      <div id="quiz-score" role="status"></div>
+      <p class="sr-only" id="live-status" aria-live="polite"></p>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">10</span> Flashcards</h2>
+      <p class="sub">Click or press Enter/Space to flip.</p>
+      <div class="fgrid">
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Behavior-preserving step</div>
+          <div class="fface back">A change that alters internal structure without changing observable behavior. If a test goes red after it, the step — not the test — is suspect.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Characterization test</div>
+          <div class="fface back">A test written against legacy code that records what it actually does today, not what it should do. It pins behavior so refactoring can be verified.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Preparatory refactoring</div>
+          <div class="fface back">Beck’s rule: make the change easy, then make the easy change. Restructure first (behavior unchanged) so the feature or fix that follows is simple.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Two hats</div>
+          <div class="fface back">Refactoring hat: change structure, keep behavior. Feature hat: change behavior. Never wear both in one commit — mixed commits are unreviewable.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Expand and contract</div>
+          <div class="fface back">Parallel change for interfaces: expand (add the new alongside the old), migrate callers one at a time, contract (delete the old). No flag day, tests green throughout.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Code smell</div>
+          <div class="fface back">A surface indication of a deeper problem — long method, duplicated code, data clump. A smell suggests where to look, not a verdict on its own.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Always green</div>
+          <div class="fface back">The system must be fully working after each refactoring step, not just at the end. Green-to-green is what makes a long restructuring boring, not terrifying.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Comprehension refactoring</div>
+          <div class="fface back">Cleaning up code you struggled to understand, so the next reader does not struggle. Rename, extract, and clarify as you learn what the code does.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Litter-pickup refactoring</div>
+          <div class="fface back">The opportunistic habit: fix a small smell you pass — a bad name, a duplicated line — in minutes, only when it is safe, without a dedicated cleanup project.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Strangler fig</div>
+          <div class="fface back">When a change is too big for small steps: build the new path alongside the old, migrate traffic gradually, and retire the old path last. No big-bang cutover.</div>
+        </div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">11</span> Reach for this when&hellip;</h2>
+      <div class="triggers">
+        <div class="trigger"><strong>You catch yourself saying &ldquo;I&rsquo;d fix this, but I&rsquo;m afraid to touch it&rdquo;</strong> &mdash; that sentence is the trigger. Pin the behavior with a characterization test, then take the smallest step you can verify.</div>
+        <div class="trigger"><strong>A feature looks painful because of how the code is shaped</strong> &mdash; do preparatory refactoring first: make the change easy, then make the easy change, in separate commits.</div>
+        <div class="trigger"><strong>An interface change would touch dozens of callers</strong> &mdash; use expand and contract: new interface alongside the old, migrate one caller at a time, delete the old only when it is unused.</div>
+      </div>
+    </section>
+
+    <a class="back-link" href="../index.html#daily-topics">&larr; Back to daily topics</a>
+  </div>
+  <script>
+    const status = document.getElementById('live-status');
+    document.querySelectorAll('.copy-btn').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const target = document.getElementById(button.dataset.copy);
+        const text = target.innerText;
+        try {
+          await navigator.clipboard.writeText(text);
+          const original = button.textContent;
+          button.textContent = 'Copied';
+          status.textContent = 'Prompt copied to clipboard.';
+          setTimeout(() => button.textContent = original, 1600);
+        } catch {
+          const range = document.createRange();
+          range.selectNodeContents(target);
+          const selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+          status.textContent = 'Prompt selected. Copy it with your device copy command.';
+        }
+      });
+    });
+    const explanations = [
+      ["Cleanup plus new features is restructuring, not refactoring — the behavior-preserving rule is what makes refactoring verifiable.",
+       "Correct. Fowler’s definition is precise: small behavior-preserving transformations, observable behavior unchanged. Anything else is a different activity.",
+       "A from-scratch rewrite is restructuring, not refactoring — the system is broken during it, and no step-by-step verification exists.",
+       "Deleting dead code can be a refactoring, but it is only one example — the definition is about behavior-preserving restructuring in general."],
+      ["Forcing a painful change in as-is guarantees the next change is painful too, and leaves the mess for the next reader.",
+       "A rewrite is the most expensive answer and abandons the working system — preparatory refactoring gets the same ease for far less risk.",
+       "Correct. Beck’s rule: make the change easy (preparatory refactoring, behavior unchanged), then make the easy change (the feature).",
+       "One commit doing both is unreviewable — when a test fails, nobody can tell whether the refactor or the feature broke it."],
+      ["Correct. Expand (new alongside old), migrate callers one at a time with tests green, contract (delete the old). No flag day, no broken window.",
+       "One giant commit is exactly the big-bang failure mode — unreviewable, and a single broken caller blocks everything.",
+       "Keeping both forever is not a migration, it is permanent duplication: two interfaces to maintain, and nobody knows which is canonical.",
+       "Deleting first breaks every caller at once — the opposite of a safe migration."],
+      ["Updating the test to match new code destroys the safety net: the test was supposed to catch exactly this behavior change.",
+       "Pressing on through red leaves you in a half-refactored state where you no longer know which step broke it.",
+       "Debugging forward into a broken state is how a one-step problem becomes a ten-step mystery. Revert first, then shrink the step.",
+       "Correct. A refactoring step must preserve behavior by definition — a red test means the step was wrong, so undo it and retry smaller."],
+      ["Extracting a function with tests still green is a textbook behavior-preserving refactoring.",
+       "Correct — this is NOT refactoring: the discount calculation changed behavior, so the commit mixes a feature change into a cleanup. Split it into two commits.",
+       "Moving a method to its heaviest user, verified by tests, is a classic Fowler refactoring (Move Method).",
+       "Replace Temp with Query is a named refactoring from Fowler’s catalog — same value, clearer structure."]
+    ];
+    const questions = [...document.querySelectorAll('.quiz-q')];
+    let score = 0, answered = 0;
+    questions.forEach((q, qi) => {
+      const correct = parseInt(q.dataset.answer, 10);
+      const exp = q.querySelector('.qexp');
+      q.querySelectorAll('.qopt').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          if (q.dataset.done) return;
+          q.dataset.done = "1";
+          const chosen = parseInt(btn.dataset.i, 10);
+          const ok = chosen === correct;
+          q.querySelectorAll('.qopt').forEach((b) => {
+            b.disabled = true;
+            if (parseInt(b.dataset.i, 10) === correct) b.classList.add('correct');
+          });
+          if (!ok) btn.classList.add('wrong');
+          else score++;
+          answered++;
+          exp.hidden = false;
+          exp.innerHTML = ok
+            ? "<strong class=\"ok\">Correct.</strong> " + explanations[qi][chosen]
+            : "<strong class=\"no\">Not quite.</strong> " + explanations[qi][chosen];
+          if (answered === questions.length) {
+            const box = document.getElementById('quiz-score');
+            box.style.display = "block";
+            box.innerHTML = "You scored <strong>" + score + " / " + questions.length + "</strong>." +
+              (score === questions.length ? " Clean sweep — go refactor something you were afraid of, one green step at a time." :
+               score >= 3 ? " Solid — re-read the failure mode you missed; that is where the real-world points live." :
+               " Worth a re-read of sections 04 and 06 before your next refactor.");
+          }
+        });
+      });
+    });
+    document.querySelectorAll('.fcard').forEach((card) => {
+      const flip = () => card.classList.toggle('flipped');
+      card.addEventListener('click', flip);
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); }
+      });
+    });
+  </script>
+</body>
+</html>

@@ -292,5 +292,12 @@
     "date": "2026-10-24",
     "summary": "Raschke's four short-term setups \u2014 Turtle Soup, 80-20's, Holy Grail, and the Taylor 3-day cycle \u2014 with rules, day-vs-swing use, stock-trader adaptations, quiz, and flashcards.",
     "skill": "raschke-four-setups"
+  },
+  {
+    "slug": "2026-10-25-refactoring-without-fear",
+    "title": "Refactoring without fear",
+    "date": "2026-10-25",
+    "summary": "Refactoring is not a cleanup project \u2014 it is a sequence of small, behavior-preserving steps, each verified before the next: pin behavior with characterization tests, keep the tests green, commit after each step, never mix a behavior change into a refactoring step, and use expand-and-contract for interface changes.",
+    "skill": "refactoring-without-fear"
   }
 ]
