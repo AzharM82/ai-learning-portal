@@ -285,5 +285,12 @@
     "date": "2026-10-24",
     "summary": "A senior's approval means something: read intent before code, move general to specific, interrogate the tests, check the invisible failure modes, label every comment, and verify by running the change when it matters.",
     "skill": "code-review-craft"
+  },
+  {
+    "slug": "2026-10-24-raschke-four-setups",
+    "title": "Linda Raschke's four setups: Turtle Soup, 80-20's, Holy Grail, and the Taylor cycle",
+    "date": "2026-10-24",
+    "summary": "Raschke's four short-term setups \u2014 Turtle Soup, 80-20's, Holy Grail, and the Taylor 3-day cycle \u2014 with rules, day-vs-swing use, stock-trader adaptations, quiz, and flashcards.",
+    "skill": "raschke-four-setups"
   }
 ]
