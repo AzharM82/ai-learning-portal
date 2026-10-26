@@ -299,5 +299,12 @@
     "date": "2026-10-25",
     "summary": "Refactoring is not a cleanup project \u2014 it is a sequence of small, behavior-preserving steps, each verified before the next: pin behavior with characterization tests, keep the tests green, commit after each step, never mix a behavior change into a refactoring step, and use expand-and-contract for interface changes.",
     "skill": "refactoring-without-fear"
+  },
+  {
+    "slug": "2026-10-26-design-patterns-worth-knowing",
+    "title": "Design patterns worth knowing (and ones to skip)",
+    "date": "2026-10-26",
+    "summary": "You do not need all 23 Gang of Four patterns: learn Strategy, Factory, Observer, Adapter, Decorator, and Builder deeply, start from the pain that keeps changing, and skip Singleton-as-global and the rest until a real pain demands them.",
+    "skill": "design-patterns-worth-knowing"
   }
 ]

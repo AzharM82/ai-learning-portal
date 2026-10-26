@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Design patterns worth knowing (and ones to skip) &middot; AI Learning Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+    :root {
+      --ink: #14212b; --muted: #53636f; --paper: #f6f8f7; --white: #ffffff;
+      --line: #cbd5d8; --navy: #163247; --navy-2: #21465e; --teal: #0b8174;
+      --teal-soft: #dff2ee; --orange: #d66332; --orange-soft: #f8e4d8;
+      --gold: #d8a524; --gold-soft: #f7edc8; --blue-soft: #e3eef4;
+      --red: #b3402e; --red-soft: #f9e3de; --green: #1e7a3c; --green-soft: #e2f2e6;
+      --shadow: 0 18px 45px rgba(20, 33, 43, .09); --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; color: var(--ink);
+      background: linear-gradient(rgba(20,33,43,.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(20,33,43,.035) 1px, transparent 1px), var(--paper);
+      background-size: 28px 28px;
+      font-family: "Source Sans 3", sans-serif; font-size: 17px; line-height: 1.58;
+    }
+    .shell { width: min(960px, calc(100% - 40px)); margin: 0 auto; }
+    .portal-nav{position:sticky;top:0;z-index:50;background:rgba(22,50,71,.97);border-bottom:1px solid rgba(255,255,255,.12)}
+    .portal-nav-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;flex-wrap:wrap}
+    .portal-brand{color:#fff;text-decoration:none;font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:15px}
+    .portal-brand span{color:var(--gold);font-weight:400}
+    .portal-links{display:flex;gap:18px;flex-wrap:wrap}
+    .portal-links a{color:#dbe7ee;text-decoration:none;font-size:14.5px}
+    .portal-links a:hover{color:#fff;text-decoration:underline}
+    .hero { padding: 56px 0 36px; }
+    .chapter-mark { display:inline-flex;align-items:center;gap:10px;color:var(--navy);
+      font:600 12px/1.2 "IBM Plex Mono",monospace;letter-spacing:.09em;text-transform:uppercase;margin-bottom:18px; }
+    .chapter-mark::before { content:"";width:42px;height:3px;background:var(--orange); }
+    h1 { font-size: clamp(36px, 5vw, 58px); line-height: 1.02; letter-spacing:-.03em; margin:0 0 14px; }
+    .lede { color: var(--muted); font-size: clamp(18px,2vw,22px); max-width: 64ch; margin:0 0 8px; }
+    .date-line { font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--muted); }
+    section.block { margin: 44px 0; }
+    h2 { font-size: 26px; letter-spacing:-.02em; margin:0 0 6px; display:flex;align-items:center;gap:12px; }
+    h2 .num { font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:600;color:var(--white);
+      background:var(--navy);border-radius:999px;min-width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center; }
+    .sub { color:var(--muted); margin:0 0 18px; max-width: 68ch; }
+    .card { background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+      padding:24px;box-shadow:var(--shadow); }
+    .skill-card { background:var(--navy);color:#eaf2f7;border-radius:var(--radius);padding:22px 24px;
+      font-family:"IBM Plex Mono",monospace;font-size:14.5px;overflow-x:auto;box-shadow:var(--shadow); }
+    .skill-card .k { color:var(--gold); }
+    .idea { font-size:21px;line-height:1.5;border-left:4px solid var(--teal);padding:6px 0 6px 20px;max-width:62ch; }
+    .idea strong { color:var(--navy); }
+    .mechanics { display:grid;gap:14px; }
+    .mech { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:18px 20px;
+      display:grid;grid-template-columns:44px 1fr;gap:14px;align-items:start; }
+    .mech .mnum { font-family:"IBM Plex Mono",monospace;font-weight:600;color:var(--teal);
+      background:var(--teal-soft);border-radius:10px;width:44px;height:44px;display:flex;align-items:center;justify-content:center; }
+    .mech h3 { margin:0 0 6px;font-size:18px; }
+    .mech p { margin:0;color:var(--muted);font-size:15.5px; }
+    .mech code, .inline-code { font-family:"IBM Plex Mono",monospace;font-size:.88em;background:var(--blue-soft);
+      padding:2px 7px;border-radius:6px;color:var(--navy); }
+    pre.code { background:#0f2233;color:#e8f1f5;border-radius:14px;padding:20px 22px;overflow-x:auto;
+      font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.6;margin:0; }
+    pre.code .c { color:#8ba3b0; } pre.code .s { color:#ffd479; } pre.code .k { color:#7fd6c2; }
+    .fail { border-left:4px solid var(--orange); }
+    .fail h3 .fix { display:block;margin-top:8px;font-size:15px;font-weight:500;color:var(--green); }
+    .ref-list { display:grid;gap:12px; }
+    .ref { display:flex;gap:14px;align-items:flex-start;background:var(--white);border:1px solid var(--line);
+      border-radius:14px;padding:16px 18px;text-decoration:none;color:inherit; }
+    .ref:hover { border-color:var(--teal); }
+    .ref .badge { flex:none;font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;letter-spacing:.06em;
+      padding:5px 10px;border-radius:999px;text-transform:uppercase; }
+    .badge.doc { background:var(--blue-soft);color:var(--navy); }
+    .badge.vid { background:var(--orange-soft);color:var(--orange); }
+    .ref h3 { margin:0 0 4px;font-size:17px; }
+    .ref p { margin:0;color:var(--muted);font-size:14.5px; }
+    .prompt-block { background:#0f2233;border-radius:var(--radius);overflow:hidden;margin-bottom:18px;box-shadow:var(--shadow); }
+    .prompt-top { display:flex;justify-content:space-between;align-items:center;gap:12px;
+      padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.12); }
+    .prompt-top strong { color:#fff;font-size:13px;letter-spacing:.06em;font-family:"IBM Plex Mono",monospace; }
+    .copy-btn { border:1px solid #6c8796;background:transparent;color:#fff;border-radius:6px;padding:7px 11px;
+      cursor:pointer;font-weight:700;font-size:14px; }
+    .copy-btn:hover { background:rgba(255,255,255,.1); }
+    .copy-btn:focus-visible { outline:2px solid var(--gold);outline-offset:2px; }
+    .prompt-text { color:#e8f1f5;font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.65;
+      padding:18px;white-space:pre-wrap;margin:0; }
+    .sr-only { position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0); }
+    .quiz-q { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px; }
+    .quiz-q .qq { font-weight:700;margin:0 0 12px;font-size:18px; }
+    .qopts { display:grid;gap:8px; }
+    .qopt { text-align:left;background:var(--paper);border:1px solid var(--line);border-radius:10px;
+      padding:12px 14px;cursor:pointer;font-size:15.5px;color:var(--ink); }
+    .qopt:hover:not(:disabled) { border-color:var(--navy); }
+    .qopt:disabled { cursor:default;opacity:.85; }
+    .qopt.correct { background:var(--green-soft);border-color:var(--green); }
+    .qopt.wrong { background:var(--red-soft);border-color:var(--red); }
+    .qexp { margin:12px 0 0;font-size:15px;color:var(--muted); }
+    .qexp strong.ok { color:var(--green); } .qexp strong.no { color:var(--red); }
+    #quiz-score { display:none;margin-top:8px;background:var(--navy);color:#fff;border-radius:14px;
+      padding:20px 24px;font-size:19px; }
+    #quiz-score strong { color:var(--gold); }
+    .fgrid { display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px; }
+    .fcard { perspective:900px;cursor:pointer;min-height:170px; }
+    .fcard-inner { position:relative;width:100%;height:100%;min-height:170px;transform-style:preserve-3d;transition:transform .45s; }
+    .fcard.flipped .fcard-inner { transform:rotateY(180deg); }
+    .fface { position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+      border-radius:14px;padding:18px;display:flex;align-items:center;justify-content:center;text-align:center;
+      border:1px solid var(--line);background:var(--white);box-shadow:var(--shadow);font-size:15.5px; }
+    .fface.front { font-weight:700;color:var(--navy); }
+    .fface.back { transform:rotateY(180deg);background:var(--teal-soft);color:var(--ink);font-size:14.5px; }
+    .fcard:focus-visible { outline:2px solid var(--teal);outline-offset:3px;border-radius:14px; }
+    .triggers { display:grid;gap:10px; }
+    .trigger { background:var(--gold-soft);border-radius:12px;padding:14px 18px;font-size:16px; }
+    .trigger strong { color:var(--navy); }
+    .back-link { display:inline-block;margin:8px 0 60px;font-weight:600;color:var(--teal);text-decoration:none;font-size:17px; }
+    .back-link:hover { text-decoration:underline; }
+    .fig { background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+      padding:12px;box-shadow:var(--shadow);overflow-x:auto; }
+    .fig svg { display:block;width:100%;height:auto; }
+    .flow-anim { stroke-dasharray: 8 6; animation: dashmove 1.2s linear infinite; }
+    @keyframes dashmove { to { stroke-dashoffset: -14; } }
+    @media (prefers-reduced-motion: reduce) { .fcard-inner{transition:none;} .flow-anim{animation:none;} }
+  </style>
+</head>
+<body><nav class="portal-nav">
+    <div class="shell portal-nav-inner">
+      <a class="portal-brand" href="../index.html">AI Engineering <span>&middot; Learning Portal</span></a>
+      <div class="portal-links">
+        <a href="../index.html#daily-topics">Daily topics</a>
+        <a href="../index.html#loop">Loop</a>
+        <a href="../index.html#graph">Graph</a>
+        <a href="../index.html#harness">Harness</a>
+      </div>
+    </div>
+  </nav>
+  <div class="shell">
+    <header class="hero">
+      <div class="chapter-mark">Daily topic &middot; Software engineering</div>
+      <h1>Design patterns worth knowing (and ones to skip)</h1>
+      <p class="lede">You do not need all 23 Gang of Four patterns. You need a handful, learned deeply, and a habit: start from the pain, name what keeps changing, and pick the smallest structure that makes that change easy. A pattern is a named, reusable solution to a recurring design problem &mdash; not a library, not a badge of seniority, and never the starting point.</p>
+      <p class="date-line">2026-10-26 &middot; Topic 043</p>
+    </header>
+
+    <section class="block">
+      <h2><span class="num">01</span> The skill card</h2>
+      <p class="sub">Every topic on this portal is designed like a Codex skill: a name, a trigger, and concrete steps.</p>
+      <div class="skill-card"><pre style="margin:0">---
+<span class="k">name:</span> design-patterns-worth-knowing
+<span class="k">description:</span> Reach for this when a design keeps changing in the same place:
+  name what varies, then use the smallest fitting pattern — Strategy for
+  swappable algorithms, Factory for creation decisions, Observer for
+  decoupled notification, Adapter/Facade for foreign or complex APIs,
+  Decorator for layered behavior, Builder for complex construction —
+  and skip Singleton-as-global, Abstract Factory, Visitor, and Mediator
+  until a real pain demands them.
+---</pre></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">02</span> The one-idea version</h2>
+      <p class="idea">A pattern is <strong>a name for a recurring shape of change</strong>: something varies, something stays stable, and the pattern draws the boundary between them. So the question is never &ldquo;which pattern can I use here?&rdquo; It is &ldquo;what keeps changing, and what would make that change easy?&rdquo; Answer that first, and the pattern &mdash; or the plain function that beats it &mdash; picks itself.</p>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">03</span> Start from the pain, not the pattern</h2>
+      <p class="sub">The same decision, every time. If the plain version is not hurting yet, do not upgrade it.</p>
+      <div class="fig">
+        <svg viewBox="0 0 960 420" role="img" aria-label="Diagram: start from the pain, identify what varies, choose creation, composition or communication, pick the smallest pattern, or keep the plain function.">
+          <g font-family="Source Sans 3, sans-serif" font-size="14">
+            <text x="20" y="26" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="600" fill="#163247">THE PATTERN DECISION — PAIN FIRST, NAME SECOND</text>
+            <g font-family="IBM Plex Mono, monospace" font-size="12" font-weight="600">
+              <rect x="20" y="60" width="200" height="90" rx="12" fill="#e3eef4" stroke="#163247" stroke-width="2"/><text x="120" y="100" text-anchor="middle" fill="#163247">1 · THE PAIN</text><text x="120" y="122" text-anchor="middle" font-size="11" font-weight="400" fill="#53636f">An if-chain growing,</text><text x="120" y="138" text-anchor="middle" font-size="11" font-weight="400" fill="#53636f">a second API, a new rule</text>
+              <rect x="255" y="60" width="200" height="90" rx="12" fill="#dff2ee" stroke="#0b8174" stroke-width="2"/><text x="355" y="100" text-anchor="middle" fill="#163247">2 · WHAT VARIES?</text><text x="355" y="122" text-anchor="middle" font-size="11" font-weight="400" fill="#53636f">Creation? Composition?</text><text x="355" y="138" text-anchor="middle" font-size="11" font-weight="400" fill="#53636f">Communication?</text>
+              <rect x="490" y="60" width="200" height="90" rx="12" fill="#f7edc8" stroke="#d8a524" stroke-width="2"/><text x="590" y="100" text-anchor="middle" fill="#163247">3 · SMALLEST FIT</text><text x="590" y="122" text-anchor="middle" font-size="11" font-weight="400" fill="#53636f">Strategy / Factory /</text><text x="590" y="138" text-anchor="middle" font-size="11" font-weight="400" fill="#53636f">Observer / Adapter…</text>
+              <rect x="725" y="60" width="215" height="90" rx="12" fill="#163247"/><text x="832" y="100" text-anchor="middle" fill="#ffffff">4 · OR PLAIN CODE</text><text x="832" y="122" text-anchor="middle" font-size="11" font-weight="400" fill="#dbe7ee">A function, a parameter,</text><text x="832" y="138" text-anchor="middle" font-size="11" font-weight="400" fill="#dbe7ee">a dict — if that suffices</text>
+            </g>
+            <g stroke="#0b8174" stroke-width="3" fill="none" class="flow-anim">
+              <path d="M220,105 L255,105"/><path d="M455,105 L490,105"/><path d="M690,105 L725,105"/>
+            </g>
+            <rect x="20" y="180" width="450" height="110" rx="12" fill="#dff2ee" stroke="#0b8174"/>
+            <text x="40" y="208" font-family="IBM Plex Mono, monospace" font-size="12" font-weight="600" fill="#163247">WORTH KNOWING COLD</text>
+            <text x="40" y="234" font-size="15" fill="#53636f">Strategy · Factory · Observer · Adapter · Decorator</text>
+            <text x="40" y="260" font-size="15" fill="#53636f">Builder · Facade · Dependency Injection (the Singleton fix)</text>
+            <rect x="490" y="180" width="450" height="110" rx="12" fill="#f8e4d8" stroke="#d66332"/>
+            <text x="510" y="208" font-family="IBM Plex Mono, monospace" font-size="12" font-weight="600" fill="#163247">SKIP UNTIL PAIN DEMANDS IT</text>
+            <text x="510" y="234" font-size="15" fill="#53636f">Singleton as global state · Abstract Factory · Visitor</text>
+            <text x="510" y="260" font-size="15" fill="#53636f">Mediator · Memento · Flyweight (until memory is measured)</text>
+            <text x="20" y="322" font-size="15" fill="#53636f"><tspan font-weight="700" fill="#163247">Patterns are a shared vocabulary, not a shopping list:</tspan> saying &ldquo;use a Strategy here&rdquo; should communicate a whole solution in two words.</text>
+            <text x="20" y="348" font-size="15" fill="#53636f"><tspan font-weight="700" fill="#b3402e">Modern languages retire patterns:</tspan> first-class functions replace simple Strategies; iterators replace Iterator; DI containers replace hand-rolled Singletons.</text>
+            <text x="20" y="388" font-size="15" fill="#53636f">Learn the intent and trade-offs of each pattern, not just its name — a name without a cost model is how over-engineering starts.</text>
+          </g>
+        </svg>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">04</span> How it works</h2>
+      <p class="sub">Seven mechanics: six patterns worth knowing, and the discipline for skipping the rest.</p>
+      <div class="mechanics">
+        <div class="mech"><div class="mnum">1</div><div>
+          <h3>Name what varies before you name a pattern</h3>
+          <p>Patterns fall into three families: <em>creational</em> (how objects are made), <em>structural</em> (how objects are composed), and <em>behavioral</em> (how objects communicate). Classify the pain first — creation, composition, or communication — and you have already narrowed 23 patterns to a handful. If nothing is varying yet, you have no pattern problem; you have a working function.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">2</div><div>
+          <h3>Strategy: swap the algorithm, not the code</h3>
+          <p>When a behavior has several variants — shipping rates, discount rules, pricing tiers — pull each variant behind one shared interface and inject the one you need. Adding a variant then means adding a class, not editing an if-chain in five places. In Python, a plain function often <em>is</em> the strategy; reach for a class only when the variant carries state or configuration.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">3</div><div>
+          <h3>Factory: hide the creation decision in one place</h3>
+          <p>When callers should not know which concrete class they get — a payment provider by region, a parser by file type — put that decision in one factory function behind a shared interface. Callers depend on the interface, so a new variant lands in one place. A factory with no real decision to hide is just indirection: if there is only ever one class, construct it directly.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">4</div><div>
+          <h3>Observer: notify without coupling</h3>
+          <p>When many things must react to one event — an order placed, a config changed — let the subject keep a list of listeners and call <code>notify</code> on each. The subject never learns who is listening, so inventory, email, and analytics can each subscribe independently. This is the same idea behind DOM events, message queues, and pub-sub; always provide an unsubscribe, or listeners leak.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">5</div><div>
+          <h3>Adapter and Facade: tame what you did not write</h3>
+          <p><em>Adapter</em> translates one interface into the one your code expects: every shipping vendor&rsquo;s API becomes one <code>ship()</code> method. <em>Facade</em> simplifies a whole subsystem behind one friendly entry point: one <code>checkout()</code> call instead of five subsystem calls in the right order. Both keep foreign complexity at the border instead of letting it leak through your codebase.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">6</div><div>
+          <h3>Decorator and Builder: compose and construct cleanly</h3>
+          <p><em>Decorator</em> layers optional behavior by wrapping an object — caching, logging, auth around a service — without a subclass for every combination, and without editing the core. Each layer must call through to the wrapped object, or behavior silently vanishes. <em>Builder</em> replaces a 10-parameter constructor with a readable step-by-step build, so a complex object can be assembled in different configurations without a telescoping constructor.</p>
+        </div></div>
+        <div class="mech"><div class="mnum">7</div><div>
+          <h3>Skip list: know the cost before you pay it</h3>
+          <p><em>Singleton</em> as a global is the classic trap: hidden dependencies, untestable code, state that survives tests. Prefer dependency injection — pass the instance in, and let the container manage one shared instance if you truly need one. <em>Abstract Factory</em> pays off only for families of related products. <em>Visitor, Mediator, and Memento</em> are powerful and rarely worth their indirection; <em>Flyweight</em> earns its complexity only when memory pressure is measured, not guessed.</p>
+        </div></div>
+      </div>
+    </section>
+    <section class="block">
+      <h2><span class="num">05</span> Code sketch</h2>
+      <p class="sub">Strategy + Factory in under 30 lines: a new shipping rule is a new class plus one factory entry — never an edit to checkout.</p>
+      <div class="card" style="padding:0;overflow:hidden"><pre class="code" style="border-radius:0"><span class="c"># Strategy: one interface, one class per algorithm</span>
+<span class="k">class</span> <span class="s">Standard</span>:
+    <span class="k">def</span> <span class="s">cost</span>(self, weight): <span class="k">return</span> 5 + 0.5 * weight
+<span class="k">class</span> <span class="s">Express</span>:
+    <span class="k">def</span> <span class="s">cost</span>(self, weight): <span class="k">return</span> 15 + 1.5 * weight
+
+<span class="c"># Factory: the creation decision lives in exactly one place</span>
+<span class="k">def</span> <span class="s">shipping_for</span>(name):
+    <span class="k">return</span> {<span class="s">"standard"</span>: Standard(), <span class="s">"express"</span>: Express()}[name]
+
+<span class="c"># Checkout depends on the interface, never on a concrete class</span>
+<span class="k">def</span> <span class="s">checkout</span>(weight, method):
+    <span class="k">return</span> shipping_for(method).cost(weight)
+
+<span class="k">assert</span> checkout(10, <span class="s">"standard"</span>) == 10.0
+<span class="k">assert</span> checkout(10, <span class="s">"express"</span>) == 30.0
+<span class="k">print</span>(<span class="s">"standard:"</span>, checkout(10, <span class="s">"standard"</span>), <span class="s">"express:"</span>, checkout(10, <span class="s">"express"</span>))</pre></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">06</span> Failure modes</h2>
+      <p class="sub">Five ways patterns go wrong, each with the fix.</p>
+      <div class="mechanics">
+        <div class="mech fail"><div class="mnum">!</div><div>
+          <h3>Pattern-first design<span class="fix">Fix: write the plain version first; introduce the pattern only when the second variant, second vendor, or second rule actually arrives.</span></h3>
+          <p>Starting from &ldquo;let&rsquo;s use Abstract Factory here&rdquo; inverts the decision: the code now serves the pattern instead of the problem. YAGNI is the antidote — a pattern adopted before its pain is speculation with a class diagram.</p>
+        </div></div>
+        <div class="mech fail"><div class="mnum">!</div><div>
+          <h3>Singleton as a global variable in a suit<span class="fix">Fix: inject the dependency through the constructor; let a DI container own the single instance, so tests can substitute a fake.</span></h3>
+          <p>Global access hides dependencies, couples every caller to one implementation, and makes tests order-dependent because state survives between tests. A singleton is defensible only for a truly unique, stateless, process-local resource — and even then, injection is usually cleaner.</p>
+        </div></div>
+        <div class="mech fail"><div class="mnum">!</div><div>
+          <h3>Observer leaks and surprise ordering<span class="fix">Fix: always provide unsubscribe, and never let listeners depend on notification order — order is an implementation detail, not a contract.</span></h3>
+          <p>Forgotten subscriptions keep objects alive and fire handlers long after the listener is gone; listeners that assume they run first or last break silently when a new subscriber registers. Treat the listener list as a set, not a sequence.</p>
+        </div></div>
+        <div class="mech fail"><div class="mnum">!</div><div>
+          <h3>Decorator stacks that swallow behavior<span class="fix">Fix: every decorator must call through to the wrapped object; keep stacks shallow and name each layer by what it adds.</span></h3>
+          <p>A decorator that forgets to delegate drops behavior silently — the worst kind of bug, because nothing errors. Deep stacks (logging around caching around auth around retry) also become unreadable; if you cannot name the stack in one sentence, flatten it.</p>
+        </div></div>
+        <div class="mech fail"><div class="mnum">!</div><div>
+          <h3>Strategy classes for what a function could do<span class="fix">Fix: in Python, start with functions as strategies; promote to a class only when the variant carries state or needs configuration.</span></h3>
+          <p>Not every pattern needs its textbook shape. First-class functions, closures, and dicts-of-functions are Strategy and Factory in miniature — less code, same boundary. A class per one-line algorithm is ceremony, not design.</p>
+        </div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">07</span> Go deeper</h2>
+      <p class="sub">Curated and real &mdash; every link verified. Start with why patterns are worth learning at all, then the five-pattern tour, then the 15-pattern overview.</p>
+      <div class="ref-list">
+        <a class="ref" href="https://refactoring.guru/design-patterns/why-learn-patterns" target="_blank" rel="noopener">
+          <span class="badge doc">docs</span>
+          <div><h3>Why should I learn patterns? (Refactoring.Guru)</h3><p>The honest pitch: patterns are tried-and-tested solutions, and just as importantly a shared language — saying &ldquo;use a Singleton&rdquo; communicates a whole solution in one word. The best starting point before any catalog.</p></div>
+        </a>
+        <a class="ref" href="https://dev.to/thepavansai/design-patterns-what-they-are-and-why-they-matter-a7p" target="_blank" rel="noopener">
+          <span class="badge doc">docs</span>
+          <div><h3>Design patterns: what they are and why they matter (DEV)</h3><p>A beginner-friendly tour of the three families — creational, structural, behavioral — with the key distinction that a pattern is a design-level blueprint to adapt, not code to copy-paste.</p></div>
+        </a>
+        <a class="ref" href="https://www.youtube.com/watch?v=ASA_wfzuidg" target="_blank" rel="noopener">
+          <span class="badge vid">video</span>
+          <div><h3>Design Patterns Explained: Singleton, Factory, Observer, Strategy, Decorator</h3><p>The five patterns at the heart of this lesson, built one at a time with animations — plus one common mistake per pattern, matching this page&rsquo;s failure modes almost exactly.</p></div>
+        </a>
+        <a class="ref" href="https://www.youtube.com/watch?v=rpt8PpIPhJQ" target="_blank" rel="noopener">
+          <span class="badge vid">video</span>
+          <div><h3>Every Important Design Pattern Explained in 18 Minutes</h3><p>Fifteen patterns in eighteen minutes — the wider map after the core five: Builder, Adapter, Facade, Proxy, Composite, State, Command, Template Method, Iterator, and Chain of Responsibility.</p></div>
+        </a>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">08</span> Sample prompts</h2>
+      <p class="sub">Copy-paste these into your AI assistant when a design decision is on the table.</p>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>NAME THE PAIN FIRST</strong><button class="copy-btn" data-copy="p1">Copy</button></div>
+        <p class="prompt-text" id="p1">Here is my code: [paste the code].
+Do not suggest a design pattern yet. First tell me: what keeps changing (or is about to change) in this code, and is it creation, composition, or communication? Then name the smallest structure that makes that change easy — a plain function, a parameter, or a pattern — and why. If a pattern, name its cost too.</p>
+      </div>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>REFACTOR TO STRATEGY</strong><button class="copy-btn" data-copy="p2">Copy</button></div>
+        <p class="prompt-text" id="p2">This if-chain keeps growing every time we add a variant: [paste the code].
+Refactor it to the Strategy pattern: one shared interface, one class (or function) per variant, and a factory that picks the variant. Show me exactly where a future variant would be added, and confirm no existing behavior changes.</p>
+      </div>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>AUDIT: PATTERN OR OVER-ENGINEERING?</strong><button class="copy-btn" data-copy="p3">Copy</button></div>
+        <p class="prompt-text" id="p3">Review this design for over-engineering: [paste the code or design].
+For each pattern used, say: what pain does it actually solve today, what would break if I removed it, and what is the simpler alternative? Flag Singleton-as-global, factories with a single product, and abstractions with only one implementation. Give a verdict: keep, simplify, or remove — per pattern.</p>
+      </div>
+    </section>
+    <section class="block">
+      <h2><span class="num">09</span> Quiz</h2>
+      <p class="sub">Click an answer &mdash; you&rsquo;ll see immediately whether you&rsquo;re right and why.</p>
+      <div id="quiz">
+        <div class="quiz-q" data-answer="1">
+          <p class="qq">1. What is a design pattern, precisely?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">A library you install to get a feature, like a framework.</button>
+            <button class="qopt" data-i="1">A named, reusable description of a solution to a recurring design problem — a blueprint to adapt, not code to copy.</button>
+            <button class="qopt" data-i="2">An algorithm: a fixed sequence of steps that always produces the same output.</button>
+            <button class="qopt" data-i="3">A coding style rule, like how to name variables.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="2">
+          <p class="qq">2. A discount rule keeps growing: a new if-branch every promotion. What is the best first move?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">Add an Abstract Factory for all possible future discount families.</button>
+            <button class="qopt" data-i="1">Make the whole discount engine a Singleton so every caller shares it.</button>
+            <button class="qopt" data-i="2">Strategy: put each discount rule behind one shared interface, so a new promotion is a new class, not an edit to the if-chain.</button>
+            <button class="qopt" data-i="3">Rewrite the module from scratch in a cleaner style.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="0">
+          <p class="qq">3. Your code must work with three shipping vendors, each with a different API shape. Which pattern fits best?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">Adapter: translate each vendor API into the one interface your code expects, keeping vendor quirks at the border.</button>
+            <button class="qopt" data-i="1">Flyweight: share vendor objects to save memory.</button>
+            <button class="qopt" data-i="2">Memento: save and restore vendor state.</button>
+            <button class="qopt" data-i="3">Visitor: walk the vendor object structure with an external operation.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="3">
+          <p class="qq">4. Why is Singleton-as-global usually the wrong call, even when &ldquo;there is only one&rdquo; of something?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">Because singletons are slow.</button>
+            <button class="qopt" data-i="1">Because singletons cannot hold state at all.</button>
+            <button class="qopt" data-i="2">Because only one instance can ever exist in any program.</button>
+            <button class="qopt" data-i="3">Because global access hides dependencies, couples callers to one implementation, and makes tests order-dependent through surviving state.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="1">
+          <p class="qq">5. Which starting question best prevents over-engineering with patterns?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">Which pattern looks most impressive in this design review?</button>
+            <button class="qopt" data-i="1">What keeps changing, and what would make that change easy — and would a plain function already do it?</button>
+            <button class="qopt" data-i="2">How many of the 23 Gang of Four patterns can I fit into this module?</button>
+            <button class="qopt" data-i="3">Which pattern did the last project use for this?</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+      </div>
+      <div id="quiz-score" role="status"></div>
+      <p class="sr-only" id="live-status" aria-live="polite"></p>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">10</span> Flashcards</h2>
+      <p class="sub">Click or press Enter/Space to flip.</p>
+      <div class="fgrid">
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Strategy</div>
+          <div class="fface back">Interchangeable algorithms behind one interface. Swap the object, not the code — a new variant is a new class, not an if-chain edit.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Factory</div>
+          <div class="fface back">One place decides which concrete class to create, behind a shared interface. Callers never learn the concrete type. No real decision? No factory.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Observer</div>
+          <div class="fface back">A subject notifies a list of listeners without knowing who they are. Always provide unsubscribe, and never depend on notification order.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Adapter</div>
+          <div class="fface back">Translates one interface into the one your code expects. Keeps a foreign API&rsquo;s quirks at the border instead of leaking them through your code.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Decorator</div>
+          <div class="fface back">Layers behavior by wrapping an object: caching, logging, auth — without subclass explosion. Every layer must call through to the wrapped object.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Builder</div>
+          <div class="fface back">Step-by-step construction of a complex object, replacing a telescoping constructor. Different configurations, one readable build.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Facade</div>
+          <div class="fface back">One simple entry point over a whole subsystem. One checkout() call instead of five subsystem calls in the right order.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Singleton trap</div>
+          <div class="fface back">One instance + global access = hidden dependencies and order-dependent tests. Prefer dependency injection; let a container own the single instance.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Three families</div>
+          <div class="fface back">Creational: how objects are made. Structural: how objects are composed. Behavioral: how objects communicate. Classify the pain first.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Pattern-first smell</div>
+          <div class="fface back">Choosing the pattern before the pain is over-engineering. Plain code first; the pattern earns its place when the second variant arrives.</div>
+        </div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">11</span> Reach for this when&hellip;</h2>
+      <div class="triggers">
+        <div class="trigger"><strong>An if-chain grows with every new variant</strong> &mdash; pull each variant behind one interface (Strategy) and let a factory pick it. New variants become additions, not edits.</div>
+        <div class="trigger"><strong>A foreign API or a messy subsystem leaks into your code</strong> &mdash; put an Adapter or Facade at the border: one interface your code owns, quirks contained on the other side.</div>
+        <div class="trigger"><strong>Someone proposes a pattern before naming the pain</strong> &mdash; stop and ask what keeps changing. If a function, a parameter, or a dict already makes that change easy, that is the design.</div>
+      </div>
+    </section>
+
+    <a class="back-link" href="../index.html#daily-topics">&larr; Back to daily topics</a>
+  </div>
+  <script>
+    const status = document.getElementById('live-status');
+    document.querySelectorAll('.copy-btn').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const target = document.getElementById(button.dataset.copy);
+        const text = target.innerText;
+        try {
+          await navigator.clipboard.writeText(text);
+          const original = button.textContent;
+          button.textContent = 'Copied';
+          status.textContent = 'Prompt copied to clipboard.';
+          setTimeout(() => button.textContent = original, 1600);
+        } catch {
+          const range = document.createRange();
+          range.selectNodeContents(target);
+          const selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+          status.textContent = 'Prompt selected. Copy it with your device copy command.';
+        }
+      });
+    });
+    const explanations = [
+      ["A pattern is not installable code — it is a reusable design description you adapt to your situation.",
+       "Correct. A pattern names a recurring solution at design level; you adapt the blueprint, you do not copy-paste a library.",
+       "An algorithm is concrete steps to a result. A pattern is higher-level: it tells you what to do, not exactly how.",
+       "Naming conventions are style, not design patterns — patterns solve recurring structural problems."],
+      ["Abstract Factory is for families of related products — far more machinery than one growing rule needs.",
+       "A Singleton shares one instance; it does nothing about the growing if-chain, and adds global-state costs.",
+       "Correct. Strategy turns each rule into an interchangeable implementation behind one interface — additions, not edits.",
+       "A rewrite discards working code to solve a problem Strategy solves with one new class."],
+      ["Correct. Adapter exists exactly for this: one interface your code expects, each vendor translated into it at the border.",
+       "Flyweight saves memory by sharing fine-grained objects — it does not translate interfaces.",
+       "Memento captures and restores state — unrelated to translating between APIs.",
+       "Visitor adds operations to an object structure without changing it — not an interface translation."],
+      ["Singletons are not inherently slow; the cost is coupling and testability, not speed.",
+       "Singletons can hold state — that is precisely the problem: the state survives and leaks between uses.",
+       "One instance per process is the point of Singleton; the problem is global access to it, not the count itself.",
+       "Correct. Hidden dependencies, tight coupling to one implementation, and state that survives between tests are why Singleton-as-global is the classic trap."],
+      ["Impressiveness is not a design criterion — pain solved per line of indirection is.",
+       "Correct. Name what varies, name what makes that change easy, and check the plain solution first. That question is the whole discipline.",
+       "Fitting patterns into a module is pattern-first design — the failure mode this lesson warns against.",
+       "The last project&rsquo;s pattern solved the last project&rsquo;s pain. Start from this code&rsquo;s pain, not precedent."]
+    ];
+    const questions = [...document.querySelectorAll('.quiz-q')];
+    let score = 0, answered = 0;
+    questions.forEach((q, qi) => {
+      const correct = parseInt(q.dataset.answer, 10);
+      const exp = q.querySelector('.qexp');
+      q.querySelectorAll('.qopt').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          if (q.dataset.done) return;
+          q.dataset.done = "1";
+          const chosen = parseInt(btn.dataset.i, 10);
+          const ok = chosen === correct;
+          q.querySelectorAll('.qopt').forEach((b) => {
+            b.disabled = true;
+            if (parseInt(b.dataset.i, 10) === correct) b.classList.add('correct');
+          });
+          if (!ok) btn.classList.add('wrong');
+          else score++;
+          answered++;
+          exp.hidden = false;
+          exp.innerHTML = ok
+            ? "<strong class=\"ok\">Correct.</strong> " + explanations[qi][chosen]
+            : "<strong class=\"no\">Not quite.</strong> " + explanations[qi][chosen];
+          if (answered === questions.length) {
+            const box = document.getElementById('quiz-score');
+            box.style.display = "block";
+            box.innerHTML = "You scored <strong>" + score + " / " + questions.length + "</strong>." +
+              (score === questions.length ? " Clean sweep — next time a pattern is proposed, ask what pain it solves before approving it." :
+               score >= 3 ? " Solid — re-read the failure mode you missed; that is where the real-world points live." :
+               " Worth a re-read of sections 04 and 06 before your next design review.");
+          }
+        });
+      });
+    });
+    document.querySelectorAll('.fcard').forEach((card) => {
+      const flip = () => card.classList.toggle('flipped');
+      card.addEventListener('click', flip);
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); }
+      });
+    });
+  </script>
+</body>
+</html>
