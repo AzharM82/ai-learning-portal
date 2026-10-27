@@ -306,5 +306,12 @@
     "date": "2026-10-26",
     "summary": "You do not need all 23 Gang of Four patterns: learn Strategy, Factory, Observer, Adapter, Decorator, and Builder deeply, start from the pain that keeps changing, and skip Singleton-as-global and the rest until a real pain demands them.",
     "skill": "design-patterns-worth-knowing"
+  },
+  {
+    "slug": "2026-10-27-concurrency-basics-threads-async-races",
+    "title": "Concurrency basics: threads, async, races",
+    "date": "2026-10-27",
+    "summary": "Concurrency is dealing with many things at once; parallelism is doing many things at once. Threads share memory, async shares a thread, and races happen when two writers interleave \u2014 learn which tool fits waiting vs computing.",
+    "skill": "concurrency-basics"
   }
 ]
