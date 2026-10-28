@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Security basics: OWASP top 10 for builders &middot; AI Learning Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+    :root {
+      --ink: #14212b; --muted: #53636f; --paper: #f6f8f7; --white: #ffffff;
+      --line: #cbd5d8; --navy: #163247; --navy-2: #21465e; --teal: #0b8174;
+      --teal-soft: #dff2ee; --orange: #d66332; --orange-soft: #f8e4d8;
+      --gold: #d8a524; --gold-soft: #f7edc8; --blue-soft: #e3eef4;
+      --red: #b3402e; --red-soft: #f9e3de; --green: #1e7a3c; --green-soft: #e2f2e6;
+      --shadow: 0 18px 45px rgba(20, 33, 43, .09); --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; color: var(--ink);
+      background: linear-gradient(rgba(20,33,43,.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(20,33,43,.035) 1px, transparent 1px), var(--paper);
+      background-size: 28px 28px;
+      font-family: "Source Sans 3", sans-serif; font-size: 17px; line-height: 1.58;
+    }
+    .shell { width: min(960px, calc(100% - 40px)); margin: 0 auto; }
+    .portal-nav{position:sticky;top:0;z-index:50;background:rgba(22,50,71,.97);border-bottom:1px solid rgba(255,255,255,.12)}
+    .portal-nav-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;flex-wrap:wrap}
+    .portal-brand{color:#fff;text-decoration:none;font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:15px}
+    .portal-brand span{color:var(--gold);font-weight:400}
+    .portal-links{display:flex;gap:18px;flex-wrap:wrap}
+    .portal-links a{color:#dbe7ee;text-decoration:none;font-size:14.5px}
+    .portal-links a:hover{color:#fff;text-decoration:underline}
+    .hero { padding: 56px 0 36px; }
+    .chapter-mark { display:inline-flex;align-items:center;gap:10px;color:var(--navy);
+      font:600 12px/1.2 "IBM Plex Mono",monospace;letter-spacing:.09em;text-transform:uppercase;margin-bottom:18px; }
+    .chapter-mark::before { content:"";width:42px;height:3px;background:var(--orange); }
+    h1 { font-size: clamp(36px, 5vw, 58px); line-height: 1.02; letter-spacing:-.03em; margin:0 0 14px; }
+    .lede { color: var(--muted); font-size: clamp(18px,2vw,22px); max-width: 64ch; margin:0 0 8px; }
+    .date-line { font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--muted); }
+    section.block { margin: 44px 0; }
+    h2 { font-size: 26px; letter-spacing:-.02em; margin:0 0 6px; display:flex;align-items:center;gap:12px; }
+    h2 .num { font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:600;color:var(--white);
+      background:var(--navy);border-radius:999px;min-width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center; }
+    .sub { color:var(--muted); margin:0 0 18px; max-width: 68ch; }
+    .card { background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+      padding:24px;box-shadow:var(--shadow); }
+    .skill-card { background:var(--navy);color:#eaf2f7;border-radius:var(--radius);padding:22px 24px;
+      font-family:"IBM Plex Mono",monospace;font-size:14.5px;overflow-x:auto;box-shadow:var(--shadow); }
+    .skill-card .k { color:var(--gold); }
+    .idea { font-size:21px;line-height:1.5;border-left:4px solid var(--teal);padding:6px 0 6px 20px;max-width:62ch; }
+    .idea strong { color:var(--navy); }
+    .mechanics { display:grid;gap:14px; }
+    .mech { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:18px 20px;
+      display:grid;grid-template-columns:44px 1fr;gap:14px;align-items:start; }
+    .mech .mnum { font-family:"IBM Plex Mono",monospace;font-weight:600;color:var(--teal);
+      background:var(--teal-soft);border-radius:10px;width:44px;height:44px;display:flex;align-items:center;justify-content:center; }
+    .mech h3 { margin:0 0 6px;font-size:18px; }
+    .mech p { margin:0;color:var(--muted);font-size:15.5px; }
+    .mech code, .inline-code { font-family:"IBM Plex Mono",monospace;font-size:.88em;background:var(--blue-soft);
+      padding:2px 7px;border-radius:6px;color:var(--navy); }
+    pre.code { background:#0f2233;color:#e8f1f5;border-radius:14px;padding:20px 22px;overflow-x:auto;
+      font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.6;margin:0; }
+    pre.code .c { color:#8ba3b0; } pre.code .s { color:#ffd479; } pre.code .k { color:#7fd6c2; }
+    .fail { border-left:4px solid var(--orange); }
+    .fail h3 .fix { display:block;margin-top:8px;font-size:15px;font-weight:500;color:var(--green); }
+    .ref-list { display:grid;gap:12px; }
+    .ref { display:flex;gap:14px;align-items:flex-start;background:var(--white);border:1px solid var(--line);
+      border-radius:14px;padding:16px 18px;text-decoration:none;color:inherit; }
+    .ref:hover { border-color:var(--teal); }
+    .ref .badge { flex:none;font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;letter-spacing:.06em;
+      padding:5px 10px;border-radius:999px;text-transform:uppercase; }
+    .badge.doc { background:var(--blue-soft);color:var(--navy); }
+    .badge.vid { background:var(--orange-soft);color:var(--orange); }
+    .ref h3 { margin:0 0 4px;font-size:17px; }
+    .ref p { margin:0;color:var(--muted);font-size:14.5px; }
+    .prompt-block { background:#0f2233;border-radius:var(--radius);overflow:hidden;margin-bottom:18px;box-shadow:var(--shadow); }
+    .prompt-top { display:flex;justify-content:space-between;align-items:center;gap:12px;
+      padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.12); }
+    .prompt-top strong { color:#fff;font-size:13px;letter-spacing:.06em;font-family:"IBM Plex Mono",monospace; }
+    .copy-btn { border:1px solid #6c8796;background:transparent;color:#fff;border-radius:6px;padding:7px 11px;
+      cursor:pointer;font-weight:700;font-size:14px; }
+    .copy-btn:hover { background:rgba(255,255,255,.1); }
+    .copy-btn:focus-visible { outline:2px solid var(--gold);outline-offset:2px; }
+    .prompt-text { color:#e8f1f5;font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.65;
+      padding:18px;white-space:pre-wrap;margin:0; }
+    .sr-only { position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0); }
+    .quiz-q { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px; }
+    .quiz-q .qq { font-weight:700;margin:0 0 12px;font-size:18px; }
+    .qopts { display:grid;gap:8px; }
+    .qopt { text-align:left;background:var(--paper);border:1px solid var(--line);border-radius:10px;
+      padding:12px 14px;cursor:pointer;font-size:15.5px;color:var(--ink); }
+    .qopt:hover:not(:disabled) { border-color:var(--navy); }
+    .qopt:disabled { cursor:default;opacity:.85; }
+    .qopt.correct { background:var(--green-soft);border-color:var(--green); }
+    .qopt.wrong { background:var(--red-soft);border-color:var(--red); }
+    .qexp { margin:12px 0 0;font-size:15px;color:var(--muted); }
+    .qexp strong.ok { color:var(--green); } .qexp strong.no { color:var(--red); }
+    #quiz-score { display:none;margin-top:8px;background:var(--navy);color:#fff;border-radius:14px;
+      padding:20px 24px;font-size:19px; }
+    #quiz-score strong { color:var(--gold); }
+    .fgrid { display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px; }
+    .fcard { perspective:900px;cursor:pointer;min-height:170px; }
+    .fcard-inner { position:relative;width:100%;height:100%;min-height:170px;transform-style:preserve-3d;transition:transform .45s; }
+    .fcard.flipped .fcard-inner { transform:rotateY(180deg); }
+    .fface { position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+      border-radius:14px;padding:18px;display:flex;align-items:center;justify-content:center;text-align:center;
+      border:1px solid var(--line);background:var(--white);box-shadow:var(--shadow);font-size:15.5px; }
+    .fface.front { font-weight:700;color:var(--navy); }
+    .fface.back { transform:rotateY(180deg);background:var(--teal-soft);color:var(--ink);font-size:14.5px; }
+    .fcard:focus-visible { outline:2px solid var(--teal);outline-offset:3px;border-radius:14px; }
+    .triggers { display:grid;gap:10px; }
+    .trigger { background:var(--gold-soft);border-radius:12px;padding:14px 18px;font-size:16px; }
+    .trigger strong { color:var(--navy); }
+    .back-link { display:inline-block;margin:8px 0 60px;font-weight:600;color:var(--teal);text-decoration:none;font-size:17px; }
+    .back-link:hover { text-decoration:underline; }
+    .fig { background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+      padding:12px;box-shadow:var(--shadow);overflow-x:auto; }
+    .fig svg { display:block;width:100%;height:auto; }
+    .flow-anim { stroke-dasharray: 8 6; animation: dashmove 1.2s linear infinite; }
+    @keyframes dashmove { to { stroke-dashoffset: -14; } }
+    @media (prefers-reduced-motion: reduce) { .fcard-inner{transition:none;} .flow-anim{animation:none;} }
+  </style>
+</head>
+<body><nav class="portal-nav">
+    <div class="shell portal-nav-inner">
+      <a class="portal-brand" href="../index.html">AI Engineering <span>&middot; Learning Portal</span></a>
+      <div class="portal-links">
+        <a href="../index.html#daily-topics">Daily topics</a>
+        <a href="../index.html#loop">Loop</a>
+        <a href="../index.html#graph">Graph</a>
+        <a href="../index.html#harness">Harness</a>
+      </div>
+    </div>
+  </nav>
+  <div class="shell">
+    <header class="hero">
+      <div class="chapter-mark">Daily topic &middot; Software engineering</div>
+      <h1>Security basics: OWASP top 10 for builders</h1>
+      <p class="lede">Most web apps are not broken by exotic zero-days. They are broken by the same ten families of mistakes, ranked by OWASP from real vulnerability data: a missing permission check, a query built from user input, a default password, an unpatched library. Learn the ten as builder habits, not as a compliance list, and you close the doors attackers actually walk through.</p>
+      <p class="date-line">2026-10-28 &middot; Topic 045</p>
+    </header>
+
+    <section class="block">
+      <h2><span class="num">01</span> The skill card</h2>
+      <p class="sub">Every topic on this portal is designed like a Codex skill: a name, a trigger, and concrete steps.</p>
+      <div class="skill-card"><pre style="margin:0">---
+<span class="k">name:</span> security-basics-owasp-top-10
+<span class="k">description:</span> Reach for this before shipping any web app or API:
+  authorize every object on the server, treat all input as data
+  (parameterize and encode), use proven crypto only, harden the
+  config and the supply chain, design for abuse, and log, alert,
+  and fail closed when something goes wrong.
+---</pre></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">02</span> The one-idea version</h2>
+      <p class="idea"><strong>The OWASP Top 10 is a map of broken trust boundaries, not a trivia list.</strong> Every category is a place where your app trusted something it should not have: the browser to enforce permissions, the user to send harmless input, a default setting to be safe, a library to be clean. Security basics means moving every one of those checks to a place the attacker does not control — the server, the design, and the pipeline.</p>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">03</span> The 2025 list, as a request flowing through gates</h2>
+      <p class="sub">The OWASP Developer Guide lists the 2025 edition as the latest: A01 Broken Access Control, A02 Security Misconfiguration, A03 Software Supply Chain Failures, A04 Cryptographic Failures, A05 Injection, A06 Insecure Design, A07 Authentication Failures, A08 Software or Data Integrity Failures, A09 Security Logging and Alerting Failures, A10 Mishandling of Exceptional Conditions. Grouped by where a request meets them:</p>
+      <div class="fig">
+        <svg viewBox="0 0 960 430" role="img" aria-label="Diagram: a request passes three server-side gates (authenticate, authorize every object, treat input as data), standing on a foundation of proven crypto, hardened config and a clean supply chain, watched by logging and safe failure.">
+          <g font-family="Source Sans 3, sans-serif" font-size="14">
+            <text x="20" y="26" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="600" fill="#163247">EVERY REQUEST, THREE GATES — ALL ON THE SERVER</text>
+            <g font-family="IBM Plex Mono, monospace" font-size="12" font-weight="600">
+              <rect x="20" y="60" width="200" height="90" rx="12" fill="#e3eef4" stroke="#163247" stroke-width="2"/><text x="120" y="100" text-anchor="middle" fill="#163247">1 · AUTHENTICATE</text><text x="120" y="122" text-anchor="middle" font-size="11" font-weight="400" fill="#53636f">A07: strong login, MFA,</text><text x="120" y="138" text-anchor="middle" font-size="11" font-weight="400" fill="#53636f">rate limits, safe sessions</text>
+              <rect x="260" y="60" width="280" height="90" rx="12" fill="#dff2ee" stroke="#0b8174" stroke-width="2"/><text x="400" y="100" text-anchor="middle" fill="#163247">2 · AUTHORIZE EVERY OBJECT</text><text x="400" y="122" text-anchor="middle" font-size="11" font-weight="400" fill="#53636f">A01 (the #1 risk): is THIS user</text><text x="400" y="138" text-anchor="middle" font-size="11" font-weight="400" fill="#53636f">allowed to touch THIS record?</text>
+              <rect x="580" y="60" width="360" height="90" rx="12" fill="#f7edc8" stroke="#d8a524" stroke-width="2"/><text x="760" y="100" text-anchor="middle" fill="#163247">3 · TREAT INPUT AS DATA, NEVER CODE</text><text x="760" y="122" text-anchor="middle" font-size="11" font-weight="400" fill="#53636f">A05: parameterized queries, encoded output.</text><text x="760" y="138" text-anchor="middle" font-size="11" font-weight="400" fill="#53636f">User input must never become a command.</text>
+            </g>
+            <line x1="220" y1="105" x2="260" y2="105" stroke="#0b8174" stroke-width="2" class="flow-anim"/>
+            <line x1="540" y1="105" x2="580" y2="105" stroke="#0b8174" stroke-width="2" class="flow-anim"/>
+            <g font-family="IBM Plex Mono, monospace" font-size="12" font-weight="600">
+              <rect x="20" y="200" width="450" height="90" rx="12" fill="#f8e4d8" stroke="#d66332" stroke-width="2"/><text x="245" y="240" text-anchor="middle" fill="#163247">THE FOUNDATION YOU SHIP ON</text><text x="245" y="262" text-anchor="middle" font-size="11" font-weight="400" fill="#53636f">A04 proven crypto · A02 hardened config, no defaults</text><text x="245" y="278" text-anchor="middle" font-size="11" font-weight="400" fill="#53636f">A03 + A08 patched, pinned, integrity-checked dependencies</text>
+              <rect x="490" y="200" width="450" height="90" rx="12" fill="#e3eef4" stroke="#163247" stroke-width="2"/><text x="715" y="240" text-anchor="middle" fill="#163247">DESIGN, WATCH, FAIL SAFELY</text><text x="715" y="262" text-anchor="middle" font-size="11" font-weight="400" fill="#53636f">A06 threat-model the abuse case before you build</text><text x="715" y="278" text-anchor="middle" font-size="11" font-weight="400" fill="#53636f">A09 log + alert · A10 generic errors, fail closed</text>
+            </g>
+            <text x="20" y="330" font-size="15" fill="#53636f"><tspan font-weight="700" fill="#163247">The pattern:</tspan> the 2021 list most tutorials still cite (injection at A03, SSRF at A10) has been re-ranked — in 2025 misconfiguration is A02 and supply-chain failures are A03, because that is where the incident data moved.</text>
+            <text x="20" y="360" font-size="15" fill="#53636f"><tspan font-weight="700" fill="#b3402e">The trap:</tspan> hiding a button in the UI is not access control. If the server does not check, an attacker with curl walks straight past it — that is exactly how A01 stays at #1.</text>
+          </g>
+        </svg>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">04</span> How it works</h2>
+      <p class="sub">Six builder mechanics that cover the ten categories, in the order you apply them.</p>
+      <div class="mechanics">
+        <div class="mech"><div class="mnum">1</div><div><h3>Authorize on the server, for every object and every function — deny by default (A01)</h3>
+        <p>Broken Access Control is the #1 risk because it is a design habit, not a typo: the app checks <em>logged in?</em> but never <em>allowed to touch this record?</em> Change an ID in the URL (<code>/invoices/124</code> instead of <code>123</code>) and a stranger's data comes back — that is an insecure direct object reference. Fix it structurally: a server-side permission check on every handler, scoped queries (<code>WHERE owner_id = current_user</code>), and default-deny for anything not explicitly allowed.</p></div></div>
+        <div class="mech"><div class="mnum">2</div><div><h3>Never let input become code: parameterize queries, encode output (A05)</h3>
+        <p>Injection is one bug with many interpreters: SQL, OS commands, templates, and the browser itself (XSS). The root cause is always the same — user input glued into a string that something then executes. Parameterized queries / prepared statements send the query and the data separately, so input can never change the query's meaning. For output, encode for the context (HTML, attribute, JavaScript) so data stays data when the browser renders it.</p></div></div>
+        <div class="mech"><div class="mnum">3</div><div><h3>Use proven crypto, and never store secrets like an amateur (A04)</h3>
+        <p>Cryptographic Failures are usually absences, not bad math: passwords in plain text or fast hashes, no TLS, secrets checked into git, home-grown encryption. Use the platform standards: hash passwords with a dedicated password hash (Argon2 or bcrypt), encrypt in transit with TLS everywhere, encrypt sensitive data at rest, keep secrets in a secret store — and rotate anything that ever touched a repo or a log.</p></div></div>
+        <div class="mech"><div class="mnum">4</div><div><h3>Harden the config and the supply chain you ship on (A02, A03, A08)</h3>
+        <p>Three categories, one discipline: know what you run. Misconfiguration (A02) is default credentials, debug mode in production, verbose errors, and unused features left on — fix with hardened, reviewed, environment-specific config. Supply-chain failures (A03) expand the old vulnerable-components problem: pin and patch dependencies, generate an SBOM, and scan in CI. Integrity failures (A08) are trusting updates and data without verification — verify signatures and never deserialize untrusted data.</p></div></div>
+        <div class="mech"><div class="mnum">5</div><div><h3>Design for abuse before you build, and make authentication boring-strong (A06, A07)</h3>
+        <p>Insecure Design (A06) means the flaw was in the plan: a password-reset flow anyone can abuse cannot be patched at the code level. Threat-model first — who would abuse this flow, and what stops them? Authentication Failures (A07) are the implementation side: allow strong passwords, rate-limit and lock out credential stuffing, offer MFA, expire sessions, and never ship default credentials. If a control is not in the design, code review will not invent it.</p></div></div>
+        <div class="mech"><div class="mnum">6</div><div><h3>Log, alert, and fail closed — never fail open or leak internals (A09, A10)</h3>
+        <p>You cannot respond to attacks you never see: log authentication and access-control failures, alert on them, and keep logs attackers cannot tamper with (A09). And when something unexpected happens, mishandling it is its own category (A10): return a generic error to the user, keep stack traces and SQL errors in the server log, and make the failure state the safe state — a crashed permission check must deny, never allow.</p></div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">05</span> Code sketch</h2>
+      <p class="sub">One handler applying gates 1–3 and failing safely: ownership check, parameterized query, generic errors, and a log line on denial.</p>
+      <pre class="code"><span class="k">import</span> logging
+log = logging.getLogger(<span class="s">"app"</span>)
+
+<span class="k">def</span> get_invoice(db, user, invoice_id):
+    <span class="c"># A05: parameterized — invoice_id is data, never SQL</span>
+    row = db.execute(
+        <span class="s">"SELECT owner_id, total FROM invoices WHERE id = ?"</span>,
+        (invoice_id,),
+    ).fetchone()
+    <span class="k">if</span> row <span class="k">is</span> <span class="k">None</span>:
+        <span class="c"># A10: generic message, no internals leaked</span>
+        <span class="k">return</span> 404, {<span class="s">"error"</span>: <span class="s">"not found"</span>}
+    <span class="c"># A01: authorize THIS object for THIS user, server-side</span>
+    <span class="k">if</span> row[0] != user.id <span class="k">and</span> <span class="k">not</span> user.is_admin:
+        <span class="c"># A09: denials are security events — log them</span>
+        log.warning(<span class="s">"access denied user=%s invoice=%s"</span>,
+                    user.id, invoice_id)
+        <span class="k">return</span> 403, {<span class="s">"error"</span>: <span class="s">"forbidden"</span>}
+    <span class="k">return</span> 200, {<span class="s">"id"</span>: invoice_id, <span class="s">"total"</span>: row[1]}
+
+<span class="c"># Missing on purpose: any string-built query, any check</span>
+<span class="c"># that lives only in the UI, any plaintext secret.</span></pre>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">06</span> Failure modes</h2>
+      <p class="sub">Five ways builders ship a Top-10 bug — and the one-line fix for each.</p>
+      <div class="mechanics">
+        <div class="mech fail"><div class="mnum">1</div><div><h3>Checking login, not permission (IDOR)<span class="fix">Fix: authorize the specific object on the server for every request — scope the query by owner.</span></h3>
+        <p>The endpoint requires a session, so it feels protected. But any logged-in user can increment an ID and read everyone else's records. Authentication is who you are; authorization is what you may touch — A01 is #1 precisely because teams ship the first and forget the second.</p></div></div>
+        <div class="mech fail"><div class="mnum">2</div><div><h3>Building queries by string concatenation<span class="fix">Fix: parameterized queries / prepared statements everywhere — no exceptions for &ldquo;internal&rdquo; tools.</span></h3>
+        <p><code>"... WHERE name = '" + name + "'"</code> hands the attacker the keyboard to your database. Escaping by hand always misses a case; parameterization removes the whole class by separating code from data.</p></div></div>
+        <div class="mech fail"><div class="mnum">3</div><div><h3>Plain-text passwords, home-grown crypto, secrets in git<span class="fix">Fix: Argon2/bcrypt for passwords, TLS everywhere, secrets in a secret store — and rotate anything exposed.</span></h3>
+        <p>A fast hash (or none) turns a leaked database into everyone's password. A secret committed once lives in history forever, even after you delete the line. Crypto failures are silent until the breach report.</p></div></div>
+        <div class="mech fail"><div class="mnum">4</div><div><h3>Debug mode, defaults, and dependencies left to rot in production<span class="fix">Fix: hardened reviewed config per environment, defaults changed, dependencies pinned, patched, and scanned in CI.</span></h3>
+        <p>Misconfiguration (A02) and supply-chain failures (A03) are the highest risers in the 2025 list because modern apps are mostly configuration and other people's code. The exploit for a known-vulnerable library is public — patching late is volunteering.</p></div></div>
+        <div class="mech fail"><div class="mnum">5</div><div><h3>Silent failures: no logs, and stack traces as the error page<span class="fix">Fix: log and alert on auth and access failures, return generic errors, and fail closed.</span></h3>
+        <p>Without logging (A09) a breach runs for months unnoticed. With verbose errors (A10) every failure teaches the attacker your schema, paths, and versions. Both are one-line habits set at the framework level — set them once, correctly.</p></div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">07</span> Go deeper</h2>
+      <p class="sub">Verified references — every link opened and checked before publishing.</p>
+      <div class="ref-list">
+        <a class="ref" href="https://devguide.owasp.org/en/07-training-education/05-top-ten/"><span class="badge doc">Docs</span><div><h3>OWASP Developer Guide: OWASP Top 10</h3><p>The official guide's Top 10 page: what the list is, the full 2025 categories (A01–A10), how the data is collected, and how to use it as a training and testing starting point.</p></div></a>
+        <a class="ref" href="https://owasp.org/projects/top-ten"><span class="badge doc">Docs</span><div><h3>OWASP Top 10 — official project page (OWASP Foundation)</h3><p>The flagship project's home on owasp.org — the canonical source for the current edition and its per-category pages.</p></div></a>
+        <a class="ref" href="https://cheatsheetseries.owasp.org/index.html"><span class="badge doc">Docs</span><div><h3>OWASP Cheat Sheet Series — introduction and index</h3><p>Where the Top 10 turns into fixes: 130+ concise, code-level cheat sheets (access control, injection prevention, password storage, and more), mapped back to the Top 10 categories.</p></div></a>
+        <a class="ref" href="https://youtu.be/RMkoIrpz8ug"><span class="badge vid">Video</span><div><h3>OWASP Spotlight — Project 10: Top 10</h3><p>OWASP's own spotlight video on the Top 10 project: why the list exists and why it is the first step toward more secure coding.</p></div></a>
+        <a class="ref" href="https://www.youtube.com/watch?v=05fM-u8JDA0"><span class="badge vid">Video</span><div><h3>OWASP API Security Top 10 (2023) — Complete Engineering Explainer</h3><p>The API sibling of the Top 10, walked category by category with payloads and remediations — BOLA, broken authentication, SSRF, and misconfiguration, exactly where modern apps break.</p></div></a>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">08</span> Sample prompts</h2>
+      <p class="sub">Copy one into your AI assistant and apply it to your own code.</p>
+      <p id="live-status" class="sr-only" role="status"></p>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>AUDIT AGAINST THE TOP 10</strong><button class="copy-btn" data-copy="p1">Copy</button></div>
+        <p class="prompt-text" id="p1">Audit this web app code against the OWASP Top 10 (2025). For each category A01–A10 say: not present, present with file/line evidence, or cannot tell from this code. For every present finding, show the smallest concrete fix. Start with broken access control and injection — do not give generic advice.</p>
+      </div>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>FIND THE IDOR</strong><button class="copy-btn" data-copy="p2">Copy</button></div>
+        <p class="prompt-text" id="p2">Review these API handlers for broken access control. For each handler that loads an object by an ID from the request, tell me: does it verify the current user owns or may access that object, on the server? List every handler that only checks authentication, and rewrite it with a scoped query or an explicit ownership check.</p>
+      </div>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>THREAT-MODEL THE FLOW</strong><button class="copy-btn" data-copy="p3">Copy</button></div>
+        <p class="prompt-text" id="p3">Threat-model this user flow (for example password reset or checkout) the way OWASP's Insecure Design category demands: list the abuse cases an attacker would try, which Top 10 categories each abuse maps to, and the design-level control that stops it — not code patches, design decisions.</p>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">09</span> Quiz</h2>
+      <p class="sub">Five questions. Click an answer — you get the explanation right away.</p>
+      <div id="quiz">
+        <div class="quiz-q" data-answer="2">
+          <p class="qq">1. A logged-in user changes /invoices/123 to /invoices/124 and sees a stranger's invoice. Which category is this, and what is the fix?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">Injection — sanitize the ID before using it in the URL.</button>
+            <button class="qopt" data-i="1">Cryptographic Failures — encrypt the invoice IDs so users cannot guess them.</button>
+            <button class="qopt" data-i="2">Broken Access Control (A01) — check on the server that this user may access this specific invoice.</button>
+            <button class="qopt" data-i="3">Security Misconfiguration — hide the invoices link from non-admin users.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="1">
+          <p class="qq">2. Why do parameterized queries stop SQL injection?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">They scan user input and delete dangerous keywords like DROP and SELECT.</button>
+            <button class="qopt" data-i="1">They send the query structure and the data separately, so input can never change the query's meaning.</button>
+            <button class="qopt" data-i="2">They encrypt the input so the database cannot read it.</button>
+            <button class="qopt" data-i="3">They run the query twice and compare the results.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="3">
+          <p class="qq">3. Your password-reset flow lets anyone reset anyone's password by guessing an email. Patching the code does not help. Why?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">It is a cryptographic failure — the reset tokens need stronger encryption.</button>
+            <button class="qopt" data-i="1">It is a logging failure — you just need to record the resets.</button>
+            <button class="qopt" data-i="2">It is an injection flaw — the email field is not validated.</button>
+            <button class="qopt" data-i="3">It is Insecure Design (A06) — the flaw is in the flow itself, so the fix is a design change (proof of ownership), not a code tweak.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="0">
+          <p class="qq">4. Which set of habits covers A02, A03, and A08 together?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">Harden and review configuration, pin and patch dependencies with an SBOM and CI scanning, and verify the integrity of updates and data.</button>
+            <button class="qopt" data-i="1">Use longer passwords, enable MFA, and expire sessions sooner.</button>
+            <button class="qopt" data-i="2">Encode all output, parameterize all queries, and validate all input.</button>
+            <button class="qopt" data-i="3">Add more logging, more alerts, and longer log retention.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="1">
+          <p class="qq">5. Your permission-check service crashes mid-request. What should the app do, and what should the user see?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">Allow the request — availability matters more — and show the stack trace so support can debug it.</button>
+            <button class="qopt" data-i="1">Deny the request (fail closed), log the failure with detail server-side, and show the user a generic error.</button>
+            <button class="qopt" data-i="2">Retry the request until the service recovers, showing a live error feed.</button>
+            <button class="qopt" data-i="3">Serve a cached copy of the last successful response, including its data.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+      </div>
+      <div id="quiz-score" role="status"></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">10</span> Flashcards</h2>
+      <p class="sub">Click a card (or focus it and press Enter / Space) to flip it.</p>
+      <div class="fgrid">
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Broken Access Control (A01:2025)</div>
+          <div class="fface back">The #1 risk: users acting outside their permissions — IDOR, forced browsing, privilege escalation. Fix: server-side check per object, deny by default.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Injection (A05:2025)</div>
+          <div class="fface back">User input interpreted as code — SQL, OS commands, or script in a page (XSS). Fix: parameterize queries and encode output; input is data, never code.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Parameterized query</div>
+          <div class="fface back">Query structure and data sent separately (placeholders like ?). The database never parses input as SQL, so injection has nothing to grab onto.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Cryptographic Failures (A04:2025)</div>
+          <div class="fface back">Sensitive data exposed by missing or misused crypto: plain-text passwords, no TLS, secrets in code. Fix: proven algorithms, Argon2/bcrypt, secret stores.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Security Misconfiguration (A02:2025)</div>
+          <div class="fface back">Default credentials, debug mode in prod, verbose errors, unused features left on. Fix: hardened, reviewed config per environment, changed defaults.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Software Supply Chain Failures (A03:2025)</div>
+          <div class="fface back">The 2025 expansion of vulnerable components: unpatched libraries, compromised packages, unsafe build pipelines. Fix: pin, patch, SBOM, scan in CI.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Insecure Design (A06:2025)</div>
+          <div class="fface back">The flaw is in the plan, not the code — an abusable flow no patch can save. Fix: threat-model abuse cases before building, design the control in.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Authentication Failures (A07:2025)</div>
+          <div class="fface back">Weak passwords allowed, no rate limiting or MFA, sessions that never expire, default credentials. Fix: boring-strong identity — limits, MFA, expiry.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Logging &amp; Alerting Failures (A09:2025)</div>
+          <div class="fface back">Attacks nobody sees: auth and access failures unlogged, no alerts, tamperable logs. Undetected breaches run for months. Log denials; alert on them.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Fail closed (A10:2025)</div>
+          <div class="fface back">Mishandling exceptional conditions leaks internals and opens doors. On error: deny, return a generic message, keep the details in the server log.</div>
+        </div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">11</span> Reach for this when&hellip;</h2>
+      <div class="triggers">
+        <div class="trigger"><strong>You are about to ship any endpoint that loads data by an ID</strong> &mdash; run the A01 test first: log in as a second user, change the ID, and confirm the server says no. If it does not, nothing else on the list matters yet.</div>
+        <div class="trigger"><strong>A code review touches a query, a login flow, a file upload, or a new dependency</strong> &mdash; walk the relevant Top 10 categories for that surface (A05, A07, A03) and check the cheat sheet before approving.</div>
+        <div class="trigger"><strong>Someone says &ldquo;we will add security later&rdquo;</strong> &mdash; point at A06: insecure design cannot be patched later. The abuse-case conversation costs an hour now and a redesign later.</div>
+      </div>
+    </section>
+
+    <a class="back-link" href="../index.html#daily-topics">&larr; Back to daily topics</a>
+  </div>
+  <script>
+    const status = document.getElementById('live-status');
+    document.querySelectorAll('.copy-btn').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const target = document.getElementById(button.dataset.copy);
+        const text = target.innerText;
+        try {
+          await navigator.clipboard.writeText(text);
+          const original = button.textContent;
+          button.textContent = 'Copied';
+          status.textContent = 'Prompt copied to clipboard.';
+          setTimeout(() => button.textContent = original, 1600);
+        } catch {
+          const range = document.createRange();
+          range.selectNodeContents(target);
+          const selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+          status.textContent = 'Prompt selected. Copy it with your device copy command.';
+        }
+      });
+    });
+    const explanations = [
+      ["Sanitizing the ID does not help — a perfectly clean numeric ID still points at someone else's invoice. The missing piece is permission, not hygiene.",
+       "Encrypting IDs hides them, but authorization by obscurity breaks the first time an ID leaks. The server still has to check ownership.",
+       "Correct. This is Broken Access Control, the #1 category: the app authenticated the user but never authorized the object. Check ownership (or scope the query) on the server.",
+       "Hiding links is UI cosmetics. The endpoint is still reachable with curl — that gap between UI and server is exactly A01."],
+      ["Blocklists lose: attackers encode, split, and rephrase payloads faster than any keyword list. Deleting words also breaks legitimate input.",
+       "Correct. Parameterization separates code from data at the protocol level — the input is bound as a value, so it cannot rewrite the query, however hostile it is.",
+       "The database does read the values — as data. Encryption is about confidentiality, not about how input is parsed.",
+       "Nothing runs the query twice — the protection is structural, in how the query and parameters are transmitted."],
+      ["Stronger tokens help only if the flow first proves the requester owns the account — encryption was never the missing step.",
+       "Logging the abuse gives you a recording of the breach, not a prevention. Visibility (A09) complements design; it does not replace it.",
+       "Validating the email's format changes nothing — a well-formed email is exactly what the attacker supplies.",
+       "Correct. When the flow itself grants the power, no line of code inside it can take the power away. Insecure Design is fixed in the design: prove ownership before resetting."],
+      ["Correct. A02 is configuration, A03 is the components and pipeline you build from, A08 is trusting updates and data without verification — one discipline: know and verify what you run.",
+       "Those are authentication habits (A07) — important, but they say nothing about config, components, or integrity.",
+       "Those are the injection defenses (A05). Essential, and a different category entirely.",
+       "Logging is A09. It detects problems in these categories but does not prevent them."],
+      ["Failing open turns a partial outage into a full breach, and a stack trace is a free architecture briefing for the attacker.",
+       "Correct. Fail closed on security checks, keep diagnostic detail in server logs (A09), and give users a generic error (A10).",
+       "Retrying against a downed security service can hammer it further, and a live error feed leaks the same internals a stack trace would.",
+       "Cached data served without a fresh permission check is access control by memory — the exact A01 failure, with extra staleness."]
+    ];
+    const questions = [...document.querySelectorAll('.quiz-q')];
+    let score = 0, answered = 0;
+    questions.forEach((q, qi) => {
+      const correct = parseInt(q.dataset.answer, 10);
+      const exp = q.querySelector('.qexp');
+      q.querySelectorAll('.qopt').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          if (q.dataset.done) return;
+          q.dataset.done = "1";
+          const chosen = parseInt(btn.dataset.i, 10);
+          const ok = chosen === correct;
+          q.querySelectorAll('.qopt').forEach((b) => {
+            b.disabled = true;
+            if (parseInt(b.dataset.i, 10) === correct) b.classList.add('correct');
+          });
+          if (!ok) btn.classList.add('wrong');
+          else score++;
+          answered++;
+          exp.hidden = false;
+          exp.innerHTML = ok
+            ? "<strong class=\"ok\">Correct.</strong> " + explanations[qi][chosen]
+            : "<strong class=\"no\">Not quite.</strong> " + explanations[qi][chosen];
+          if (answered === questions.length) {
+            const box = document.getElementById('quiz-score');
+            box.style.display = "block";
+            box.innerHTML = "You scored <strong>" + score + " / " + questions.length + "</strong>." +
+              (score === questions.length ? " Clean sweep — you are ready to run the A01 test on your own endpoints." :
+               score >= 3 ? " Solid — re-read the failure mode you missed; that is where the real-world points live." :
+               " Worth a re-read of sections 04 and 06 before your next code review.");
+          }
+        });
+      });
+    });
+    document.querySelectorAll('.fcard').forEach((card) => {
+      const flip = () => card.classList.toggle('flipped');
+      card.addEventListener('click', flip);
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); }
+      });
+    });
+  </script>
+</body>
+</html>
