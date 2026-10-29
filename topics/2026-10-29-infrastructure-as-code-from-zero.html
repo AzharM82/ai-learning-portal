@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Infrastructure as code from zero &middot; AI Learning Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+    :root {
+      --ink: #14212b; --muted: #53636f; --paper: #f6f8f7; --white: #ffffff;
+      --line: #cbd5d8; --navy: #163247; --navy-2: #21465e; --teal: #0b8174;
+      --teal-soft: #dff2ee; --orange: #d66332; --orange-soft: #f8e4d8;
+      --gold: #d8a524; --gold-soft: #f7edc8; --blue-soft: #e3eef4;
+      --red: #b3402e; --red-soft: #f9e3de; --green: #1e7a3c; --green-soft: #e2f2e6;
+      --shadow: 0 18px 45px rgba(20, 33, 43, .09); --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; color: var(--ink);
+      background: linear-gradient(rgba(20,33,43,.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(20,33,43,.035) 1px, transparent 1px), var(--paper);
+      background-size: 28px 28px;
+      font-family: "Source Sans 3", sans-serif; font-size: 17px; line-height: 1.58;
+    }
+    .shell { width: min(960px, calc(100% - 40px)); margin: 0 auto; }
+    .portal-nav{position:sticky;top:0;z-index:50;background:rgba(22,50,71,.97);border-bottom:1px solid rgba(255,255,255,.12)}
+    .portal-nav-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;flex-wrap:wrap}
+    .portal-brand{color:#fff;text-decoration:none;font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:15px}
+    .portal-brand span{color:var(--gold);font-weight:400}
+    .portal-links{display:flex;gap:18px;flex-wrap:wrap}
+    .portal-links a{color:#dbe7ee;text-decoration:none;font-size:14.5px}
+    .portal-links a:hover{color:#fff;text-decoration:underline}
+    .hero { padding: 56px 0 36px; }
+    .chapter-mark { display:inline-flex;align-items:center;gap:10px;color:var(--navy);
+      font:600 12px/1.2 "IBM Plex Mono",monospace;letter-spacing:.09em;text-transform:uppercase;margin-bottom:18px; }
+    .chapter-mark::before { content:"";width:42px;height:3px;background:var(--orange); }
+    h1 { font-size: clamp(36px, 5vw, 58px); line-height: 1.02; letter-spacing:-.03em; margin:0 0 14px; }
+    .lede { color: var(--muted); font-size: clamp(18px,2vw,22px); max-width: 64ch; margin:0 0 8px; }
+    .date-line { font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--muted); }
+    section.block { margin: 44px 0; }
+    h2 { font-size: 26px; letter-spacing:-.02em; margin:0 0 6px; display:flex;align-items:center;gap:12px; }
+    h2 .num { font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:600;color:var(--white);
+      background:var(--navy);border-radius:999px;min-width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center; }
+    .sub { color:var(--muted); margin:0 0 18px; max-width: 68ch; }
+    .card { background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+      padding:24px;box-shadow:var(--shadow); }
+    .skill-card { background:var(--navy);color:#eaf2f7;border-radius:var(--radius);padding:22px 24px;
+      font-family:"IBM Plex Mono",monospace;font-size:14.5px;overflow-x:auto;box-shadow:var(--shadow); }
+    .skill-card .k { color:var(--gold); }
+    .idea { font-size:21px;line-height:1.5;border-left:4px solid var(--teal);padding:6px 0 6px 20px;max-width:62ch; }
+    .idea strong { color:var(--navy); }
+    .mechanics { display:grid;gap:14px; }
+    .mech { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:18px 20px;
+      display:grid;grid-template-columns:44px 1fr;gap:14px;align-items:start; }
+    .mech .mnum { font-family:"IBM Plex Mono",monospace;font-weight:600;color:var(--teal);
+      background:var(--teal-soft);border-radius:10px;width:44px;height:44px;display:flex;align-items:center;justify-content:center; }
+    .mech h3 { margin:0 0 6px;font-size:18px; }
+    .mech p { margin:0;color:var(--muted);font-size:15.5px; }
+    .mech code, .inline-code { font-family:"IBM Plex Mono",monospace;font-size:.88em;background:var(--blue-soft);
+      padding:2px 7px;border-radius:6px;color:var(--navy); }
+    pre.code { background:#0f2233;color:#e8f1f5;border-radius:14px;padding:20px 22px;overflow-x:auto;
+      font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.6;margin:0; }
+    pre.code .c { color:#8ba3b0; } pre.code .s { color:#ffd479; } pre.code .k { color:#7fd6c2; }
+    .fail { border-left:4px solid var(--orange); }
+    .fail h3 .fix { display:block;margin-top:8px;font-size:15px;font-weight:500;color:var(--green); }
+    .ref-list { display:grid;gap:12px; }
+    .ref { display:flex;gap:14px;align-items:flex-start;background:var(--white);border:1px solid var(--line);
+      border-radius:14px;padding:16px 18px;text-decoration:none;color:inherit; }
+    .ref:hover { border-color:var(--teal); }
+    .ref .badge { flex:none;font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;letter-spacing:.06em;
+      padding:5px 10px;border-radius:999px;text-transform:uppercase; }
+    .badge.doc { background:var(--blue-soft);color:var(--navy); }
+    .badge.vid { background:var(--orange-soft);color:var(--orange); }
+    .ref h3 { margin:0 0 4px;font-size:17px; }
+    .ref p { margin:0;color:var(--muted);font-size:14.5px; }
+    .prompt-block { background:#0f2233;border-radius:var(--radius);overflow:hidden;margin-bottom:18px;box-shadow:var(--shadow); }
+    .prompt-top { display:flex;justify-content:space-between;align-items:center;gap:12px;
+      padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.12); }
+    .prompt-top strong { color:#fff;font-size:13px;letter-spacing:.06em;font-family:"IBM Plex Mono",monospace; }
+    .copy-btn { border:1px solid #6c8796;background:transparent;color:#fff;border-radius:6px;padding:7px 11px;
+      cursor:pointer;font-weight:700;font-size:14px; }
+    .copy-btn:hover { background:rgba(255,255,255,.1); }
+    .copy-btn:focus-visible { outline:2px solid var(--gold);outline-offset:2px; }
+    .prompt-text { color:#e8f1f5;font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.65;
+      padding:18px;white-space:pre-wrap;margin:0; }
+    .sr-only { position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0); }
+    .quiz-q { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px; }
+    .quiz-q .qq { font-weight:700;margin:0 0 12px;font-size:18px; }
+    .qopts { display:grid;gap:8px; }
+    .qopt { text-align:left;background:var(--paper);border:1px solid var(--line);border-radius:10px;
+      padding:12px 14px;cursor:pointer;font-size:15.5px;color:var(--ink); }
+    .qopt:hover:not(:disabled) { border-color:var(--navy); }
+    .qopt:disabled { cursor:default;opacity:.85; }
+    .qopt.correct { background:var(--green-soft);border-color:var(--green); }
+    .qopt.wrong { background:var(--red-soft);border-color:var(--red); }
+    .qexp { margin:12px 0 0;font-size:15px;color:var(--muted); }
+    .qexp strong.ok { color:var(--green); } .qexp strong.no { color:var(--red); }
+    #quiz-score { display:none;margin-top:8px;background:var(--navy);color:#fff;border-radius:14px;
+      padding:20px 24px;font-size:19px; }
+    #quiz-score strong { color:var(--gold); }
+    .fgrid { display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px; }
+    .fcard { perspective:900px;cursor:pointer;min-height:170px; }
+    .fcard-inner { position:relative;width:100%;height:100%;min-height:170px;transform-style:preserve-3d;transition:transform .45s; }
+    .fcard.flipped .fcard-inner { transform:rotateY(180deg); }
+    .fface { position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+      border-radius:14px;padding:18px;display:flex;align-items:center;justify-content:center;text-align:center;
+      border:1px solid var(--line);background:var(--white);box-shadow:var(--shadow);font-size:15.5px; }
+    .fface.front { font-weight:700;color:var(--navy); }
+    .fface.back { transform:rotateY(180deg);background:var(--teal-soft);color:var(--ink);font-size:14.5px; }
+    .fcard:focus-visible { outline:2px solid var(--teal);outline-offset:3px;border-radius:14px; }
+    .triggers { display:grid;gap:10px; }
+    .trigger { background:var(--gold-soft);border-radius:12px;padding:14px 18px;font-size:16px; }
+    .trigger strong { color:var(--navy); }
+    .back-link { display:inline-block;margin:8px 0 60px;font-weight:600;color:var(--teal);text-decoration:none;font-size:17px; }
+    .back-link:hover { text-decoration:underline; }
+    .fig { background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+      padding:12px;box-shadow:var(--shadow);overflow-x:auto; }
+    .fig svg { display:block;width:100%;height:auto; }
+    .flow-anim { stroke-dasharray: 8 6; animation: dashmove 1.2s linear infinite; }
+    @keyframes dashmove { to { stroke-dashoffset: -14; } }
+    @media (prefers-reduced-motion: reduce) { .fcard-inner{transition:none;} .flow-anim{animation:none;} }
+  </style>
+</head>
+<body><nav class="portal-nav">
+    <div class="shell portal-nav-inner">
+      <a class="portal-brand" href="../index.html">AI Engineering <span>&middot; Learning Portal</span></a>
+      <div class="portal-links">
+        <a href="../index.html#daily-topics">Daily topics</a>
+        <a href="../index.html#loop">Loop</a>
+        <a href="../index.html#graph">Graph</a>
+        <a href="../index.html#harness">Harness</a>
+      </div>
+    </div>
+  </nav>
+  <div class="shell">
+    <header class="hero">
+      <div class="chapter-mark">Daily topic &middot; Software engineering</div>
+      <h1>Infrastructure as code from zero</h1>
+      <p class="lede">Stop clicking clouds into existence. Infrastructure as code (IaC) means you declare the environment you want in versioned text files, a tool diffs that declaration against reality, shows you a plan you can review like a code change, and then makes reality match &mdash; the same way, every time, in every environment.</p>
+      <p class="date-line">2026-10-29 &middot; Topic 046</p>
+    </header>
+
+    <section class="block">
+      <h2><span class="num">01</span> The skill card</h2>
+      <p class="sub">Every topic on this portal is designed like a Codex skill: a name, a trigger, and concrete steps.</p>
+      <div class="skill-card"><pre style="margin:0">---
+<span class="k">name:</span> infrastructure-as-code
+<span class="k">description:</span> Reach for this whenever an environment is created or
+  changed by hand: declare the desired state in versioned files,
+  keep state remote and locked, review the plan before you apply,
+  parameterize environments instead of copying them, and let the
+  pipeline &mdash; never the console &mdash; make the change.
+---</pre></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">02</span> The one-idea version</h2>
+      <p class="idea"><strong>Infrastructure is a desired state you declare, not a sequence of clicks you remember.</strong> Microsoft Learn puts it plainly: just as the same source code always generates the same binary, an IaC model generates the same environment every time it deploys. You edit the source, not the target &mdash; the tool computes the diff, and applying it is idempotent: run it twice, get the same result once.</p>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">03</span> The loop: write, plan, apply, detect drift</h2>
+      <p class="sub">HashiCorp names Terraform&rsquo;s core workflow Write &rarr; Plan &rarr; Apply. Add the two bookends that make it a team practice &mdash; version control before, and drift detection after &mdash; and you have the whole discipline:</p>
+      <div class="fig">
+        <svg viewBox="0 0 960 400" role="img" aria-label="Diagram: declarative code in git is planned against state and reality, reviewed, applied through provider APIs to cloud resources, state is updated, and drift detection feeds back to a new plan.">
+          <g font-family="Source Sans 3, sans-serif" font-size="14">
+            <text x="20" y="26" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="600" fill="#163247">ONE LOOP, NO CONSOLE CLICKS</text>
+            <g font-family="IBM Plex Mono, monospace" font-size="12" font-weight="600">
+              <rect x="20" y="60" width="200" height="90" rx="12" fill="#e3eef4" stroke="#163247" stroke-width="2"/><text x="120" y="100" text-anchor="middle" fill="#163247">1 &middot; WRITE + COMMIT</text><text x="120" y="122" text-anchor="middle" font-size="11" font-weight="400" fill="#53636f">Desired state in .tf / Bicep /</text><text x="120" y="138" text-anchor="middle" font-size="11" font-weight="400" fill="#53636f">YAML, reviewed in a PR</text>
+              <rect x="260" y="60" width="200" height="90" rx="12" fill="#dff2ee" stroke="#0b8174" stroke-width="2"/><text x="360" y="100" text-anchor="middle" fill="#163247">2 &middot; PLAN</text><text x="360" y="122" text-anchor="middle" font-size="11" font-weight="400" fill="#53636f">Tool diffs code vs. state +</text><text x="360" y="138" text-anchor="middle" font-size="11" font-weight="400" fill="#53636f">reality: create / change / destroy</text>
+              <rect x="500" y="60" width="200" height="90" rx="12" fill="#f7edc8" stroke="#d8a524" stroke-width="2"/><text x="600" y="100" text-anchor="middle" fill="#163247">3 &middot; REVIEW THE PLAN</text><text x="600" y="122" text-anchor="middle" font-size="11" font-weight="400" fill="#53636f">The plan is the contract:</text><text x="600" y="138" text-anchor="middle" font-size="11" font-weight="400" fill="#53636f">a human approves the exact diff</text>
+              <rect x="740" y="60" width="200" height="90" rx="12" fill="#f8e4d8" stroke="#d66332" stroke-width="2"/><text x="840" y="100" text-anchor="middle" fill="#163247">4 &middot; APPLY</text><text x="840" y="122" text-anchor="middle" font-size="11" font-weight="400" fill="#53636f">Provider APIs create / update</text><text x="840" y="138" text-anchor="middle" font-size="11" font-weight="400" fill="#53636f">in dependency order; state saved</text>
+            </g>
+            <line x1="220" y1="105" x2="260" y2="105" stroke="#0b8174" stroke-width="2" class="flow-anim"/>
+            <line x1="460" y1="105" x2="500" y2="105" stroke="#0b8174" stroke-width="2" class="flow-anim"/>
+            <line x1="700" y1="105" x2="740" y2="105" stroke="#0b8174" stroke-width="2" class="flow-anim"/>
+            <g font-family="IBM Plex Mono, monospace" font-size="12" font-weight="600">
+              <rect x="20" y="200" width="450" height="90" rx="12" fill="#dff2ee" stroke="#0b8174" stroke-width="2"/><text x="245" y="240" text-anchor="middle" fill="#163247">STATE IS THE LEDGER</text><text x="245" y="262" text-anchor="middle" font-size="11" font-weight="400" fill="#53636f">Maps each declaration to a real resource ID.</text><text x="245" y="278" text-anchor="middle" font-size="11" font-weight="400" fill="#53636f">Remote, locked, backed up &mdash; never hand-edited.</text>
+              <rect x="490" y="200" width="450" height="90" rx="12" fill="#f8e4d8" stroke="#d66332" stroke-width="2"/><text x="715" y="240" text-anchor="middle" fill="#163247">DRIFT IS A BUG REPORT</text><text x="715" y="262" text-anchor="middle" font-size="11" font-weight="400" fill="#53636f">Someone edited the console? The next plan shows it.</text><text x="715" y="278" text-anchor="middle" font-size="11" font-weight="400" fill="#53636f">Fix the code or revert reality &mdash; never ignore it.</text>
+            </g>
+            <text x="20" y="330" font-size="15" fill="#53636f"><tspan font-weight="700" fill="#163247">The payoff:</tspan> dev, staging, and prod are the same code with different variables &mdash; no snowflake environments that nobody can rebuild.</text>
+            <text x="20" y="360" font-size="15" fill="#53636f"><tspan font-weight="700" fill="#b3402e">The trap:</tspan> IaC does not forgive a bad plan. A reviewed diff is your last cheap moment before a destroy becomes real.</text>
+          </g>
+        </svg>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">04</span> How it works</h2>
+      <p class="sub">Seven mechanics, in the order you meet them on your first real project.</p>
+      <div class="mechanics">
+        <div class="mech"><div class="mnum">1</div><div><h3>Declare the end state; do not script the steps</h3>
+        <p>Declarative IaC (Terraform, Bicep, ARM, CloudFormation) describes <em>what</em> should exist &mdash; a network, two subnets, a VM of this size &mdash; and the tool works out creation order from the dependency graph. That is what makes it idempotent, per Microsoft Learn: applying the same model always lands the same configuration, whatever the starting state. Imperative scripts (do A, then B, then C) break the moment reality is not where the script assumed. Reach for a real programming language (Pulumi, AWS CDK) only when you genuinely need loops and abstractions a declarative file cannot express.</p></div></div>
+        <div class="mech"><div class="mnum">2</div><div><h3>Learn the vocabulary: providers, resources, variables, outputs, modules</h3>
+        <p>A <strong>provider</strong> is the plugin that translates your declarations into one platform&rsquo;s API calls (AWS, Azure, GCP, Kubernetes, even GitHub). A <strong>resource</strong> is one managed object. <strong>Variables</strong> are inputs, <strong>outputs</strong> are the values other code consumes, and a <strong>module</strong> is a reusable folder of declarations &mdash; your &ldquo;standard web tier&rdquo; used twenty times instead of copy-pasted twenty times. References between resources (<code>subnet_id = aws_subnet.web.id</code>) are how the tool learns the dependency order for free.</p></div></div>
+        <div class="mech"><div class="mnum">3</div><div><h3>Version it exactly like application code</h3>
+        <p>Commit the files to git, review changes in pull requests, and pin provider and module versions (with the lock file committed). HashiCorp&rsquo;s point is that the configuration <em>is</em> the infrastructure topology, readable in one place &mdash; so a PR diff is an infrastructure review, <code>git log</code> is your audit trail, and rolling back is checking out the previous version and applying it. If a change did not go through a PR, it did not happen &mdash; that rule is what kills snowflake environments.</p></div></div>
+        <div class="mech"><div class="mnum">4</div><div><h3>Treat state as a database, not a file</h3>
+        <p>The tool needs memory: Terraform&rsquo;s state file maps each declared resource to its real cloud ID, which is how the next plan knows what already exists. Keep state in a <strong>remote backend with locking</strong> (so two applies cannot race), back it up, restrict who can read it &mdash; state can contain sensitive values in plain text &mdash; and never edit it by hand or commit it to git. Most beginner disasters are state disasters: a lost or corrupted state file makes the tool forget it owns production.</p></div></div>
+        <div class="mech"><div class="mnum">5</div><div><h3>Plan first, read the plan, then apply the saved plan</h3>
+        <p><code>init</code> downloads providers, <code>plan</code> is the dry run, <code>apply</code> makes it real, <code>destroy</code> tears it down. The discipline is in the middle step: read every create / update / <strong>destroy</strong> in the plan, save that exact plan in CI, and apply the saved plan &mdash; not a freshly generated one. An unexpected destroy or replace of a database is visible in the plan for free; it is only a surprise if nobody looked. Never use auto-approve on production.</p></div></div>
+        <div class="mech"><div class="mnum">6</div><div><h3>One codebase, many environments &mdash; parameterize, never fork</h3>
+        <p>Dev, staging, and prod should differ only in variable values (instance size, replica count, domain) and state, never in copied code. Copy-pasted environment folders drift apart within a month and double every fix forever. Keep the shared shape in modules, keep each environment thin (a backend + a variables file), and keep the blast radius small by splitting state along boundaries that change independently &mdash; network, platform, app &mdash; rather than one giant state for everything.</p></div></div>
+        <div class="mech"><div class="mnum">7</div><div><h3>Run it from the pipeline, guard it with policy, watch for drift</h3>
+        <p>Mature IaC runs in CI/CD: format and validate on every PR, plan posted as a PR comment, apply only from the pipeline with a short-lived cloud identity (OIDC, not a permanent access key pasted into a secret). Add policy-as-code checks for the expensive mistakes (public storage, unencrypted disks, missing tags), keep secrets in a secret store referenced &mdash; never written &mdash; in code, and run a scheduled plan: a non-empty plan on an unchanged repo is drift, and drift means someone bypassed the loop.</p></div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">05</span> Code sketch</h2>
+      <p class="sub">The whole idea in Python: desired state as data, a plan as a diff against recorded state, and an apply that is safe to re-run. Real tools (Terraform, Pulumi) do this against cloud APIs &mdash; the shape is identical.</p>
+      <pre class="code"><span class="c"># desired state is data you version in git</span>
+desired = {
+    <span class="s">"web-vm"</span>:  {<span class="s">"type"</span>: <span class="s">"vm"</span>, <span class="s">"size"</span>: <span class="s">"small"</span>, <span class="s">"replicas"</span>: 2},
+    <span class="s">"web-lb"</span>:  {<span class="s">"type"</span>: <span class="s">"lb"</span>, <span class="s">"public"</span>: <span class="k">True</span>},
+}
+state = load_state()          <span class="c"># ledger: what we managed last apply</span>
+
+<span class="k">def</span> plan(desired, state):
+    actions = []
+    <span class="k">for</span> name, want <span class="k">in</span> desired.items():
+        <span class="k">if</span> name <span class="k">not in</span> state:
+            actions.append((<span class="s">"create"</span>, name))
+        <span class="k">elif</span> state[name] != want:
+            actions.append((<span class="s">"update"</span>, name))
+    <span class="k">for</span> name <span class="k">in</span> state:
+        <span class="k">if</span> name <span class="k">not in</span> desired:
+            actions.append((<span class="s">"destroy"</span>, name))  <span class="c"># read this line twice</span>
+    <span class="k">return</span> actions
+
+<span class="k">for</span> action, name <span class="k">in</span> plan(desired, state):
+    print(action, name)       <span class="c"># a human / pipeline approves THIS list</span>
+<span class="c"># apply(plan) calls provider APIs in dependency order and saves</span>
+<span class="c"># the new state. Re-running with no changes plans zero actions:</span>
+<span class="c"># that is idempotence.</span></pre>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">06</span> Failure modes</h2>
+      <p class="sub">Five ways IaC projects hurt themselves &mdash; and the one-line fix for each.</p>
+      <div class="mechanics">
+        <div class="mech fail"><div class="mnum">1</div><div><h3>ClickOps drift: &ldquo;just one quick console fix&rdquo;<span class="fix">Fix: edit the code, not the target &mdash; and run a scheduled plan so drift is caught the same day.</span></h3>
+        <p>A hotfix in the console feels faster, but now code and reality disagree. The next unrelated apply silently reverts the hotfix &mdash; usually during another incident. AWS and Microsoft both name drift as the core problem IaC exists to solve; bypassing the loop recreates it.</p></div></div>
+        <div class="mech fail"><div class="mnum">2</div><div><h3>State committed to git, kept on one laptop, or hand-edited<span class="fix">Fix: remote backend with locking and backups, restricted access, and state surgery only via the tool&rsquo;s own commands.</span></h3>
+        <p>State in git leaks sensitive values and conflicts on every merge. State on one laptop is a single point of losing production&rsquo;s map. A hand edit corrupts the ledger so plans lie. Treat state like a production database, because it is one.</p></div></div>
+        <div class="mech fail"><div class="mnum">3</div><div><h3>Applying without reading the plan<span class="fix">Fix: save the plan, review creates / updates / destroys, and apply that saved plan &mdash; no auto-approve in prod.</span></h3>
+        <p>Renaming a resource or changing one attribute can force a destroy-and-recreate of a database or load balancer. It was all printed in the plan. The plan is the cheapest code review in engineering; skipping it converts a typo into downtime.</p></div></div>
+        <div class="mech fail"><div class="mnum">4</div><div><h3>Copy-pasted environments and one giant state<span class="fix">Fix: modules + per-environment variables, and split state by blast radius (network / platform / app).</span></h3>
+        <p>Three copied folders become three different infrastructures within a month, and every fix has to be made three times. One giant state has the opposite problem: every apply can touch everything, locking blocks everyone, and one corruption takes the whole estate with it.</p></div></div>
+        <div class="mech fail"><div class="mnum">5</div><div><h3>Secrets hardcoded in code &mdash; and sitting in state<span class="fix">Fix: reference secrets from a secret store, use short-lived pipeline identity (OIDC), and restrict + encrypt state access.</span></h3>
+        <p>A password in a <code>.tf</code> file lives in git history forever, and many tools also store resource attributes &mdash; including secrets &mdash; in state in plain text. IaC multiplies both the power and the leak surface; design for it from day one, not after the first rotation panic.</p></div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">07</span> Go deeper</h2>
+      <p class="sub">Verified references &mdash; every link opened and checked before publishing.</p>
+      <div class="ref-list">
+        <a class="ref" href="https://developer.hashicorp.com/terraform/intro"><span class="badge doc">Docs</span><div><h3>What is Terraform? &mdash; HashiCorp Developer</h3><p>The canonical intro from the tool&rsquo;s maker: providers and APIs, the Write &rarr; Plan &rarr; Apply workflow, state, modules, and collaboration &mdash; the vocabulary this lesson uses.</p></div></a>
+        <a class="ref" href="https://learn.microsoft.com/en-us/devops/deliver/what-is-infrastructure-as-code/"><span class="badge doc">Docs</span><div><h3>What is infrastructure as code (IaC)? &mdash; Microsoft Learn / Azure DevOps</h3><p>The tool-neutral definition: environment drift and snowflakes, idempotence, declarative files, and &ldquo;edit the source, not the target&rdquo; &mdash; plus how Azure does it natively with ARM and Bicep.</p></div></a>
+        <a class="ref" href="https://aws.amazon.com/what-is/iac/"><span class="badge doc">Docs</span><div><h3>What is Infrastructure as Code? &mdash; AWS</h3><p>AWS&rsquo;s explainer: duplicating environments, reducing configuration errors, declarative vs imperative approaches, IaC in CI/CD, and where CloudFormation and the CDK fit.</p></div></a>
+        <a class="ref" href="https://www.youtube.com/watch?v=Z1l_L1S8d68"><span class="badge vid">Video</span><div><h3>Learn Terraform in 9 Minutes</h3><p>A whiteboard walk-through of the console-clicking problem, write / plan / apply, the parts of a Terraform file, and why state and the lock file catch beginners out.</p></div></a>
+        <a class="ref" href="https://www.youtube.com/watch?v=SLB_c_ayRMo"><span class="badge vid">Video</span><div><h3>Terraform Course &mdash; Automate your AWS cloud infrastructure (freeCodeCamp)</h3><p>The long hands-on version: set up AWS, deploy and modify real resources, then work through state, outputs, variables, and referencing resources.</p></div></a>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">08</span> Sample prompts</h2>
+      <p class="sub">Copy one into your AI assistant and apply it to your own work.</p>
+      <p id="live-status" class="sr-only" role="status"></p>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>CONVERT A MANUAL SETUP TO IaC</strong><button class="copy-btn" data-copy="p1">Copy</button></div>
+        <p class="prompt-text" id="p1">Here is how I currently create this environment by hand in the cloud console: [paste the steps]. Convert it to a first Terraform (or Bicep) project: list the resources and their dependencies, write the declarations with variables for anything environment-specific, and show me the init / plan / apply commands. Flag anything I do manually that has no declarative equivalent.</p>
+      </div>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>REVIEW THIS PLAN LIKE A SENIOR</strong><button class="copy-btn" data-copy="p2">Copy</button></div>
+        <p class="prompt-text" id="p2">Review this infrastructure plan output the way a senior platform engineer would before approving an apply: list every destroy or forced replacement and what data or traffic it risks, any change that widens public access or weakens encryption, and anything that looks like drift being reverted. End with apply / do-not-apply and why. [paste plan]</p>
+      </div>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>DE-SNOWFLAKE MY ENVIRONMENTS</strong><button class="copy-btn" data-copy="p3">Copy</button></div>
+        <p class="prompt-text" id="p3">I have separate, copy-pasted IaC folders for dev, staging, and prod that have drifted apart. Design the refactor: what becomes a shared module, what stays as per-environment variables and state, how to migrate each environment without destroying and recreating resources, and the order to do it in so prod is touched last.</p>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">09</span> Quiz</h2>
+      <p class="sub">Five questions. Click an answer &mdash; you get the explanation right away.</p>
+      <div id="quiz">
+        <div class="quiz-q" data-answer="2">
+          <p class="qq">1. What does it mean that IaC is declarative and idempotent?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">You write the exact API calls in order, and the tool retries them until they succeed.</button>
+            <button class="qopt" data-i="1">The files are written in JSON, and JSON can be applied to any cloud unchanged.</button>
+            <button class="qopt" data-i="2">You declare the desired end state; the tool computes the steps, and applying the same declaration always lands the same configuration.</button>
+            <button class="qopt" data-i="3">The tool declares your intent to the team in a report, and a human performs the steps.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="1">
+          <p class="qq">2. Why does the tool keep a state file, and how should it be stored?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">It is a log for humans to read; commit it to git so everyone can audit it.</button>
+            <button class="qopt" data-i="1">It maps declarations to real resource IDs so the next plan knows what exists; keep it remote, locked, backed up, and access-restricted.</button>
+            <button class="qopt" data-i="2">It caches provider downloads to make init faster; any local folder is fine.</button>
+            <button class="qopt" data-i="3">It stores the plan history; delete it after each apply to keep runs clean.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="3">
+          <p class="qq">3. A teammate hotfixed a security group in the console last night. Your scheduled plan this morning is non-empty. What happened, and what do you do?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">Nothing &mdash; plans are always non-empty. Ignore it.</button>
+            <button class="qopt" data-i="1">The tool is broken; delete the state file and re-init.</button>
+            <button class="qopt" data-i="2">Apply immediately so reality matches code again, without telling anyone.</button>
+            <button class="qopt" data-i="3">That is drift: reality no longer matches code. Decide deliberately &mdash; codify the hotfix in a PR if it should stay, or apply to revert it if it should not.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="0">
+          <p class="qq">4. Dev, staging, and prod need the same shape but different sizes. The IaC way is:</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">One shared codebase / modules, with per-environment variables and separate state.</button>
+            <button class="qopt" data-i="1">Copy the folder three times so each environment can evolve independently.</button>
+            <button class="qopt" data-i="2">Maintain prod by hand because it is too important to automate.</button>
+            <button class="qopt" data-i="3">One state file for all three, so a single apply updates everything at once.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+        <div class="quiz-q" data-answer="1">
+          <p class="qq">5. The plan for a one-line change shows your database will be destroyed and recreated. What is the right move?</p>
+          <div class="qopts">
+            <button class="qopt" data-i="0">Apply anyway &mdash; the tool knows best, and recreation is usually lossless.</button>
+            <button class="qopt" data-i="1">Stop. This is exactly what reading the plan is for: find why the attribute forces replacement, and restructure the change (or plan the migration) before applying.</button>
+            <button class="qopt" data-i="2">Edit the state file by hand so the plan stops showing the destroy.</button>
+            <button class="qopt" data-i="3">Turn on auto-approve so future plans do not block on prompts.</button>
+          </div>
+          <p class="qexp" hidden></p>
+        </div>
+      </div>
+      <div id="quiz-score" role="status"></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">10</span> Flashcards</h2>
+      <p class="sub">Click a card (or focus it and press Enter / Space) to flip it.</p>
+      <div class="fgrid">
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Infrastructure as code (IaC)</div>
+          <div class="fface back">Defining and deploying infrastructure (networks, VMs, load balancers, databases) in versioned, machine-readable files instead of manual console or hardware processes.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Declarative vs imperative</div>
+          <div class="fface back">Declarative: declare the end state, the tool computes the steps (Terraform, Bicep). Imperative / general-language: specify steps or program them (scripts, Pulumi, CDK).</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Idempotence</div>
+          <div class="fface back">Applying the same declaration always produces the same configuration, regardless of the starting state. Re-running a converged apply plans zero changes.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Provider</div>
+          <div class="fface back">The plugin that translates your declarations into one platform&rsquo;s API calls &mdash; AWS, Azure, GCP, Kubernetes, GitHub, and thousands more in registries.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">State file</div>
+          <div class="fface back">The tool&rsquo;s ledger mapping declarations to real resource IDs. Remote, locked, backed up, restricted &mdash; never committed to git, never hand-edited.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Plan</div>
+          <div class="fface back">The dry-run diff of code vs state + reality: create / update / destroy, in dependency order. Review it, save it, apply that exact plan.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Drift</div>
+          <div class="fface back">Reality no longer matches code &mdash; usually a manual console change. A scheduled plan detects it; resolve it in code or by reverting, never by ignoring it.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Module</div>
+          <div class="fface back">A reusable folder of declarations with variables in and outputs out &mdash; the standard shape (web tier, database tier) instantiated many times without copy-paste.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Snowflake environment</div>
+          <div class="fface back">An environment built and maintained by hand until it is unique and cannot be reproduced automatically &mdash; the failure mode IaC was invented to eliminate.</div>
+        </div></div>
+        <div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner">
+          <div class="fface front">Edit the source, not the target</div>
+          <div class="fface back">Microsoft Learn&rsquo;s rule for every IaC change: change the versioned model and let the pipeline configure the environment &mdash; never change the environment directly.</div>
+        </div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">11</span> Reach for this when&hellip;</h2>
+      <div class="triggers">
+        <div class="trigger"><strong>You are about to create a second environment, or rebuild one after an incident</strong> &mdash; if rebuilding depends on someone&rsquo;s memory or a wiki checklist, codify it now: the first IaC project pays for itself at the first rebuild.</div>
+        <div class="trigger"><strong>Someone says &ldquo;dev works but staging doesn&rsquo;t&rdquo; or proposes a console hotfix</strong> &mdash; that is drift talking. Put the environments under one codebase and route the hotfix through a PR, even a fast one.</div>
+        <div class="trigger"><strong>An auditor, a new teammate, or future-you asks &ldquo;why is it configured like this?&rdquo;</strong> &mdash; with IaC the answer is a git history: who changed it, when, in which reviewed PR, and how to roll it back.</div>
+      </div>
+    </section>
+
+    <a class="back-link" href="../index.html#daily-topics">&larr; Back to daily topics</a>
+  </div>
+  <script>
+    const status = document.getElementById('live-status');
+    document.querySelectorAll('.copy-btn').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const target = document.getElementById(button.dataset.copy);
+        const text = target.innerText;
+        try {
+          await navigator.clipboard.writeText(text);
+          const original = button.textContent;
+          button.textContent = 'Copied';
+          status.textContent = 'Prompt copied to clipboard.';
+          setTimeout(() => button.textContent = original, 1600);
+        } catch {
+          const range = document.createRange();
+          range.selectNodeContents(target);
+          const selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+          status.textContent = 'Prompt selected. Copy it with your device copy command.';
+        }
+      });
+    });
+    const explanations = [
+      ["Ordered API scripts are the imperative style IaC replaces: the first unexpected starting state breaks the sequence.",
+       "File format is not the point, and no IaC file is truly cloud-portable unchanged: providers, resources, and APIs differ per platform. The declaration and the idempotent apply are the point.",
+       "Correct. Declarative means the file states the end state; idempotence (Microsoft Learn's term) means the same apply always lands the same configuration, whatever reality looked like before.",
+       "The tool does perform the steps: through provider APIs, in dependency order, after you approve the plan. The human approves; the tool executes."],
+      ["State is not a human audit log, and it can contain sensitive values in plain text: committing it to git is both a security leak and a merge-conflict machine.",
+       "Correct. State is the ledger that binds code to real IDs, which is what makes the next plan accurate. Remote + locking prevents racing applies; backups and restricted access protect production's map.",
+       "Provider downloads are init's cache, unrelated to state. State is about resources, not binaries.",
+       "Deleting state makes the tool forget it manages live resources: the next plan tries to recreate everything. State is deleted almost never, and only deliberately."],
+      ["A non-empty plan on an unchanged repo is a signal, not noise: something out-of-band changed reality.",
+       "State is the messenger here, not the problem: deleting it destroys the mapping to live resources and makes everything worse.",
+       "Silently reverting a hotfix can re-open the incident the hotfix closed, and doing it without telling the author guarantees a repeat.",
+       "Correct. Drift is a decision point: if the hotfix is right, codify it in a reviewed PR so code catches up with reality; if it is wrong, apply to revert it, knowingly."],
+      ["Correct. Same modules, different variables (size, count, names) and separate state per environment: one shape to fix, three isolated blast radii.",
+       "Copied folders are how environments become snowflakes: they diverge within weeks and every fix must be repeated, imperfectly, three times.",
+       "Prod is where manual change is most dangerous, not least: it is the environment that most needs reviewed plans and an audit trail.",
+       "Shared state across environments means one apply, one lock, and one corruption for all three: the opposite of isolation."],
+      ["Recreation of a stateful resource is very often lossy: a new empty database has the right shape and none of the data.",
+       "Correct. A forced replacement in the plan is the tool warning you, for free, before anything happens. Find the attribute that forces it; often there is an in-place alternative or a migration path.",
+       "Hand-editing state makes the ledger lie: the tool stops showing the destroy because it no longer knows the truth, not because the danger went away.",
+       "Auto-approve removes the human from the one moment designed for a human: reading the plan before reality changes."]
+    ];
+    const questions = [...document.querySelectorAll('.quiz-q')];
+    let score = 0, answered = 0;
+    questions.forEach((q, qi) => {
+      const correct = parseInt(q.dataset.answer, 10);
+      const exp = q.querySelector('.qexp');
+      q.querySelectorAll('.qopt').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          if (q.dataset.done) return;
+          q.dataset.done = "1";
+          const chosen = parseInt(btn.dataset.i, 10);
+          const ok = chosen === correct;
+          q.querySelectorAll('.qopt').forEach((b) => {
+            b.disabled = true;
+            if (parseInt(b.dataset.i, 10) === correct) b.classList.add('correct');
+          });
+          if (!ok) btn.classList.add('wrong');
+          else score++;
+          answered++;
+          exp.hidden = false;
+          exp.innerHTML = ok
+            ? "<strong class=\"ok\">Correct.</strong> " + explanations[qi][chosen]
+            : "<strong class=\"no\">Not quite.</strong> " + explanations[qi][chosen];
+          if (answered === questions.length) {
+            const box = document.getElementById('quiz-score');
+            box.style.display = "block";
+            box.innerHTML = "You scored <strong>" + score + " / " + questions.length + "</strong>." +
+              (score === questions.length ? " Clean sweep — go codify one hand-built environment this week." :
+               score >= 3 ? " Solid — re-read the failure mode you missed; that is where real IaC projects bleed." :
+               " Worth a re-read of sections 04 and 06 before your first apply.");
+          }
+        });
+      });
+    });
+    document.querySelectorAll('.fcard').forEach((card) => {
+      const flip = () => card.classList.toggle('flipped');
+      card.addEventListener('click', flip);
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); }
+      });
+    });
+  </script>
+</body>
+</html>

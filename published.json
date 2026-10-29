@@ -320,5 +320,12 @@
     "date": "2026-10-28",
     "summary": "The OWASP Top 10 is not a checklist to memorize \u2014 it is a map of how web apps actually get broken: authorize every object on the server, never let user input become a command, use proven crypto, harden config and supply chain, design for abuse, and log and fail safely. The 2025 list, six builder mechanics, five failure modes, quiz and flashcards.",
     "skill": "security-basics-owasp-top-10"
+  },
+  {
+    "slug": "2026-10-29-infrastructure-as-code-from-zero",
+    "title": "Infrastructure as code from zero",
+    "date": "2026-10-29",
+    "summary": "Stop clicking clouds into existence: declare the desired state in versioned files, let the tool diff code against reality (state), review the plan like a code change, and apply idempotently \u2014 so any environment can be rebuilt, audited, and rolled back from git.",
+    "skill": "infrastructure-as-code"
   }
 ]
