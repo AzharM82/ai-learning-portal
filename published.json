@@ -327,5 +327,12 @@
     "date": "2026-10-29",
     "summary": "Stop clicking clouds into existence: declare the desired state in versioned files, let the tool diff code against reality (state), review the plan like a code change, and apply idempotently \u2014 so any environment can be rebuilt, audited, and rolled back from git.",
     "skill": "infrastructure-as-code"
+  },
+  {
+    "slug": "2026-10-30-model-context-protocol-mcp",
+    "title": "Model Context Protocol (MCP): servers, tools, resources, and transports",
+    "date": "2026-10-30",
+    "summary": "MCP turns M\u00d7N custom integrations into M+N: build one server that exposes tools, resources, and prompts over JSON-RPC, let any host discover them with tools/list, and choose stdio for local or Streamable HTTP for remote \u2014 with authorization and human approval at the host.",
+    "skill": "model-context-protocol"
   }
 ]
