@@ -334,5 +334,12 @@
     "date": "2026-10-30",
     "summary": "MCP turns M\u00d7N custom integrations into M+N: build one server that exposes tools, resources, and prompts over JSON-RPC, let any host discover them with tools/list, and choose stdio for local or Streamable HTTP for remote \u2014 with authorization and human approval at the host.",
     "skill": "model-context-protocol"
+  },
+  {
+    "slug": "2026-10-31-coding-agents-in-practice",
+    "title": "Coding agents in practice: Copilot agent mode, task decomposition, repo-scale changes",
+    "date": "2026-10-31",
+    "summary": "A coding agent is not autocomplete with ambition \u2014 it is a loop that plans, edits across the repo, runs commands, and iterates on errors until the task is done. Decompose work into well-scoped, verifiable chunks, give the repo its own instructions, isolate the agent on a branch, and review the diff like a teammate's PR.",
+    "skill": "coding-agents-in-practice"
   }
 ]
