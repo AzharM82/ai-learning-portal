@@ -341,5 +341,12 @@
     "date": "2026-10-31",
     "summary": "A coding agent is not autocomplete with ambition \u2014 it is a loop that plans, edits across the repo, runs commands, and iterates on errors until the task is done. Decompose work into well-scoped, verifiable chunks, give the repo its own instructions, isolate the agent on a branch, and review the diff like a teammate's PR.",
     "skill": "coding-agents-in-practice"
+  },
+  {
+    "slug": "2026-11-01-spec-driven-development",
+    "title": "Spec-driven development: specs as the source of truth for AI-built features",
+    "date": "2026-11-01",
+    "summary": "Stop letting code be the truth and prompts be the plan: write an executable spec first \u2014 constitution, spec.md (what/why), plan.md (how), tasks.md \u2014 let the agent implement against it, then converge by checking code back against the spec. When requirements change, you edit the spec, not scattered code.",
+    "skill": "spec-driven-development"
   }
 ]
