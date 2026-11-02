@@ -348,5 +348,12 @@
     "date": "2026-11-01",
     "summary": "Stop letting code be the truth and prompts be the plan: write an executable spec first \u2014 constitution, spec.md (what/why), plan.md (how), tasks.md \u2014 let the agent implement against it, then converge by checking code back against the spec. When requirements change, you edit the spec, not scattered code.",
     "skill": "spec-driven-development"
+  },
+  {
+    "slug": "2026-11-02-agent-frameworks-compared",
+    "title": "Agent frameworks compared: LangGraph, Semantic Kernel, and the Microsoft Agent Framework",
+    "date": "2026-11-02",
+    "summary": "Three frameworks, three control philosophies: LangGraph gives you an explicit state graph you compile and checkpoint, Semantic Kernel centers a Kernel with plugins and per-service agent classes, and Microsoft Agent Framework \u2014 the successor to Semantic Kernel and AutoGen \u2014 unifies one Agent type with sessions, context providers, middleware, and graph workflows. Choose by workflow shape, ecosystem, and migration path, not by hype.",
+    "skill": "agent-frameworks-compared"
   }
 ]

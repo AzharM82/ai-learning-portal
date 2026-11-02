@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent frameworks compared: LangGraph, Semantic Kernel, and the Microsoft Agent Framework &middot; AI Learning Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+    :root {
+      --ink: #14212b; --muted: #53636f; --paper: #f6f8f7; --white: #ffffff;
+      --line: #cbd5d8; --navy: #163247; --navy-2: #21465e; --teal: #0b8174;
+      --teal-soft: #dff2ee; --orange: #d66332; --orange-soft: #f8e4d8;
+      --gold: #d8a524; --gold-soft: #f7edc8; --blue-soft: #e3eef4;
+      --red: #b3402e; --red-soft: #f9e3de; --green: #1e7a3c; --green-soft: #e2f2e6;
+      --shadow: 0 18px 45px rgba(20, 33, 43, .09); --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; color: var(--ink);
+      background: linear-gradient(rgba(20,33,43,.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(20,33,43,.035) 1px, transparent 1px), var(--paper);
+      background-size: 28px 28px;
+      font-family: "Source Sans 3", sans-serif; font-size: 17px; line-height: 1.58;
+    }
+    .shell { width: min(960px, calc(100% - 40px)); margin: 0 auto; }
+    .portal-nav{position:sticky;top:0;z-index:50;background:rgba(22,50,71,.97);border-bottom:1px solid rgba(255,255,255,.12)}
+    .portal-nav-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;flex-wrap:wrap}
+    .portal-brand{color:#fff;text-decoration:none;font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:15px}
+    .portal-brand span{color:var(--gold);font-weight:400}
+    .portal-links{display:flex;gap:18px;flex-wrap:wrap}
+    .portal-links a{color:#dbe7ee;text-decoration:none;font-size:14.5px}
+    .portal-links a:hover{color:#fff;text-decoration:underline}
+    .hero { padding: 56px 0 36px; }
+    .chapter-mark { display:inline-flex;align-items:center;gap:10px;color:var(--navy);
+      font:600 12px/1.2 "IBM Plex Mono",monospace;letter-spacing:.09em;text-transform:uppercase;margin-bottom:18px; }
+    .chapter-mark::before { content:"";width:42px;height:3px;background:var(--orange); }
+    h1 { font-size: clamp(36px, 5vw, 58px); line-height: 1.02; letter-spacing:-.03em; margin:0 0 14px; }
+    .lede { color: var(--muted); font-size: clamp(18px,2vw,22px); max-width: 64ch; margin:0 0 8px; }
+    .date-line { font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--muted); }
+    section.block { margin: 44px 0; }
+    h2 { font-size: 26px; letter-spacing:-.02em; margin:0 0 6px; display:flex;align-items:center;gap:12px; }
+    h2 .num { font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:600;color:var(--white);
+      background:var(--navy);border-radius:999px;min-width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center; }
+    .sub { color:var(--muted); margin:0 0 18px; max-width: 68ch; }
+    .card { background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+      padding:24px;box-shadow:var(--shadow); }
+    .skill-card { background:var(--navy);color:#eaf2f7;border-radius:var(--radius);padding:22px 24px;
+      font-family:"IBM Plex Mono",monospace;font-size:14.5px;overflow-x:auto;box-shadow:var(--shadow); }
+    .skill-card .k { color:var(--gold); }
+    .idea { font-size:21px;line-height:1.5;border-left:4px solid var(--teal);padding:6px 0 6px 20px;max-width:62ch; }
+    .idea strong { color:var(--navy); }
+    .mechanics { display:grid;gap:14px; }
+    .mech { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:18px 20px;
+      display:grid;grid-template-columns:44px 1fr;gap:14px;align-items:start; }
+    .mech .mnum { font-family:"IBM Plex Mono",monospace;font-weight:600;color:var(--teal);
+      background:var(--teal-soft);border-radius:10px;width:44px;height:44px;display:flex;align-items:center;justify-content:center; }
+    .mech h3 { margin:0 0 6px;font-size:18px; }
+    .mech p { margin:0;color:var(--muted);font-size:15.5px; }
+    .mech code, .inline-code { font-family:"IBM Plex Mono",monospace;font-size:.88em;background:var(--blue-soft);
+      padding:2px 7px;border-radius:6px;color:var(--navy); }
+    pre.code { background:#0f2233;color:#e8f1f5;border-radius:14px;padding:20px 22px;overflow-x:auto;
+      font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.6;margin:0; }
+    pre.code .c { color:#8ba3b0; } pre.code .s { color:#ffd479; } pre.code .k { color:#7fd6c2; }
+    .fail { border-left:4px solid var(--orange); }
+    .fail h3 .fix { display:block;margin-top:8px;font-size:15px;font-weight:500;color:var(--green); }
+    .ref-list { display:grid;gap:12px; }
+    .ref { display:flex;gap:14px;align-items:flex-start;background:var(--white);border:1px solid var(--line);
+      border-radius:14px;padding:16px 18px;text-decoration:none;color:inherit; }
+    .ref:hover { border-color:var(--teal); }
+    .ref .badge { flex:none;font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;letter-spacing:.06em;
+      padding:5px 10px;border-radius:999px;text-transform:uppercase; }
+    .badge.doc { background:var(--blue-soft);color:var(--navy); }
+    .badge.vid { background:var(--orange-soft);color:var(--orange); }
+    .ref h3 { margin:0 0 4px;font-size:17px; }
+    .ref p { margin:0;color:var(--muted);font-size:14.5px; }
+    .prompt-block { background:#0f2233;border-radius:var(--radius);overflow:hidden;margin-bottom:18px;box-shadow:var(--shadow); }
+    .prompt-top { display:flex;justify-content:space-between;align-items:center;gap:12px;
+      padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.12); }
+    .prompt-top strong { color:#fff;font-size:13px;letter-spacing:.06em;font-family:"IBM Plex Mono",monospace; }
+    .copy-btn { border:1px solid #6c8796;background:transparent;color:#fff;border-radius:6px;padding:7px 11px;
+      cursor:pointer;font-weight:700;font-size:14px; }
+    .copy-btn:hover { background:rgba(255,255,255,.1); }
+    .copy-btn:focus-visible { outline:2px solid var(--gold);outline-offset:2px; }
+    .prompt-text { color:#e8f1f5;font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.65;
+      padding:18px;white-space:pre-wrap;margin:0; }
+    .sr-only { position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0); }
+    .quiz-q { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px; }
+    .quiz-q .qq { font-weight:700;margin:0 0 12px;font-size:18px; }
+    .qopts { display:grid;gap:8px; }
+    .qopt { text-align:left;background:var(--paper);border:1px solid var(--line);border-radius:10px;
+      padding:12px 14px;cursor:pointer;font-size:15.5px;color:var(--ink); }
+    .qopt:hover:not(:disabled) { border-color:var(--navy); }
+    .qopt:disabled { cursor:default;opacity:.85; }
+    .qopt.correct { background:var(--green-soft);border-color:var(--green); }
+    .qopt.wrong { background:var(--red-soft);border-color:var(--red); }
+    .qexp { margin:12px 0 0;font-size:15px;color:var(--muted); }
+    .qexp strong.ok { color:var(--green); } .qexp strong.no { color:var(--red); }
+    #quiz-score { display:none;margin-top:8px;background:var(--navy);color:#fff;border-radius:14px;
+      padding:20px 24px;font-size:19px; }
+    #quiz-score strong { color:var(--gold); }
+    .fgrid { display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px; }
+    .fcard { perspective:900px;cursor:pointer;min-height:170px; }
+    .fcard-inner { position:relative;width:100%;height:100%;min-height:170px;transform-style:preserve-3d;transition:transform .45s; }
+    .fcard.flipped .fcard-inner { transform:rotateY(180deg); }
+    .fface { position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+      border-radius:14px;padding:18px;display:flex;align-items:center;justify-content:center;text-align:center;
+      border:1px solid var(--line);background:var(--white);box-shadow:var(--shadow);font-size:15.5px; }
+    .fface.front { font-weight:700;color:var(--navy); }
+    .fface.back { transform:rotateY(180deg);background:var(--teal-soft);color:var(--ink);font-size:14.5px; }
+    .fcard:focus-visible { outline:2px solid var(--teal);outline-offset:3px;border-radius:14px; }
+    .triggers { display:grid;gap:10px; }
+    .trigger { background:var(--gold-soft);border-radius:12px;padding:14px 18px;font-size:16px; }
+    .trigger strong { color:var(--navy); }
+    .back-link { display:inline-block;margin:8px 0 60px;font-weight:600;color:var(--teal);text-decoration:none;font-size:17px; }
+    .back-link:hover { text-decoration:underline; }
+    .fig { background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+      padding:12px;box-shadow:var(--shadow);overflow-x:auto; }
+    .fig svg { display:block;width:100%;height:auto; }
+    .flow-anim { stroke-dasharray: 8 6; animation: dashmove 1.2s linear infinite; }
+    @keyframes dashmove { to { stroke-dashoffset: -14; } }
+    @media (prefers-reduced-motion: reduce) { .fcard-inner{transition:none;} .flow-anim{animation:none;} }
+  </style>
+</head>
+<body><nav class="portal-nav">
+    <div class="shell portal-nav-inner">
+      <a class="portal-brand" href="../index.html">AI Engineering <span>&middot; Learning Portal</span></a>
+      <div class="portal-links">
+        <a href="../index.html#daily-topics">Daily topics</a>
+        <a href="../index.html#loop">Loop</a>
+        <a href="../index.html#graph">Graph</a>
+        <a href="../index.html#harness">Harness</a>
+      </div>
+    </div>
+  </nav>
+  <div class="shell">
+    <header class="hero">
+      <div class="chapter-mark">Daily topic &middot; AI engineering — round 2</div>
+      <h1>Agent frameworks compared: LangGraph, Semantic Kernel, and the Microsoft Agent Framework</h1>
+      <p class="lede">Every agent framework is a bet about control: who decides the next step — an explicit graph you drew, a kernel that lets the model pick plugins, or a unified agent-plus-workflow runtime? LangGraph, Semantic Kernel, and Microsoft Agent Framework make three different bets. Pick by workflow shape, ecosystem, and where your code must run in two years — not by demo speed.</p>
+      <p class="date-line">2026-11-02 &middot; Topic 050</p>
+    </header>
+
+    <section class="block">
+      <h2><span class="num">01</span> The skill card</h2>
+      <p class="sub">Every topic on this portal is designed like a Codex skill: a name, a trigger, and concrete steps.</p>
+      <div class="skill-card"><pre style="margin:0">---
+<span class="k">name:</span> agent-frameworks-compared
+<span class="k">description:</span> Reach for this when choosing an agent framework:
+  map your workflow first (open-ended agent vs defined steps),
+  then compare LangGraph (explicit state graph), Semantic Kernel
+  (Kernel + plugins, per-service agents), and Microsoft Agent
+  Framework (one Agent type, sessions, graph workflows — the
+  successor to Semantic Kernel and AutoGen) on control, state,
+  tools, and migration cost.
+---</pre></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">02</span> The one-idea version</h2>
+      <p class="idea"><strong>Frameworks differ first in their control model, not their model list.</strong> LangGraph makes control explicit: you define shared <em>State</em>, <em>Nodes</em> that do work, and <em>Edges</em> that decide what runs next. Semantic Kernel centers a <em>Kernel</em> holding services and plugins, with a different agent class per provider. Microsoft Agent Framework — described by Microsoft as the next generation of both Semantic Kernel and AutoGen — unifies that into one <em>Agent</em> type plus graph-based <em>Workflows</em> when the steps are known in advance.</p>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">03</span> The picture: three control models</h2>
+      <p class="sub">Same job — research, decide, act — drawn three ways. Notice what each picture puts in the center:</p>
+      <div class="fig">
+        <svg viewBox="0 0 960 400" role="img" aria-label="Diagram comparing three frameworks: LangGraph centers a state graph with nodes and edges, Semantic Kernel centers a Kernel with plugins and per-service agents, Microsoft Agent Framework centers a unified Agent with sessions and workflows.">
+          <g font-family="Source Sans 3, sans-serif" font-size="14">
+            <text x="20" y="26" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="600" fill="#163247">CENTER OF GRAVITY: GRAPH vs KERNEL vs AGENT + WORKFLOW</text>
+            <g font-family="IBM Plex Mono, monospace" font-size="12" font-weight="600">
+              <rect x="20" y="60" width="290" height="170" rx="12" fill="#dff2ee" stroke="#0b8174" stroke-width="2"/><text x="165" y="92" text-anchor="middle" fill="#163247">LANGGRAPH</text><text x="165" y="118" text-anchor="middle" font-size="11" font-weight="400" fill="#53636f">State + Nodes + Edges</text><text x="165" y="136" text-anchor="middle" font-size="11" font-weight="400" fill="#53636f">Compile the graph, then run it</text><text x="165" y="154" text-anchor="middle" font-size="11" font-weight="400" fill="#53636f">Checkpointers, interrupts,</text><text x="165" y="172" text-anchor="middle" font-size="11" font-weight="400" fill="#53636f">subgraphs, streaming</text><text x="165" y="200" text-anchor="middle" font-size="11" font-weight="600" fill="#0b8174">YOU DRAW THE CONTROL FLOW</text>
+              <rect x="335" y="60" width="290" height="170" rx="12" fill="#e3eef4" stroke="#163247" stroke-width="2"/><text x="480" y="92" text-anchor="middle" fill="#163247">SEMANTIC KERNEL</text><text x="480" y="118" text-anchor="middle" font-size="11" font-weight="400" fill="#53636f">Kernel + Plugins + Services</text><text x="480" y="136" text-anchor="middle" font-size="11" font-weight="400" fill="#53636f">ChatCompletionAgent,</text><text x="480" y="154" text-anchor="middle" font-size="11" font-weight="400" fill="#53636f">AzureAIAgent, Assistant agents</text><text x="480" y="172" text-anchor="middle" font-size="11" font-weight="400" fill="#53636f">Orchestrations as patterns</text><text x="480" y="200" text-anchor="middle" font-size="11" font-weight="600" fill="#163247">THE KERNEL MEDIATES THE MODEL</text>
+              <rect x="650" y="60" width="290" height="170" rx="12" fill="#f7edc8" stroke="#d8a524" stroke-width="2"/><text x="795" y="92" text-anchor="middle" fill="#163247">MICROSOFT AGENT FW</text><text x="795" y="118" text-anchor="middle" font-size="11" font-weight="400" fill="#53636f">One Agent type + Sessions</text><text x="795" y="136" text-anchor="middle" font-size="11" font-weight="400" fill="#53636f">Context providers, middleware,</text><text x="795" y="154" text-anchor="middle" font-size="11" font-weight="400" fill="#53636f">MCP clients + Workflows</text><text x="795" y="172" text-anchor="middle" font-size="11" font-weight="400" fill="#53636f">.NET / Python / Go</text><text x="795" y="200" text-anchor="middle" font-size="11" font-weight="600" fill="#b3402e">AGENT WHEN OPEN-ENDED,</text>
+            </g>
+            <text x="795" y="218" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" font-weight="600" fill="#b3402e">WORKFLOW WHEN DEFINED</text>
+            <g font-family="IBM Plex Mono, monospace" font-size="12" font-weight="600">
+              <rect x="20" y="260" width="450" height="80" rx="12" fill="#f8e4d8" stroke="#d66332" stroke-width="2"/><text x="245" y="292" text-anchor="middle" fill="#163247">SK + AUTOGEN &#8594; MICROSOFT AGENT FRAMEWORK</text><text x="245" y="314" text-anchor="middle" font-size="11" font-weight="400" fill="#53636f">Same teams, direct successor — plan migration, do not greenfield on SK.</text>
+              <rect x="490" y="260" width="450" height="80" rx="12" fill="#dff2ee" stroke="#0b8174" stroke-width="2"/><text x="715" y="292" text-anchor="middle" fill="#163247">LANGGRAPH STAYS ECOSYSTEM-INDEPENDENT</text><text x="715" y="314" text-anchor="middle" font-size="11" font-weight="400" fill="#53636f">Python / JS, any LangChain chat model, LangSmith deployment.</text>
+            </g>
+            <text x="20" y="372" font-size="15" fill="#53636f"><tspan font-weight="700" fill="#163247">The rule:</tspan> draw your workflow first — the framework whose native shape matches it wins.</text>
+          </g>
+        </svg>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">04</span> How it works</h2>
+      <p class="sub">Seven mechanics: one selection rule, the three frameworks in their own terms, and how to commit without regret.</p>
+      <div class="mechanics"><div class="mech"><div class="mnum">1</div><div><h3>Map the workflow before you name a framework</h3><p>Microsoft Agent Framework&rsquo;s own guidance is the cleanest test: <strong>use an agent when the task is open-ended or conversational</strong> and a single LLM call with tools may suffice; <strong>use a workflow when the process has well-defined steps</strong>, needs explicit execution order, or must coordinate several agents — and if a plain function handles the task, write the function instead of an agent. Sketch states, branches, loops, human approvals, and failure exits on paper first. That sketch, not a vendor chart, is your selection criteria.</p></div></div>
+<div class="mech"><div class="mnum">2</div><div><h3>LangGraph: define State, add Nodes and Edges, then compile</h3><p>Per the LangChain Graph API docs, a graph is three things: <code>State</code> (a TypedDict or Pydantic schema shared by all steps, with a <em>reducer</em> per key deciding how updates merge — e.g. <code>add_messages</code> appends), <code>Nodes</code> (plain Python functions that receive state and return a partial update — an LLM call or ordinary code), and <code>Edges</code> (fixed transitions or conditional routers that inspect state). You <code>compile()</code> the <code>StateGraph</code> — which checks for orphaned nodes and attaches checkpointers and breakpoints — then invoke it. Nodes do the work; edges tell what to do next.</p></div></div>
+<div class="mech"><div class="mnum">3</div><div><h3>LangGraph in production: checkpointers, interrupts, and subgraphs</h3><p>The graph model pays off operationally: a <strong>checkpointer</strong> persists state after each super-step keyed by <code>thread_id</code>, so runs pause, resume, and can be inspected; <code>interrupt()</code> pauses for a human and <code>Command</code> resumes with an approval or an edit; the <code>Send</code> API fans work out dynamically; and a node can itself be a compiled subgraph, so teams compose tested pieces. The cost is honesty: every branch you want must be drawn — there is no hidden planner to improvise a path you did not model.</p></div></div>
+<div class="mech"><div class="mnum">4</div><div><h3>Semantic Kernel: build a Kernel, register plugins, pick an agent class per service</h3><p>Semantic Kernel&rsquo;s center is the <code>Kernel</code>: a container for AI services and <strong>plugins</strong> — functions decorated <code>[KernelFunction]</code> / <code>@kernel_function</code> that the model can call. Its Agent Framework then gives you a <em>different class per provider</em>: <code>ChatCompletionAgent</code> for chat-completion services, <code>OpenAIAssistantAgent</code>, <code>AzureAIAgent</code>, and <code>OpenAIResponsesAgent</code>, each with its own thread type you create and manage. Multi-agent work is expressed as named <strong>orchestration patterns</strong> — Sequential, Concurrent, Handoff, Group Chat, and Magentic — each constructed and invoked through a shared pattern API.</p></div></div>
+<div class="mech"><div class="mnum">5</div><div><h3>Microsoft Agent Framework: one Agent type, sessions, and building blocks around it</h3><p>Agent Framework collapses SK&rsquo;s per-service classes into a <strong>single Agent / ChatClientAgent type</strong> over a unified model-client interface (Foundry, Azure OpenAI, OpenAI, Anthropic, Ollama, and more), in .NET, Python, and Go. State moves from manually-created threads to an <code>AgentSession</code> you create with <code>agent.create_session()</code>. Around the agent sit the composable blocks SK and AutoGen pioneered, now first-class: <strong>context providers</strong> for memory and RAG, <strong>middleware</strong> that intercepts runs, calls, and tool calls, built-in <strong>MCP clients</strong>, telemetry, and a batteries-included Harness agent for long multi-step tasks. Tools register directly at agent creation — no Kernel required.</p></div></div>
+<div class="mech"><div class="mnum">6</div><div><h3>Microsoft Agent Framework workflows: executors and edges when steps are known</h3><p>When the path is defined, Agent Framework switches abstraction: a <code>WorkflowBuilder</code> connects <em>executors</em> (agents or functions) with edges, supports sequential, concurrent, group-chat, and handoff patterns, checkpointing, and human-in-the-loop — and any workflow can be wrapped with <code>.as_agent()</code> so callers use the same run API as for a single agent. That dual model is the real difference from SK: agent and workflow are peers in one runtime, not an agent framework with orchestration bolted on.</p></div></div>
+<div class="mech"><div class="mnum">7</div><div><h3>Choose on ecosystem and migration, then prove it with an eval slice</h3><p>Decide the tie-breakers explicitly: <strong>LangGraph</strong> if you are Python/JS, provider-agnostic, and need fine-grained cyclic control plus mature checkpointing; <strong>Microsoft Agent Framework</strong> if you are on Azure / Foundry / .NET, want sessions, middleware, and telemetry built in, or are migrating from Semantic Kernel or AutoGen (Microsoft publishes a step-by-step SK&#8594;Agent Framework migration guide: namespaces, agent creation, sessions, tool registration); <strong>Semantic Kernel itself</strong> mainly to maintain existing systems while you plan that move. Whichever you pick, implement one real slice — one loop, one tool, one approval, one failure — in the finalist and grade it with your eval harness before committing the codebase.</p></div></div>
+</div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">05</span> Code sketch</h2>
+      <p class="sub">The same triage idea in three dialects — notice what each one makes you name: state and edges, a kernel and an agent class, or just an agent and its session.</p>
+      <pre class="code"><span class="c"># --- LangGraph: state, nodes, edges, compile ---</span>
+<span class="k">from</span> langgraph.graph <span class="k">import</span> StateGraph, START, END, MessagesState
+<span class="k">def</span> triage(state): <span class="k">return</span> {"route": "billing" <span class="k">if</span> "refund" <span class="k">in</span> state["messages"][-1].content <span class="k">else</span> "support"}
+g = StateGraph(MessagesState); g.add_node("triage", triage); g.add_node("act", act_node)
+g.add_edge(START, "triage"); g.add_conditional_edges("triage", <span class="k">lambda</span> s: s["route"]); g.add_edge("act", END)
+app = g.compile(checkpointer=saver)  <span class="c"># resume / interrupt by thread_id</span>
+
+<span class="c"># --- Semantic Kernel: kernel + plugin, agent class per service ---</span>
+<span class="k">from</span> semantic_kernel.agents <span class="k">import</span> ChatCompletionAgent
+sk_agent = ChatCompletionAgent(service=azure_service, kernel=kernel_with_plugins,
+                               name="Triage", instructions="Route the request, then act.")
+
+<span class="c"># --- Microsoft Agent Framework: one Agent type + session ---</span>
+<span class="k">from</span> agent_framework <span class="k">import</span> Agent
+maf_agent = Agent(client=foundry_client, name="Triage",
+                  instructions="Route the request, then act.", tools=[refund_tool])
+session = <span class="k">await</span> maf_agent.create_session()
+result = <span class="k">await</span> maf_agent.run("Where is my refund?", session=session)</pre>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">06</span> Failure modes</h2>
+      <p class="sub">Five ways framework choices go wrong — and the one-line fix for each.</p>
+      <div class="mechanics"><div class="mech fail"><div class="mnum">1</div><div><h3>Picking the framework from a demo, not from your workflow shape<span class="fix">Fix: draw states, branches, approvals, and failure exits first; choose the framework whose native control model matches that drawing.</span></h3><p>A chat demo makes every framework look identical — one prompt, one tool, one answer. Production exposes the difference: loops, retries, parallel fan-out, and human gates are either native (drawn edges, workflow executors) or hand-built scaffolding you now own forever.</p></div></div>
+<div class="mech fail"><div class="mnum">2</div><div><h3>The mega-node: a LangGraph graph with one node that does everything<span class="fix">Fix: split by decision point — one node per step that can fail, branch, or be checkpointed independently.</span></h3><p>Wrapping an entire prompt-chain inside a single node keeps the code but discards the framework: no conditional routing, no per-step checkpoint, no interrupt in the middle. If your graph has no meaningful edges, you did not need a graph — or you have not modeled the workflow yet.</p></div></div>
+<div class="mech fail"><div class="mnum">3</div><div><h3>Greenfielding on Semantic Kernel as if it were the destination<span class="fix">Fix: for new Microsoft-stack work, start on Microsoft Agent Framework; reserve SK work for maintenance and a planned migration.</span></h3><p>Microsoft states it plainly: Agent Framework is the direct successor to Semantic Kernel and AutoGen, built by the same teams, with a published migration guide. New features, the unified agent type, and graph workflows are landing there — an SK greenfield today is a migration project scheduled for tomorrow.</p></div></div>
+<div class="mech fail"><div class="mnum">4</div><div><h3>Confusing agent and workflow — in any framework<span class="fix">Fix: agent for open-ended work the model must plan; workflow / graph for defined steps that must execute in order; plain function if neither is needed.</span></h3><p>Giving an autonomous agent a fixed compliance pipeline invites improvised step order; hard-coding a graph for an open-ended research task forces you to anticipate every branch. Both errors look like &lsquo;the model is unreliable&rsquo; when the real fault is the abstraction choice.</p></div></div>
+<div class="mech fail"><div class="mnum">5</div><div><h3>Assuming provider portability you never tested<span class="fix">Fix: keep model clients behind the framework&rsquo;s abstraction, avoid provider-specific message types in shared state, and smoke-test a second provider early.</span></h3><p>All three frameworks claim multi-provider support, but hosted threads, service-side history, and tool formats differ — SK even encodes them in separate agent classes, and Agent Framework&rsquo;s migration guide consolidates them precisely because they diverged. Portability is a tested property, not a logo grid.</p></div></div>
+</div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">07</span> Go deeper</h2>
+      <p class="sub">Verified references — every link opened and checked before publishing.</p>
+      <div class="ref-list">
+        <a class="ref" href="https://docs.langchain.com/oss/python/langgraph/graph-api"><span class="badge doc">Docs</span><div><h3>Graph API overview — LangGraph Documentation (LangChain)</h3><p>The primary source for this lesson&rsquo;s LangGraph claims: State, Nodes, and Edges, reducers such as add_messages, StateGraph, compiling, checkpointers, and super-steps.</p></div></a>
+        <a class="ref" href="https://learn.microsoft.com/en-us/agent-framework/overview/agent-framework-overview"><span class="badge doc">Docs</span><div><h3>Microsoft Agent Framework Overview — Microsoft Learn</h3><p>Microsoft&rsquo;s own framing: agents, the Harness agent, workflows, and integrations; agents-vs-workflows guidance; and the statement that Agent Framework combines AutoGen&rsquo;s abstractions with Semantic Kernel&rsquo;s enterprise features.</p></div></a>
+        <a class="ref" href="https://learn.microsoft.com/en-us/semantic-kernel/frameworks/agent/?pivots=programming-language-csharp"><span class="badge doc">Docs</span><div><h3>Semantic Kernel Agent Framework — Microsoft Learn</h3><p>SK in its own terms: agents inside the Kernel ecosystem, the per-service agent packages (ChatCompletionAgent, OpenAIAssistantAgent, AzureAIAgent), and when agent patterns fit an application.</p></div></a>
+        <a class="ref" href="https://www.youtube.com/watch?v=HWO26iCSIuc"><span class="badge vid">Video</span><div><h3>LangGraph Full Course — Build Stateful AI Agents with Python</h3><p>A full hands-on build covering exactly the production mechanics above: state, nodes, edges and reducers, the ReAct loop, MemorySaver / SqliteSaver persistence, human-in-the-loop with interrupt and Command, Send parallelism, and subgraphs.</p></div></a>
+        <a class="ref" href="https://www.youtube.com/watch?v=GfXj3WLVqE8"><span class="badge vid">Video</span><div><h3>Microsoft Agent Framework Explained: Create Foundry Agents, Sessions, and Tools</h3><p>Walks the unified model end to end: why Agent Framework succeeds Semantic Kernel and AutoGen, sessions and service-side history, function tools with approval, and the sequential / concurrent / group-chat / handoff workflow patterns.</p></div></a>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">08</span> Sample prompts</h2>
+      <p class="sub">Copy one into your AI assistant and apply it to your own work.</p>
+      <p id="live-status" class="sr-only" role="status"></p>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>MAP MY WORKFLOW BEFORE CHOOSING</strong><button class="copy-btn" data-copy="p1">Copy</button></div>
+        <p class="prompt-text" id="p1">Do not recommend a framework yet. Interview me about this agent use case: [describe it]. Extract: the states and steps, every branch and loop, where a human must approve, what must survive a crash and resume, which tools and providers are involved, and whether each part is open-ended (model plans) or defined (steps are fixed). Present that as a workflow map, then score LangGraph, Semantic Kernel, and Microsoft Agent Framework against ONLY those requirements, in a table.</p>
+      </div>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>PLAN AN SK &#8594; AGENT FRAMEWORK MIGRATION</strong><button class="copy-btn" data-copy="p2">Copy</button></div>
+        <p class="prompt-text" id="p2">Plan a migration of this Semantic Kernel agent code to Microsoft Agent Framework: [paste code / describe agents, plugins, threads]. Map each piece to its Agent Framework equivalent: per-service agent classes to the single Agent / ChatClientAgent type, AgentThread to AgentSession, [KernelFunction] plugins to tools registered at agent creation, and orchestrations to workflows. Flag anything with no direct equivalent, order the work so the system stays runnable at each step, and name the tests that prove behavior did not change.</p>
+      </div>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>PROTOTYPE THE SAME SLICE TWICE</strong><button class="copy-btn" data-copy="p3">Copy</button></div>
+        <p class="prompt-text" id="p3">Implement this one vertical slice twice — once in LangGraph and once in Microsoft Agent Framework: [describe slice: one loop, one tool call, one human approval, one forced failure and resume]. Keep model, prompts, and tools identical so only the framework differs. For each version report: lines of framework code, where state lives, how the approval pauses and resumes, and what happens on the forced failure. End with a recommendation tied to those observations, not to general framework reputation.</p>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">09</span> Quiz</h2>
+      <p class="sub">Five questions. Click an answer — you get the explanation right away.</p>
+      <div id="quiz"><div class="quiz-q" data-answer="2"><p class="qq">1. What is the core abstraction of LangGraph, per its Graph API docs?</p><div class="qopts"><button class="qopt" data-i="0">A Kernel that holds services and plugins and lets the model choose among them.</button>
+<button class="qopt" data-i="1">A single Agent class that hides whether work runs as an agent or a workflow.</button>
+<button class="qopt" data-i="2">A graph of State, Nodes, and Edges: nodes do the work, edges decide what runs next, and reducers merge state updates.</button>
+<button class="qopt" data-i="3">A group chat in which agents debate until a manager picks an answer.</button></div><p class="qexp" hidden></p></div>
+<div class="quiz-q" data-answer="1"><p class="qq">2. Microsoft describes Microsoft Agent Framework as what, relative to Semantic Kernel and AutoGen?</p><div class="qopts"><button class="qopt" data-i="0">A competing framework from a different team, with no migration path from either.</button>
+<button class="qopt" data-i="1">The direct successor to both: AutoGen's simple agent abstractions combined with Semantic Kernel's enterprise features, plus graph-based workflows.</button>
+<button class="qopt" data-i="2">A hosting service for Semantic Kernel agents, with the SK SDK unchanged underneath.</button>
+<button class="qopt" data-i="3">A Python-only rewrite of Semantic Kernel; .NET users should stay on SK.</button></div><p class="qexp" hidden></p></div>
+<div class="quiz-q" data-answer="3"><p class="qq">3. In Semantic Kernel, how are agents and tools organized?</p><div class="qopts"><button class="qopt" data-i="0">One agent class for every provider, with tools registered directly on the agent and no kernel object.</button>
+<button class="qopt" data-i="1">Tools are graph nodes and must be connected with conditional edges before use.</button>
+<button class="qopt" data-i="2">State is a TypedDict and every tool is a reducer function.</button>
+<button class="qopt" data-i="3">A Kernel holds services and plugins ([KernelFunction] functions); you pick a per-service agent class such as ChatCompletionAgent or AzureAIAgent, each with its own thread type.</button></div><p class="qexp" hidden></p></div>
+<div class="quiz-q" data-answer="3"><p class="qq">4. Your process has fixed steps, a required order, two approvals, and must resume after a crash. Per Agent Framework guidance, what do you build?</p><div class="qopts"><button class="qopt" data-i="0">A single autonomous agent and a very detailed prompt describing the steps.</button>
+<button class="qopt" data-i="1">A plain Python function, because workflows cannot include agents.</button>
+<button class="qopt" data-i="2">Nothing — frameworks cannot pause for approvals, so do it manually in chat.</button>
+<button class="qopt" data-i="3">A workflow (graph of executors and edges, with checkpointing and human-in-the-loop); wrap it with .as_agent() only if callers need the agent run API.</button></div><p class="qexp" hidden></p></div>
+<div class="quiz-q" data-answer="1"><p class="qq">5. You maintain a production Semantic Kernel app. What is the sound framework strategy?</p><div class="qopts"><button class="qopt" data-i="0">Rewrite it in LangGraph immediately, because SK code cannot be migrated incrementally.</button>
+<button class="qopt" data-i="1">Maintain it on SK for now, but plan the move to Microsoft Agent Framework using Microsoft's migration guide — and start any new Microsoft-stack agent work there.</button>
+<button class="qopt" data-i="2">Freeze it forever: Agent Framework cannot run SK-style plugins or tools.</button>
+<button class="qopt" data-i="3">Switch the model provider; framework choice has no effect on maintenance cost.</button></div><p class="qexp" hidden></p></div>
+</div>
+      <div id="quiz-score" role="status"></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">10</span> Flashcards</h2>
+      <p class="sub">Click a card (or focus it and press Enter / Space) to flip it.</p>
+      <div class="fgrid"><div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">LangGraph State / Node / Edge</div><div class="fface back">State is the shared schema (TypedDict or Pydantic, with a reducer per key). A Node is a function that reads state and returns a partial update. An Edge — fixed or conditional — decides which node runs next. Nodes do the work; edges tell what to do next.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Reducer (LangGraph)</div><div class="fface back">The per-key function that merges a node's update into existing state: left argument = accumulated value, right = new update. Default replaces; add_messages appends and updates by message ID. Returning an empty list does not clear a merging field — use Overwrite.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Checkpointer / thread_id (LangGraph)</div><div class="fface back">The persistence layer that saves graph state after each super-step under a thread_id. It is what makes pause, resume, human-in-the-loop interrupts, and inspection of past states possible — attach it at compile().</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Kernel + plugin (Semantic Kernel)</div><div class="fface back">The Kernel is SK's container for AI services and plugins. A plugin is a set of functions decorated [KernelFunction] / @kernel_function that the model can invoke. Every SK agent depends on a Kernel, even an empty one.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Per-service agent classes (SK)</div><div class="fface back">SK ships a different agent class per provider — ChatCompletionAgent, OpenAIAssistantAgent, AzureAIAgent, OpenAIResponsesAgent — each with its own thread type. Microsoft Agent Framework consolidates these into one Agent / ChatClientAgent type.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Orchestration patterns</div><div class="fface back">Named ways to coordinate agents: Sequential (pipeline), Concurrent (broadcast and collect), Handoff (control passes by context or rules), Group Chat (manager-coordinated conversation), and Magentic (generalist group collaboration, from Magentic-One). SK implements them as orchestrations; Agent Framework as workflows.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">AgentSession (Microsoft Agent Framework)</div><div class="fface back">Agent Framework's unit of conversation state, created with agent.create_session() — replacing SK's manually-created, provider-specific AgentThread types. Sessions carry multi-turn history, locally or service-side where the provider supports it.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Context provider (Agent Framework)</div><div class="fface back">A composable component that supplies an agent with memory or retrieved information at run time — the framework's plug-in point for long-term memory and RAG, instead of hand-stuffing everything into the prompt.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Middleware (Agent Framework)</div><div class="fface back">Hooks that intercept agent runs, chat completions, and tool calls to log, modify, guard, or measure behavior — SK's filters / telemetry ideas, made a first-class building block alongside MCP clients.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Agent vs workflow</div><div class="fface back">Agent: open-ended or conversational work where the model plans and picks tools. Workflow: a defined process — fixed steps, explicit order, multiple executors — drawn as a graph. If a plain function does the job, use neither.</div></div></div>
+</div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">11</span> Reach for this when&hellip;</h2>
+      <div class="triggers">
+        <div class="trigger"><strong>You are starting an agent project and the framework debate is blocking the design</strong> — draw the workflow (states, branches, approvals, crash points) first, then pick the framework whose native shape matches: graph, kernel, or agent + workflow.</div>
+        <div class="trigger"><strong>You run Semantic Kernel or AutoGen in production</strong> — you are on a predecessor stack: read Microsoft&rsquo;s migration guide, map threads to sessions and plugins to registered tools, and route new work to Microsoft Agent Framework.</div>
+        <div class="trigger"><strong>Your agent needs loops, parallel fan-out, human interrupts, and resumable state you can inspect</strong> — that is explicit-graph territory: LangGraph&rsquo;s StateGraph with checkpointers, or an Agent Framework workflow, drawn — not prompted.</div>
+      </div>
+    </section>
+
+    <a class="back-link" href="../index.html#daily-topics">&larr; Back to daily topics</a>
+  </div>
+
+<script>
+    const status = document.getElementById('live-status');
+    document.querySelectorAll('.copy-btn').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const target = document.getElementById(button.dataset.copy);
+        const text = target.innerText;
+        try {
+          await navigator.clipboard.writeText(text);
+          const original = button.textContent;
+          button.textContent = 'Copied';
+          status.textContent = 'Prompt copied to clipboard.';
+          setTimeout(() => button.textContent = original, 1600);
+        } catch {
+          const range = document.createRange();
+          range.selectNodeContents(target);
+          const selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+          status.textContent = 'Prompt selected. Copy it with your device copy command.';
+        }
+      });
+    });
+    const explanations = [["That is Semantic Kernel's center of gravity — the Kernel and its plugins — not LangGraph's.", "That unified Agent type is Microsoft Agent Framework's consolidation, the opposite direction from LangGraph's explicit graph.", "Correct. State, Nodes, and Edges are the three documented components; compiling a StateGraph is how a LangGraph app is built.", "Group chat is one orchestration pattern in Semantic Kernel / Agent Framework — a pattern you could implement on a graph, not the graph model itself."], ["Microsoft publishes explicit migration guides from both SK and AutoGen — a successor relationship, not an unrelated competitor.", "Correct. The overview says it combines AutoGen's abstractions with SK's session state, type safety, middleware, and telemetry — and is the next generation of both.", "It is a new SDK and runtime, not a host: agent creation, sessions, and tool registration all change, which is why a migration guide exists.", "Agent Framework ships for .NET, Python, and Go. The .NET story is central, not an afterthought."], ["That single-class, no-kernel description is Microsoft Agent Framework — the design that replaced SK's model.", "Graph nodes and edges are LangGraph's vocabulary, not SK's plugin model.", "TypedDict state and reducers are LangGraph concepts.", "Correct. The Kernel + plugins model and per-service agent classes (consolidated away in Agent Framework) are SK's signature design."], ["A detailed prompt does not enforce order or approvals — that is the agent-for-a-workflow mistake this lesson warns against.", "Workflows in Agent Framework are built precisely from agents and functions as executors.", "Both Agent Framework workflows and LangGraph (interrupt / Command) support approval pauses natively.", "Correct. Defined steps + explicit order + coordination = workflow, per Microsoft's agents-vs-workflows table."], ["No rewrite is forced: Microsoft's SK-to-Agent Framework guide maps namespaces, agent creation, sessions, and tool registration step by step.", "Correct. SK is the predecessor, Agent Framework the successor — maintain, migrate deliberately, and greenfield on the successor.", "SK plugins do map across: the migration guide shows [KernelFunction] tools becoming tools registered at Agent Framework agent creation.", "Framework choice decides state model, tool registration, and where new features land — a first-order maintenance factor."]];
+    const questions = [...document.querySelectorAll('.quiz-q')];
+    let score = 0, answered = 0;
+    questions.forEach((q, qi) => {
+      const correct = parseInt(q.dataset.answer, 10);
+      const exp = q.querySelector('.qexp');
+      q.querySelectorAll('.qopt').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          if (q.dataset.done) return;
+          q.dataset.done = "1";
+          const chosen = parseInt(btn.dataset.i, 10);
+          const ok = chosen === correct;
+          q.querySelectorAll('.qopt').forEach((b) => {
+            b.disabled = true;
+            if (parseInt(b.dataset.i, 10) === correct) b.classList.add('correct');
+          });
+          if (!ok) btn.classList.add('wrong');
+          else score++;
+          answered++;
+          exp.hidden = false;
+          exp.innerHTML = ok
+            ? "<strong class=\"ok\">Correct.</strong> " + explanations[qi][chosen]
+            : "<strong class=\"no\">Not quite.</strong> " + explanations[qi][chosen];
+          if (answered === questions.length) {
+            const box = document.getElementById('quiz-score');
+            box.style.display = "block";
+            box.innerHTML = "You scored <strong>" + score + " / " + questions.length + "</strong>." +
+              (score === questions.length ? " Clean sweep — now draw one real workflow and pick its framework from the drawing." :
+               score >= 3 ? " Solid — re-read the failure mode you missed; framework regret usually starts there." :
+               " Worth a re-read of sections 04 and 06 before your next framework decision.");
+          }
+        });
+      });
+    });
+    document.querySelectorAll('.fcard').forEach((card) => {
+      const flip = () => card.classList.toggle('flipped');
+      card.addEventListener('click', flip);
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); }
+      });
+    });
+  </script>
+</body>
+</html>
