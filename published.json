@@ -355,5 +355,12 @@
     "date": "2026-11-02",
     "summary": "Three frameworks, three control philosophies: LangGraph gives you an explicit state graph you compile and checkpoint, Semantic Kernel centers a Kernel with plugins and per-service agent classes, and Microsoft Agent Framework \u2014 the successor to Semantic Kernel and AutoGen \u2014 unifies one Agent type with sessions, context providers, middleware, and graph workflows. Choose by workflow shape, ecosystem, and migration path, not by hype.",
     "skill": "agent-frameworks-compared"
+  },
+  {
+    "slug": "2026-11-03-browser-and-computer-use-agents",
+    "title": "Browser and computer-use agents: perception, grounding, and safe action",
+    "date": "2026-11-03",
+    "summary": "A browser agent does not see a page like you do \u2014 it perceives a screenshot, an accessibility tree, or a DOM snapshot, grounds a named element to a ref or (x,y) coordinate, then acts and re-observes. Choose structured perception first, reserve pixels for canvas and legacy GUIs, and gate every consequential click with sandboxing, origin allowlists, and human approval.",
+    "skill": "browser-and-computer-use-agents"
   }
 ]
