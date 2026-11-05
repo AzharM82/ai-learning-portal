@@ -369,5 +369,12 @@
     "date": "2026-11-04",
     "summary": "A multimodal model does not read a PDF like a text file \u2014 each modality is encoded into tokens in a shared space: images as patches, audio as time slices, documents as text plus layout. Send typed blocks, budget resolution as tokens, require structured output with evidence, and verify against the source.",
     "skill": "multimodal-models"
+  },
+  {
+    "slug": "2026-11-05-long-context-engineering",
+    "title": "Long-context engineering: million-token windows, lost-in-the-middle, and compaction",
+    "date": "2026-11-05",
+    "summary": "A million-token window is capacity, not attention: accuracy falls as input grows (context rot), relevant information in the middle is used worst (the lost-in-the-middle U-curve), and every token costs attention, money, and latency. Place key information at the edges, select the smallest high-signal set, clear tool results, compact before the window rots, offload notes, and evaluate at the length you will actually ship.",
+    "skill": "long-context-engineering"
   }
 ]

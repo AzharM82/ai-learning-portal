@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Long-context engineering: million-token windows, lost-in-the-middle, and compaction &middot; AI Learning Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+    :root {
+      --ink: #14212b; --muted: #53636f; --paper: #f6f8f7; --white: #ffffff;
+      --line: #cbd5d8; --navy: #163247; --navy-2: #21465e; --teal: #0b8174;
+      --teal-soft: #dff2ee; --orange: #d66332; --orange-soft: #f8e4d8;
+      --gold: #d8a524; --gold-soft: #f7edc8; --blue-soft: #e3eef4;
+      --red: #b3402e; --red-soft: #f9e3de; --green: #1e7a3c; --green-soft: #e2f2e6;
+      --shadow: 0 18px 45px rgba(20, 33, 43, .09); --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; color: var(--ink); background: linear-gradient(rgba(20,33,43,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(20,33,43,.035) 1px, transparent 1px), var(--paper); background-size: 28px 28px; font-family: "Source Sans 3", sans-serif; font-size: 17px; line-height: 1.58; }
+    .shell { width: min(960px, calc(100% - 40px)); margin: 0 auto; }
+    .portal-nav{position:sticky;top:0;z-index:50;background:rgba(22,50,71,.97);border-bottom:1px solid rgba(255,255,255,.12)}
+    .portal-nav-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;flex-wrap:wrap}
+    .portal-brand{color:#fff;text-decoration:none;font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:15px}
+    .portal-brand span{color:var(--gold);font-weight:400}
+    .portal-links{display:flex;gap:18px;flex-wrap:wrap}
+    .portal-links a{color:#dbe7ee;text-decoration:none;font-size:14.5px}
+    .portal-links a:hover{color:#fff;text-decoration:underline}
+    .hero { padding: 56px 0 36px; }
+    .chapter-mark { display:inline-flex;align-items:center;gap:10px;color:var(--navy); font:600 12px/1.2 "IBM Plex Mono",monospace;letter-spacing:.09em;text-transform:uppercase;margin-bottom:18px; }
+    .chapter-mark::before { content:"";width:42px;height:3px;background:var(--orange); }
+    h1 { font-size: clamp(36px, 5vw, 58px); line-height: 1.02; letter-spacing:-.03em; margin:0 0 14px; }
+    .lede { color: var(--muted); font-size: clamp(18px,2vw,22px); max-width: 64ch; margin:0 0 8px; }
+    .date-line { font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--muted); }
+    section.block { margin: 44px 0; }
+    h2 { font-size: 26px; letter-spacing:-.02em; margin:0 0 6px; display:flex;align-items:center;gap:12px; }
+    h2 .num { font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:600;color:var(--white); background:var(--navy);border-radius:999px;min-width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center; }
+    .sub { color:var(--muted); margin:0 0 18px; max-width: 68ch; }
+    .card { background:var(--white);border:1px solid var(--line);border-radius:var(--radius); padding:24px;box-shadow:var(--shadow); }
+    .skill-card { background:var(--navy);color:#eaf2f7;border-radius:var(--radius);padding:22px 24px; font-family:"IBM Plex Mono",monospace;font-size:14.5px;overflow-x:auto;box-shadow:var(--shadow); }
+    .skill-card .k { color:var(--gold); }
+    .idea { font-size:21px;line-height:1.5;border-left:4px solid var(--teal);padding:6px 0 6px 20px;max-width:62ch; }
+    .idea strong { color:var(--navy); }
+    .mechanics { display:grid;gap:14px; }
+    .mech { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:18px 20px; display:grid;grid-template-columns:44px 1fr;gap:14px;align-items:start; }
+    .mech .mnum { font-family:"IBM Plex Mono",monospace;font-weight:600;color:var(--teal); background:var(--teal-soft);border-radius:10px;width:44px;height:44px;display:flex;align-items:center;justify-content:center; }
+    .mech h3 { margin:0 0 6px;font-size:18px; }
+    .mech p { margin:0;color:var(--muted);font-size:15.5px; }
+    .mech code, .inline-code { font-family:"IBM Plex Mono",monospace;font-size:.88em;background:var(--blue-soft); padding:2px 7px;border-radius:6px;color:var(--navy); }
+    pre.code { background:#0f2233;color:#e8f1f5;border-radius:14px;padding:20px 22px;overflow-x:auto; font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.6;margin:0; }
+    pre.code .c { color:#8ba3b0; } pre.code .s { color:#ffd479; } pre.code .k { color:#7fd6c2; }
+    .fail { border-left:4px solid var(--orange); }
+    .fail h3 .fix { display:block;margin-top:8px;font-size:15px;font-weight:500;color:var(--green); }
+    .ref-list { display:grid;gap:12px; }
+    .ref { display:flex;gap:14px;align-items:flex-start;background:var(--white);border:1px solid var(--line); border-radius:14px;padding:16px 18px;text-decoration:none;color:inherit; }
+    .ref:hover { border-color:var(--teal); }
+    .ref .badge { flex:none;font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;letter-spacing:.06em; padding:5px 10px;border-radius:999px;text-transform:uppercase; }
+    .badge.doc { background:var(--blue-soft);color:var(--navy); }
+    .badge.vid { background:var(--orange-soft);color:var(--orange); }
+    .ref h3 { margin:0 0 4px;font-size:17px; }
+    .ref p { margin:0;color:var(--muted);font-size:14.5px; }
+    .prompt-block { background:#0f2233;border-radius:var(--radius);overflow:hidden;margin-bottom:18px;box-shadow:var(--shadow); }
+    .prompt-top { display:flex;justify-content:space-between;align-items:center;gap:12px; padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.12); }
+    .prompt-top strong { color:#fff;font-size:13px;letter-spacing:.06em;font-family:"IBM Plex Mono",monospace; }
+    .copy-btn { border:1px solid #6c8796;background:transparent;color:#fff;border-radius:6px;padding:7px 11px; cursor:pointer;font-weight:700;font-size:14px; }
+    .copy-btn:hover { background:rgba(255,255,255,.1); }
+    .copy-btn:focus-visible { outline:2px solid var(--gold);outline-offset:2px; }
+    .prompt-text { color:#e8f1f5;font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.65; padding:18px;white-space:pre-wrap;margin:0; }
+    .sr-only { position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0); }
+    .quiz-q { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px; }
+    .quiz-q .qq { font-weight:700;margin:0 0 12px;font-size:18px; }
+    .qopts { display:grid;gap:8px; }
+    .qopt { text-align:left;background:var(--paper);border:1px solid var(--line);border-radius:10px; padding:12px 14px;cursor:pointer;font-size:15.5px;color:var(--ink); }
+    .qopt:hover:not(:disabled) { border-color:var(--navy); }
+    .qopt:disabled { cursor:default;opacity:.85; }
+    .qopt.correct { background:var(--green-soft);border-color:var(--green); }
+    .qopt.wrong { background:var(--red-soft);border-color:var(--red); }
+    .qexp { margin:12px 0 0;font-size:15px;color:var(--muted); }
+    .qexp strong.ok { color:var(--green); } .qexp strong.no { color:var(--red); }
+    #quiz-score { display:none;margin-top:8px;background:var(--navy);color:#fff;border-radius:14px; padding:20px 24px;font-size:19px; }
+    #quiz-score strong { color:var(--gold); }
+    .fgrid { display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px; }
+    .fcard { perspective:900px;cursor:pointer;min-height:170px; }
+    .fcard-inner { position:relative;width:100%;height:100%;min-height:170px;transform-style:preserve-3d;transition:transform .45s; }
+    .fcard.flipped .fcard-inner { transform:rotateY(180deg); }
+    .fface { position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden; border-radius:14px;padding:18px;display:flex;align-items:center;justify-content:center;text-align:center; border:1px solid var(--line);background:var(--white);box-shadow:var(--shadow);font-size:15.5px; }
+    .fface.front { font-weight:700;color:var(--navy); }
+    .fface.back { transform:rotateY(180deg);background:var(--teal-soft);color:var(--ink);font-size:14.5px; }
+    .fcard:focus-visible { outline:2px solid var(--teal);outline-offset:3px;border-radius:14px; }
+    .triggers { display:grid;gap:10px; }
+    .trigger { background:var(--gold-soft);border-radius:12px;padding:14px 18px;font-size:16px; }
+    .trigger strong { color:var(--navy); }
+    .back-link { display:inline-block;margin:8px 0 60px;font-weight:600;color:var(--teal);text-decoration:none;font-size:17px; }
+    .back-link:hover { text-decoration:underline; }
+    .fig { background:var(--white);border:1px solid var(--line);border-radius:var(--radius); padding:12px;box-shadow:var(--shadow);overflow-x:auto; }
+    .fig svg { display:block;width:100%;height:auto; }
+    .flow-anim { stroke-dasharray: 8 6; animation: dashmove 1.2s linear infinite; }
+    @keyframes dashmove { to { stroke-dashoffset: -14; } }
+    @media (prefers-reduced-motion: reduce) { .fcard-inner{transition:none;} .flow-anim{animation:none;} }
+  </style>
+</head>
+<body><nav class="portal-nav">
+    <div class="shell portal-nav-inner">
+      <a class="portal-brand" href="../index.html">AI Engineering <span>&middot; Learning Portal</span></a>
+      <div class="portal-links">
+        <a href="../index.html#daily-topics">Daily topics</a>
+        <a href="../index.html#loop">Loop</a>
+        <a href="../index.html#graph">Graph</a>
+        <a href="../index.html#harness">Harness</a>
+      </div>
+    </div>
+  </nav>
+  <div class="shell">
+    <header class="hero">
+      <div class="chapter-mark">Daily topic &middot; AI engineering — round 2</div>
+      <h1>Long-context engineering: million-token windows, lost-in-the-middle, and compaction</h1>
+      <p class="lede">A window that holds a million tokens sounds like the end of context problems. It is not. Accuracy decays as input grows, the middle of a long input is used worst, and every extra token is paid for in attention, money, and latency on every single turn. Long-context engineering is the discipline of spending a big window like a small budget.</p>
+      <p class="date-line">2026-11-05 &middot; Topic 053</p>
+    </header>
+
+    <section class="block">
+      <h2><span class="num">01</span> The skill card</h2>
+      <p class="sub">Every topic on this portal is designed like a Codex skill: a name, a trigger, and concrete steps.</p>
+      <div class="skill-card"><pre style="margin:0">---
+<span class="k">name:</span> long-context-engineering
+<span class="k">description:</span> Reach for this when a prompt, document set, codebase,
+  or agent run grows long: treat the advertised window as capacity,
+  not attention — put key information at the start and end, select
+  the smallest high-signal set, clear tool results, compact before
+  the window rots, offload notes outside the window, and evaluate
+  at the length and positions you will actually ship.
+---</pre></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">02</span> The one-idea version</h2>
+      <p class="idea"><strong>The window is capacity; attention is the budget — and the budget shrinks as you spend it.</strong> A transformer lets every token attend to every other token, so a longer input means n&sup2; pairwise relationships competing for the same attention budget (Anthropic&rsquo;s framing). The result is a gradient, not a cliff: recall and reasoning get less precise as tokens accumulate, and information in the middle is used worst of all. Engineering long context therefore means curating, ordering, and shrinking what is in the window — not celebrating how much fits.</p>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">03</span> The picture: the U-curve, and what to do about it</h2>
+      <p class="sub">Left: the lost-in-the-middle U-curve from Liu et al. — same information, different position, very different accuracy. Right: the four levers, in the order to pull them.</p>
+      <div class="fig">
+        <svg viewBox="0 0 960 400" role="img" aria-label="Diagram showing a U-shaped accuracy curve: high when relevant information is at the beginning or end of a long context, low in the middle, alongside four levers: order, select, clear and compact, offload and isolate.">
+          <g font-family="Source Sans 3, sans-serif" font-size="14">
+            <text x="20" y="26" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="600" fill="#163247">POSITION DECIDES USE &middot; LENGTH DECIDES ROT &middot; CURATION DECIDES BOTH</text>
+            <rect x="20" y="48" width="470" height="250" rx="12" fill="#ffffff" stroke="#cbd5d8"/>
+            <text x="40" y="76" font-family="IBM Plex Mono, monospace" font-size="12" font-weight="600" fill="#163247">ACCURACY BY POSITION OF THE ANSWER</text>
+            <line x1="60" y1="250" x2="460" y2="250" stroke="#163247" stroke-width="2"/>
+            <line x1="60" y1="90" x2="60" y2="250" stroke="#163247" stroke-width="2"/>
+            <path d="M70 110 C 160 235, 300 235, 450 110" fill="none" stroke="#d66332" stroke-width="4"/>
+            <circle cx="70" cy="110" r="6" fill="#0b8174"/><circle cx="255" cy="222" r="6" fill="#b3402e"/><circle cx="450" cy="110" r="6" fill="#0b8174"/>
+            <text x="70" y="98" text-anchor="middle" fill="#0b8174" font-weight="700">START: high</text>
+            <text x="255" y="262" text-anchor="middle" fill="#b3402e" font-weight="700">MIDDLE: lost</text>
+            <text x="450" y="98" text-anchor="middle" fill="#0b8174" font-weight="700">END: high</text>
+            <text x="255" y="286" text-anchor="middle" font-size="12" fill="#53636f">primacy bias &middot; recency bias &middot; U-shaped curve (Liu et al.)</text>
+            <g font-family="IBM Plex Mono, monospace" font-size="12" font-weight="600">
+              <rect x="520" y="48" width="420" height="56" rx="10" fill="#dff2ee" stroke="#0b8174" stroke-width="2"/><text x="730" y="72" text-anchor="middle" fill="#163247">1 · ORDER — edges for what matters most</text><text x="730" y="92" text-anchor="middle" font-size="11" font-weight="400" fill="#53636f">instructions first, question last</text>
+              <rect x="520" y="114" width="420" height="56" rx="10" fill="#e3eef4" stroke="#163247" stroke-width="2"/><text x="730" y="138" text-anchor="middle" fill="#163247">2 · SELECT — smallest high-signal set</text><text x="730" y="158" text-anchor="middle" font-size="11" font-weight="400" fill="#53636f">retrieve / just-in-time, do not stuff</text>
+              <rect x="520" y="180" width="420" height="56" rx="10" fill="#f8e4d8" stroke="#d66332" stroke-width="2"/><text x="730" y="204" text-anchor="middle" fill="#163247">3 · CLEAR, THEN COMPACT</text><text x="730" y="224" text-anchor="middle" font-size="11" font-weight="400" fill="#53636f">drop raw tool output, then summarize history</text>
+              <rect x="520" y="246" width="420" height="56" rx="10" fill="#f7edc8" stroke="#d8a524" stroke-width="2"/><text x="730" y="270" text-anchor="middle" fill="#163247">4 · OFFLOAD + ISOLATE</text><text x="730" y="290" text-anchor="middle" font-size="11" font-weight="400" fill="#53636f">notes outside the window, sub-agents inside their own</text>
+            </g>
+            <path d="M40 330 H920" stroke="#163247" stroke-width="2" fill="none" class="flow-anim"/>
+            <rect x="20" y="344" width="920" height="42" rx="10" fill="#163247"/><text x="480" y="370" text-anchor="middle" fill="#ffffff" font-weight="600">EVALUATE AT YOUR REAL LENGTH AND POSITIONS — A NEEDLE TEST ALONE PROVES ALMOST NOTHING</text>
+          </g>
+        </svg>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">04</span> How it works</h2>
+      <p class="sub">Seven mechanics: capacity vs effectiveness, position, rot, selection, clearing and compaction, offloading, and honest evaluation.</p>
+      <div class="mechanics">
+<div class="mech"><div class="mnum">1</div><div><h3>Separate the advertised window from the effective window</h3><p>Count <strong>everything</strong> against the window: system prompt, tool definitions, every message, tool results, documents, images, and the output you reserve — cached tokens still occupy it, they are just cheaper. Google&rsquo;s Gemini guide puts 1M tokens at about 50,000 lines of code or eight average novels, which is real capacity. But capacity is a ceiling, not a quality guarantee: your <em>effective</em> window is the length at which your task still passes your evals, and it is almost always shorter. Budget to the effective window, and leave headroom for the answer.</p></div></div>
+<div class="mech"><div class="mnum">2</div><div><h3>Order for the U-curve: edges carry the load</h3><p>Liu et al. (&ldquo;Lost in the Middle&rdquo;) moved one answer-bearing document through a multi-document context and found a U-shaped curve: best at the very beginning (primacy) and end (recency), significantly worse in the middle — in one setting GPT-3.5-Turbo with the answer mid-context scored <em>below</em> its no-documents baseline. So: put instructions and the most relevant evidence first, put the question <strong>last</strong> (Google&rsquo;s long-context FAQ recommends exactly this), and when the query is known up front, repeat it after the documents — the paper&rsquo;s query-aware contextualization fixed its synthetic retrieval task. Never bury the one clause, figure, or file the answer depends on in the middle third.</p></div></div>
+<div class="mech"><div class="mnum">3</div><div><h3>Expect context rot: a gradient, not a cliff</h3><p>Chroma&rsquo;s Context Rot study held task complexity constant, varied only input length, and tested 18 frontier models: performance degraded in every model, non-uniformly, well before the advertised limit — and focused prompts of ~300 tokens beat full ~113K-token histories on its conversation task. Anthropic gives the mechanism and the name: attention is a finite budget stretched over n&sup2; token pairs, and models are trained mostly on shorter sequences, so &ldquo;as token count grows, accuracy and recall degrade.&rdquo; Plan for gradual decay from the first tens of thousands of tokens, not a wall at 1M.</p></div></div>
+<div class="mech"><div class="mnum">4</div><div><h3>Select the smallest high-signal set — retrieve, don&rsquo;t stuff</h3><p>Anthropic&rsquo;s guiding principle is the smallest possible set of high-signal tokens that maximizes the chance of the outcome. In practice that means retrieval or just-in-time loading (keep lightweight identifiers — file paths, queries, links — and load data with tools at runtime, as Claude Code does with glob/grep) instead of pre-loading everything, and a hybrid when latency matters: a small curated core up front, exploration on demand. Long context does not kill RAG; it changes its job from &ldquo;fit anything at all&rdquo; to &ldquo;keep distractors out&rdquo; — Chroma found even a single similar-but-wrong distractor measurably hurts.</p></div></div>
+<div class="mech"><div class="mnum">5</div><div><h3>Clear first, then compact — deliberately and early</h3><p>For long agent runs, pull the levers in cost order. <strong>Clearing</strong> is the lightest touch: drop raw tool results once they have been processed (the model rarely needs the full JSON blob again). <strong>Compaction</strong> is next: summarize a conversation nearing the limit and restart the window from that summary, as Claude Code does — preserving architectural decisions, unresolved bugs, and implementation details plus the most recently used files, discarding redundant output. Tune compaction recall-first (capture everything relevant), then precision (cut the superfluous), and compact at a natural breakpoint on your schedule — not in a panic at 99% full, when the summary itself must be generated by a rotted context.</p></div></div>
+<div class="mech"><div class="mnum">6</div><div><h3>Offload to notes and isolate in sub-agents</h3><p>What must survive compaction should not live only in the window. <strong>Structured note-taking</strong>: the agent writes decisions, plans, and state to a file or memory store outside the context and reads it back on demand — Anthropic&rsquo;s research agent saves its plan to memory precisely because context beyond the limit gets truncated. <strong>Isolation</strong>: give sub-agents clean, focused windows for deep search or exploration and let only a distilled result return to the lead agent, so detailed search context never pollutes the main thread. Compaction keeps one long conversation coherent; notes excel at milestone-driven work; isolation excels at parallel exploration — pick per task shape, and combine them.</p></div></div>
+<div class="mech"><div class="mnum">7</div><div><h3>Evaluate at length, at position, against distractors</h3><p>Needle-in-a-haystack is necessary and nowhere near sufficient: Chroma notes it is mostly lexical matching, and scores collapse when the needle needs semantic inference, when similar distractors appear, or when the task requires reasoning rather than retrieval. Build evals that mirror production: your real documents at your real token lengths, the answer placed at start / middle / end, with realistic distractors, and a focused-context baseline to compare against. If the focused baseline wins — as it did in Chroma&rsquo;s conversation tests — your context assembly, not the model, is the bug. Re-run when you change models: effective length is a property of a model <em>and</em> a task, not a spec-sheet number.</p></div></div>
+</div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">05</span> Code sketch</h2>
+      <p class="sub">A small Python context assembler: budget check, edge-first ordering, and a compaction trigger that fires before rot, not after overflow.</p>
+      <pre class="code"><span class="c"># Assemble long context: edges first, budget enforced, compact early</span>
+BUDGET = 180_000          <span class="c"># effective window from evals, not the 1M spec</span>
+COMPACT_AT = 0.70         <span class="c"># compact at 70% full, while summaries are still good</span>
+
+<span class="k">def</span> order_docs(docs: list[dict]) -> list[dict]:
+    <span class="c"># docs pre-ranked by relevance: best first AND last (U-curve)</span>
+    <span class="k">if</span> len(docs) &lt; 3: <span class="k">return</span> docs
+    <span class="k">return</span> [docs[0]] + docs[2:] + [docs[1]]
+
+<span class="k">def</span> assemble(instructions: str, docs, history, question: str,
+             count_tokens) -> dict:
+    parts = {<span class="s">"system"</span>: instructions,
+             <span class="s">"docs"</span>: [d[<span class="s">"text"</span>] <span class="k">for</span> d <span class="k">in</span> order_docs(docs)],
+             <span class="s">"history"</span>: history, <span class="s">"question"</span>: question}  <span class="c"># question last</span>
+    total = sum(count_tokens(str(v)) <span class="k">for</span> v <span class="k">in</span> parts.values())
+    <span class="k">if</span> total &gt; BUDGET * COMPACT_AT:
+        parts[<span class="s">"history"</span>] = summarize(history, keep=[
+            <span class="s">"decisions"</span>, <span class="s">"open_bugs"</span>, <span class="s">"current_plan"</span>])  <span class="c"># recall-first</span>
+        parts[<span class="s">"docs"</span>] = parts[<span class="s">"docs"</span>][:5]  <span class="c"># drop distractors, keep edges</span>
+    total = sum(count_tokens(str(v)) <span class="k">for</span> v <span class="k">in</span> parts.values())
+    <span class="k">assert</span> total &lt; BUDGET, <span class="s">"still over effective budget: retrieve less"</span>
+    <span class="k">return</span> parts</pre>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">06</span> Failure modes</h2>
+      <p class="sub">Five ways long-context features go wrong in production — and the one-line fix for each.</p>
+      <div class="mechanics">
+<div class="mech fail"><div class="mnum">1</div><div><h3>Stuffing because it fits<span class="fix">Fix: assemble the smallest high-signal set that could answer, retrieve the rest just-in-time, and compare against a focused-context baseline in evals.</span></h3><p>&ldquo;The repo fits in 1M tokens, so send the repo.&rdquo; Every turn now pays full price and full latency, distractors included, while accuracy quietly slides down the rot gradient. Fitting was never the constraint that mattered — attention was.</p></div></div>
+<div class="mech fail"><div class="mnum">2</div><div><h3>Burying the needle in the middle<span class="fix">Fix: rank evidence, place the most relevant items first and last, put the question at the end, and test accuracy with the answer in each position.</span></h3><p>Documents concatenated in retrieval or chronological order put the decisive passage at position 11 of 20 — exactly where Liu et al. measured the deepest dip, sometimes below answering with no documents at all. The model did not lack the information; the layout hid it.</p></div></div>
+<div class="mech fail"><div class="mnum">3</div><div><h3>Declaring victory on needle-in-a-haystack<span class="fix">Fix: evaluate semantic retrieval, multi-needle and reasoning tasks, realistic distractors, and full-length production-shaped prompts — not lexical needles alone.</span></h3><p>Near-perfect NIAH scores get read as &ldquo;long context is solved.&rdquo; Chroma showed the same models degrading on tasks only slightly harder — a needle that must be inferred rather than matched, or one distractor that merely resembles the answer. Your users&rsquo; questions look like the second set, not the first.</p></div></div>
+<div class="mech fail"><div class="mnum">4</div><div><h3>Compacting too late, or compacting away the decisions<span class="fix">Fix: compact early at a set threshold, use a recall-first summary schema (decisions, open issues, plan, key files), and keep a notes file outside the window as the source of truth.</span></h3><p>Auto-compaction fires at 95%+ from an already-degraded context, and its summary drops the one architectural decision made three hours ago. The agent continues fluently — and re-litigates, re-breaks, or contradicts work it can no longer see. Lossy and late is the worst cell in the table.</p></div></div>
+<div class="mech fail"><div class="mnum">5</div><div><h3>Re-sending a giant static context on every turn<span class="fix">Fix: cache the stable prefix (system prompt, reference corpus), clear processed tool results, and keep per-turn additions small — caching cuts price, it does not excuse bloat.</span></h3><p>A support agent re-sends 400K tokens of history and documents for a one-line follow-up, sixty times a day. Latency and cost scale with the window you actually send, not the question you actually asked — and the follow-up&rsquo;s answer still rots in the pile.</p></div></div>
+</div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">07</span> Go deeper</h2>
+      <p class="sub">Verified references — every link opened and checked before publishing.</p>
+      <div class="ref-list">
+        <a class="ref" href="https://www.anthropic.com/research/effective-context-engineering-for-ai-agents"><span class="badge doc">Article</span><div><h3>Effective context engineering for AI agents — Anthropic</h3><p>The canonical playbook: attention budget and context rot, just-in-time retrieval, and the three long-horizon techniques — compaction, structured note-taking, and sub-agent isolation — with Claude Code as the worked example.</p></div></a>
+        <a class="ref" href="https://arxiv.org/html/2307.03172v3"><span class="badge doc">Paper</span><div><h3>Lost in the Middle: How Language Models Use Long Contexts — Liu et al.</h3><p>The primary source for the U-curve: controlled multi-document QA and key-value retrieval showing performance highest at the start and end of the context and significantly degraded in the middle, even for long-context models.</p></div></a>
+        <a class="ref" href="https://www.trychroma.com/research/context-rot"><span class="badge doc">Research</span><div><h3>Context Rot: How Increasing Input Tokens Impacts LLM Performance — Chroma</h3><p>The measurement that length alone hurts: 18 models, task complexity held constant, degradation that is non-uniform, distractor-sensitive, and visible on focused-vs-full history comparisons long before any window fills.</p></div></a>
+        <a class="ref" href="https://www.youtube.com/watch?v=_IlTcWciEC4"><span class="badge vid">Video</span><div><h3>Context Engineering for Agents — Lance Martin, LangChain</h3><p>A practitioner tour of how context fails in agents and the write / select / compress / isolate strategies, drawing on Manus, Cognition, and Anthropic&rsquo;s multi-agent research system.</p></div></a>
+        <a class="ref" href="https://www.youtube.com/watch?v=6_BcCthVvb8"><span class="badge vid">Video</span><div><h3>Context Engineering for AI Agents with LangChain and Manus</h3><p>The production deep dive: Manus&rsquo;s context reduction, offloading to a filesystem, and isolation patterns, plus summarization tips and evals — compaction as an engineered system, not a button.</p></div></a>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">08</span> Sample prompts</h2>
+      <p class="sub">Copy one into your AI assistant and apply it to your own work.</p>
+      <p id="live-status" class="sr-only" role="status"></p>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>AUDIT A LONG CONTEXT</strong><button class="copy-btn" data-copy="p1">Copy</button></div>
+        <p class="prompt-text" id="p1">Audit this long-context design: [describe the system — window size, what goes into each request, average token count, ordering, and the task]. Report: (1) the advertised vs likely effective window and how you would measure the effective one, (2) where the most answer-critical information currently sits (start / middle / end) and the reordering you recommend, (3) the top three rot risks — distractors, stale history, raw tool output — with the token cost of each, (4) which lever applies first among clear, compact, offload, isolate, and why, and (5) the smallest eval that would prove the redesign helped. Present it as a table.</p>
+      </div>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>DESIGN A COMPACTION POLICY</strong><button class="copy-btn" data-copy="p2">Copy</button></div>
+        <p class="prompt-text" id="p2">Design a compaction policy for this long-running agent: [describe the task, typical run length in turns and tokens, tools used, and what must never be forgotten]. Specify: the trigger (token threshold and / or natural breakpoint), what gets cleared before any summarizing happens, the exact summary schema (sections the summarizer must fill, e.g. goal, decisions, open issues, current plan, key files), what is written to notes outside the window instead of summarized, how the agent resumes after compaction, and how we will test that a compacted run finishes as reliably as an uncompacted one. If any part of my task makes compaction unsafe, say so and propose the alternative.</p>
+      </div>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>LONG CONTEXT OR RETRIEVAL?</strong><button class="copy-btn" data-copy="p3">Copy</button></div>
+        <p class="prompt-text" id="p3">For each workload below, recommend long-context stuffing, retrieval (RAG / just-in-time loading), or a hybrid — and defend each in one line on accuracy (including position and distractor effects), cost per request, and latency: [list 4-6 workloads with corpus size, query frequency, and how often the corpus changes]. Flag any workload where the honest answer is &quot;measure the effective window first&quot;, and describe the position-and-length eval you would run before deciding.</p>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">09</span> Quiz</h2>
+      <p class="sub">Five questions. Click an answer — you get the explanation right away.</p>
+      <div id="quiz">
+<div class="quiz-q" data-answer="1"><p class="qq">1. In the Lost in the Middle experiments, what happened when the answer-bearing document sat in the middle of a 20-document context?</p><div class="qopts"><button class="qopt" data-i="0">Nothing — position had no measurable effect once the model supported the full length.</button>
+<button class="qopt" data-i="1">Accuracy dropped significantly — in one setting below the model&rsquo;s score with no documents at all.</button>
+<button class="qopt" data-i="2">Accuracy improved, because the model reads the middle most carefully.</button>
+<button class="qopt" data-i="3">Only open models degraded; closed long-context models were unaffected.</button></div><p class="qexp" hidden></p></div>
+<div class="quiz-q" data-answer="2"><p class="qq">2. What does Chroma&rsquo;s Context Rot study add beyond the position effect?</p><div class="qopts"><button class="qopt" data-i="0">Proof that degradation only happens after the window is completely full.</button>
+<button class="qopt" data-i="1">Evidence that needle-in-a-haystack scores fully predict production performance.</button>
+<button class="qopt" data-i="2">Evidence that length alone degrades performance — across 18 models, non-uniformly, well before the limit, even with task complexity held constant.</button>
+<button class="qopt" data-i="3">A method to eliminate degradation by shuffling every haystack in production.</button></div><p class="qexp" hidden></p></div>
+<div class="quiz-q" data-answer="0"><p class="qq">3. You must send 15 retrieved passages. How should you lay out the request?</p><div class="qopts"><button class="qopt" data-i="0">Most relevant passages first and last, instructions at the start, and the question at the very end after the documents.</button>
+<button class="qopt" data-i="1">Question first, then passages in pure relevance order, so the best passage lands in the middle.</button>
+<button class="qopt" data-i="2">Passages in chronological order — position effects disappear at 15 documents.</button>
+<button class="qopt" data-i="3">Interleave the question between every passage to keep it fresh.</button></div><p class="qexp" hidden></p></div>
+<div class="quiz-q" data-answer="3"><p class="qq">4. An agent&rsquo;s window is filling with tool output mid-run. What is the right order of levers?</p><div class="qopts"><button class="qopt" data-i="0">Immediately summarize the whole transcript, including the tool results you have not processed yet.</button>
+<button class="qopt" data-i="1">Switch to a model with a larger window and change nothing else.</button>
+<button class="qopt" data-i="2">Restart the run from scratch — long runs cannot be rescued.</button>
+<button class="qopt" data-i="3">Clear processed tool results first (lightest touch), compact history at a threshold if it keeps growing, and keep durable state in notes outside the window.</button></div><p class="qexp" hidden></p></div>
+<div class="quiz-q" data-answer="1"><p class="qq">5. Why is a near-perfect needle-in-a-haystack score not enough to ship a long-context feature?</p><div class="qopts"><button class="qopt" data-i="0">Because NIAH uses synthetic text, and models refuse to answer synthetic questions in production.</button>
+<button class="qopt" data-i="1">Because NIAH is mostly lexical retrieval — performance falls when the answer must be inferred, when similar distractors appear, or when the task needs reasoning over the context.</button>
+<button class="qopt" data-i="2">Because NIAH is run at temperature 0, which production systems cannot use.</button>
+<button class="qopt" data-i="3">Because NIAH measures output tokens, not input tokens.</button></div><p class="qexp" hidden></p></div>
+</div>
+      <div id="quiz-score" role="status"></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">10</span> Flashcards</h2>
+      <p class="sub">Click a card (or focus it and press Enter / Space) to flip it.</p>
+      <div class="fgrid">
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Advertised vs effective window</div><div class="fface back">Advertised: the maximum tokens a model accepts (now commonly 1M). Effective: the length at which your task still passes your evals. The effective window is shorter, task-dependent, and the only one worth budgeting to.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Lost in the middle</div><div class="fface back">Liu et al.&rsquo;s finding that models use information at the start and end of a long context best and information in the middle worst — a U-shaped accuracy curve across multi-document QA and key-value retrieval.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Context rot</div><div class="fface back">The gradual degradation of accuracy and recall as input tokens grow, documented by Chroma across 18 models and named in Anthropic&rsquo;s guidance. A gradient that starts well before the window fills — not a cliff at the limit.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Attention budget</div><div class="fface back">Anthropic&rsquo;s metaphor for finite attention: every token attends to every other token (n&sup2; pairs), so each added token spends some of a fixed budget. Curation is how you stop low-signal tokens from taxing high-signal ones.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Compaction</div><div class="fface back">Summarizing a conversation nearing the limit and restarting the window from that summary — preserving decisions, open issues, and key details while discarding redundant output. Tune recall first, then precision; trigger it early, at a breakpoint.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Tool-result clearing</div><div class="fface back">The lightest form of compaction: delete raw tool outputs from the window once they have been processed, keeping the fact of the call and any distilled result. Targets the fastest-growing, lowest-signal tokens in an agent loop first.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Structured note-taking</div><div class="fface back">The agent writes plans, decisions, and state to storage outside the context window and reads them back on demand. It is what survives compaction and truncation — memory as a file, not as hope.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Just-in-time retrieval</div><div class="fface back">Keep lightweight identifiers (paths, queries, links) in context and load the actual data with tools at runtime, discovering it progressively. The alternative to pre-loading everything — and to stale pre-built indexes.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Distractor</div><div class="fface back">Context that resembles the answer but is not the answer. Chroma found even one distractor measurably lowers accuracy, more so at longer lengths — which is why selecting context out is as important as retrieving it in.</div></div></div>
+</div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">11</span> Reach for this when&hellip;</h2>
+      <div class="triggers">
+        <div class="trigger"><strong>A design starts with &ldquo;just put it all in the window&rdquo;</strong> — a whole repo, a full document set, an entire chat history. That sentence is your cue to ask for the effective window, the ordering, and the focused-baseline eval before anyone builds it.</div>
+        <div class="trigger"><strong>An agent gets worse the longer it runs</strong> — forgetting early decisions, contradicting itself, drowning in tool output. That is rot plus growth: clear tool results, compact on a threshold, and move the plan into notes outside the window.</div>
+        <div class="trigger"><strong>A vendor claim rests on a needle test</strong> — near-perfect recall at 1M tokens is a retrieval floor, not a reasoning guarantee. Reach for position-and-distractor evals at your real length before you bet a feature on the number.</div>
+      </div>
+    </section>
+
+    <a class="back-link" href="../index.html#daily-topics">&larr; Back to daily topics</a>
+  </div>
+
+<script>
+    const status = document.getElementById('live-status');
+    document.querySelectorAll('.copy-btn').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const target = document.getElementById(button.dataset.copy);
+        const text = target.innerText;
+        try {
+          await navigator.clipboard.writeText(text);
+          const original = button.textContent;
+          button.textContent = 'Copied';
+          status.textContent = 'Prompt copied to clipboard.';
+          setTimeout(() => button.textContent = original, 1600);
+        } catch {
+          const range = document.createRange();
+          range.selectNodeContents(target);
+          const selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+          status.textContent = 'Prompt selected. Copy it with your device copy command.';
+        }
+      });
+    });
+    const explanations = [["Position mattered in every model family tested, open and closed — that was the paper's central result.", "Correct. The U-curve dips so deep mid-context that GPT-3.5-Turbo scored below its closed-book, no-documents baseline of 56.1%.", "The curve is the opposite: the middle is where accuracy goes to die, which is why ordering is an engineering lever.", "Extended-context closed models showed the same U-shape; a bigger window did not exempt them."], ["Chroma's degradation appears well before the limit — that is precisely what makes it rot rather than overflow.", "NIAH is the narrow test Chroma set out to go beyond; it does not predict semantic or reasoning performance.", "Correct. Holding complexity constant while varying only length, all 18 models degraded — non-uniformly, and with distractors and similarity shaping the slope.", "Shuffled haystacks scoring better was an observation about model behavior, not a production technique — coherence is a feature for humans and downstream steps."], ["Correct. Edges are the high-attention real estate: instructions and top evidence up front, the question last — Google's long-context FAQ recommends the same question-at-the-end layout.", "Pure relevance order wastes the end slot and strands the second-best passage in the dip.", "The U-curve was measured at exactly this scale — 20 documents, roughly a few thousand tokens. It is not a million-token-only phenomenon.", "Repeating the query once after the documents (query-aware contextualization) can help; interleaving it everywhere just spends budget and fragments the evidence."], ["Summarizing unprocessed results destroys information you still need — and a summary made by an already-rotted context inherits the rot.", "A larger window delays overflow while rot, cost, and latency all keep growing — Anthropic is explicit that waiting for bigger windows does not solve pollution.", "Rescue is the entire point of clear / compact / offload: the run continues from a smaller, higher-signal window.", "Correct. Cheapest lever first: clear what is re-fetchable or processed, compact what must be remembered in prose, and keep what must be exact in external notes."], ["Synthetic needles are answered fine — that is the baseline the harder tests depart from.", "Correct. Add semantic inference, a similar distractor, or a reasoning step and the same models degrade — production questions have all three.", "Temperature is not the gap; task type is. The same settings show the split between lexical and semantic conditions.", "NIAH measures input-side retrieval of a planted sentence — its limits are about what the task demands, not token accounting."]];
+    const questions = [...document.querySelectorAll('.quiz-q')];
+    let score = 0, answered = 0;
+    questions.forEach((q, qi) => {
+      const correct = parseInt(q.dataset.answer, 10);
+      const exp = q.querySelector('.qexp');
+      q.querySelectorAll('.qopt').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          if (q.dataset.done) return;
+          q.dataset.done = "1";
+          const chosen = parseInt(btn.dataset.i, 10);
+          const ok = chosen === correct;
+          q.querySelectorAll('.qopt').forEach((b) => {
+            b.disabled = true;
+            if (parseInt(b.dataset.i, 10) === correct) b.classList.add('correct');
+          });
+          if (!ok) btn.classList.add('wrong');
+          else score++;
+          answered++;
+          exp.hidden = false;
+          exp.innerHTML = ok
+            ? "<strong class=\"ok\">Correct.</strong> " + explanations[qi][chosen]
+            : "<strong class=\"no\">Not quite.</strong> " + explanations[qi][chosen];
+          if (answered === questions.length) {
+            const box = document.getElementById('quiz-score');
+            box.style.display = "block";
+            box.innerHTML = "You scored <strong>" + score + " / " + questions.length + "</strong>." +
+              (score === questions.length ? " Clean sweep — now go measure the effective window on the longest prompt you own." :
+               score >= 3 ? " Solid — re-read the mechanic you missed; long-context failures are layout and curation failures first." :
+               " Worth a re-read of sections 04 and 06 before you ship anything that stuffs a window.");
+          }
+        });
+      });
+    });
+    document.querySelectorAll('.fcard').forEach((card) => {
+      const flip = () => card.classList.toggle('flipped');
+      card.addEventListener('click', flip);
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); }
+      });
+    });
+  </script>
+</body>
+</html>
