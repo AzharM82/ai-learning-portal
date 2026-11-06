@@ -376,5 +376,12 @@
     "date": "2026-11-05",
     "summary": "A million-token window is capacity, not attention: accuracy falls as input grows (context rot), relevant information in the middle is used worst (the lost-in-the-middle U-curve), and every token costs attention, money, and latency. Place key information at the edges, select the smallest high-signal set, clear tool results, compact before the window rots, offload notes, and evaluate at the length you will actually ship.",
     "skill": "long-context-engineering"
+  },
+  {
+    "slug": "2026-11-06-lora-and-peft-in-practice",
+    "title": "LoRA and PEFT in practice: fine-tuning a small model hands-on",
+    "date": "2026-11-06",
+    "summary": "Freeze the base model and train only a tiny low-rank update: W + BA, where rank r decides capacity, alpha scales it, and target_modules decides where it lands. QLoRA quantizes the frozen base to 4-bit so a much larger model fits on one GPU \u2014 merge for zero-latency inference, keep adapters separate for cheap multi-task serving, and evaluate against the base before you trust the savings.",
+    "skill": "lora-and-peft-in-practice"
   }
 ]
