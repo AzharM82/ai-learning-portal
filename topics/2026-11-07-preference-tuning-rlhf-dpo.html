@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Preference tuning: RLHF, DPO, and teaching models what "good" means &middot; AI Learning Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+    :root {
+      --ink: #14212b; --muted: #53636f; --paper: #f6f8f7; --white: #ffffff;
+      --line: #cbd5d8; --navy: #163247; --navy-2: #21465e; --teal: #0b8174;
+      --teal-soft: #dff2ee; --orange: #d66332; --orange-soft: #f8e4d8;
+      --gold: #d8a524; --gold-soft: #f7edc8; --blue-soft: #e3eef4;
+      --red: #b3402e; --red-soft: #f9e3de; --green: #1e7a3c; --green-soft: #e2f2e6;
+      --shadow: 0 18px 45px rgba(20, 33, 43, .09); --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; color: var(--ink); background: linear-gradient(rgba(20,33,43,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(20,33,43,.035) 1px, transparent 1px), var(--paper); background-size: 28px 28px; font-family: "Source Sans 3", sans-serif; font-size: 17px; line-height: 1.58; }
+    .shell { width: min(960px, calc(100% - 40px)); margin: 0 auto; }
+    .portal-nav{position:sticky;top:0;z-index:50;background:rgba(22,50,71,.97);border-bottom:1px solid rgba(255,255,255,.12)}
+    .portal-nav-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;flex-wrap:wrap}
+    .portal-brand{color:#fff;text-decoration:none;font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:15px}
+    .portal-brand span{color:var(--gold);font-weight:400}
+    .portal-links{display:flex;gap:18px;flex-wrap:wrap}
+    .portal-links a{color:#dbe7ee;text-decoration:none;font-size:14.5px}
+    .portal-links a:hover{color:#fff;text-decoration:underline}
+    .hero { padding: 56px 0 36px; }
+    .chapter-mark { display:inline-flex;align-items:center;gap:10px;color:var(--navy); font:600 12px/1.2 "IBM Plex Mono",monospace;letter-spacing:.09em;text-transform:uppercase;margin-bottom:18px; }
+    .chapter-mark::before { content:"";width:42px;height:3px;background:var(--orange); }
+    h1 { font-size: clamp(36px, 5vw, 58px); line-height: 1.02; letter-spacing:-.03em; margin:0 0 14px; }
+    .lede { color: var(--muted); font-size: clamp(18px,2vw,22px); max-width: 64ch; margin:0 0 8px; }
+    .date-line { font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--muted); }
+    section.block { margin: 44px 0; }
+    h2 { font-size: 26px; letter-spacing:-.02em; margin:0 0 6px; display:flex;align-items:center;gap:12px; }
+    h2 .num { font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:600;color:var(--white); background:var(--navy);border-radius:999px;min-width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center; }
+    .sub { color:var(--muted); margin:0 0 18px; max-width: 68ch; }
+    .card { background:var(--white);border:1px solid var(--line);border-radius:var(--radius); padding:24px;box-shadow:var(--shadow); }
+    .skill-card { background:var(--navy);color:#eaf2f7;border-radius:var(--radius);padding:22px 24px; font-family:"IBM Plex Mono",monospace;font-size:14.5px;overflow-x:auto;box-shadow:var(--shadow); }
+    .skill-card .k { color:var(--gold); }
+    .idea { font-size:21px;line-height:1.5;border-left:4px solid var(--teal);padding:6px 0 6px 20px;max-width:62ch; }
+    .idea strong { color:var(--navy); }
+    .mechanics { display:grid;gap:14px; }
+    .mech { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:18px 20px; display:grid;grid-template-columns:44px 1fr;gap:14px;align-items:start; }
+    .mech .mnum { font-family:"IBM Plex Mono",monospace;font-weight:600;color:var(--teal); background:var(--teal-soft);border-radius:10px;width:44px;height:44px;display:flex;align-items:center;justify-content:center; }
+    .mech h3 { margin:0 0 6px;font-size:18px; }
+    .mech p { margin:0;color:var(--muted);font-size:15.5px; }
+    .mech code, .inline-code { font-family:"IBM Plex Mono",monospace;font-size:.88em;background:var(--blue-soft); padding:2px 7px;border-radius:6px;color:var(--navy); }
+    pre.code { background:#0f2233;color:#e8f1f5;border-radius:14px;padding:20px 22px;overflow-x:auto; font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.6;margin:0; }
+    pre.code .c { color:#8ba3b0; } pre.code .s { color:#ffd479; } pre.code .k { color:#7fd6c2; }
+    .fail { border-left:4px solid var(--orange); }
+    .fail h3 .fix { display:block;margin-top:8px;font-size:15px;font-weight:500;color:var(--green); }
+    .ref-list { display:grid;gap:12px; }
+    .ref { display:flex;gap:14px;align-items:flex-start;background:var(--white);border:1px solid var(--line); border-radius:14px;padding:16px 18px;text-decoration:none;color:inherit; }
+    .ref:hover { border-color:var(--teal); }
+    .ref .badge { flex:none;font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;letter-spacing:.06em; padding:5px 10px;border-radius:999px;text-transform:uppercase; }
+    .badge.doc { background:var(--blue-soft);color:var(--navy); }
+    .badge.vid { background:var(--orange-soft);color:var(--orange); }
+    .ref h3 { margin:0 0 4px;font-size:17px; }
+    .ref p { margin:0;color:var(--muted);font-size:14.5px; }
+    .prompt-block { background:#0f2233;border-radius:var(--radius);overflow:hidden;margin-bottom:18px;box-shadow:var(--shadow); }
+    .prompt-top { display:flex;justify-content:space-between;align-items:center;gap:12px; padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.12); }
+    .prompt-top strong { color:#fff;font-size:13px;letter-spacing:.06em;font-family:"IBM Plex Mono",monospace; }
+    .copy-btn { border:1px solid #6c8796;background:transparent;color:#fff;border-radius:6px;padding:7px 11px; cursor:pointer;font-weight:700;font-size:14px; }
+    .copy-btn:hover { background:rgba(255,255,255,.1); }
+    .copy-btn:focus-visible { outline:2px solid var(--gold);outline-offset:2px; }
+    .prompt-text { color:#e8f1f5;font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.65; padding:18px;white-space:pre-wrap;margin:0; }
+    .sr-only { position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0); }
+    .quiz-q { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px; }
+    .quiz-q .qq { font-weight:700;margin:0 0 12px;font-size:18px; }
+    .qopts { display:grid;gap:8px; }
+    .qopt { text-align:left;background:var(--paper);border:1px solid var(--line);border-radius:10px; padding:12px 14px;cursor:pointer;font-size:15.5px;color:var(--ink); }
+    .qopt:hover:not(:disabled) { border-color:var(--navy); }
+    .qopt:disabled { cursor:default;opacity:.85; }
+    .qopt.correct { background:var(--green-soft);border-color:var(--green); }
+    .qopt.wrong { background:var(--red-soft);border-color:var(--red); }
+    .qexp { margin:12px 0 0;font-size:15px;color:var(--muted); }
+    .qexp strong.ok { color:var(--green); } .qexp strong.no { color:var(--red); }
+    #quiz-score { display:none;margin-top:8px;background:var(--navy);color:#fff;border-radius:14px; padding:20px 24px;font-size:19px; }
+    #quiz-score strong { color:var(--gold); }
+    .fgrid { display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px; }
+    .fcard { perspective:900px;cursor:pointer;min-height:170px; }
+    .fcard-inner { position:relative;width:100%;height:100%;min-height:170px;transform-style:preserve-3d;transition:transform .45s; }
+    .fcard.flipped .fcard-inner { transform:rotateY(180deg); }
+    .fface { position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden; border-radius:14px;padding:18px;display:flex;align-items:center;justify-content:center;text-align:center; border:1px solid var(--line);background:var(--white);box-shadow:var(--shadow);font-size:15.5px; }
+    .fface.front { font-weight:700;color:var(--navy); }
+    .fface.back { transform:rotateY(180deg);background:var(--teal-soft);color:var(--ink);font-size:14.5px; }
+    .fcard:focus-visible { outline:2px solid var(--teal);outline-offset:3px;border-radius:14px; }
+    .triggers { display:grid;gap:10px; }
+    .trigger { background:var(--gold-soft);border-radius:12px;padding:14px 18px;font-size:16px; }
+    .trigger strong { color:var(--navy); }
+    .back-link { display:inline-block;margin:8px 0 60px;font-weight:600;color:var(--teal);text-decoration:none;font-size:17px; }
+    .back-link:hover { text-decoration:underline; }
+    .fig { background:var(--white);border:1px solid var(--line);border-radius:var(--radius); padding:12px;box-shadow:var(--shadow);overflow-x:auto; }
+    .fig svg { display:block;width:100%;height:auto; }
+    .flow-anim { stroke-dasharray: 8 6; animation: dashmove 1.2s linear infinite; }
+    @keyframes dashmove { to { stroke-dashoffset: -14; } }
+    @media (prefers-reduced-motion: reduce) { .fcard-inner{transition:none;} .flow-anim{animation:none;} }
+  </style>
+</head>
+<body><nav class="portal-nav">
+    <div class="shell portal-nav-inner">
+      <a class="portal-brand" href="../index.html">AI Engineering <span>&middot; Learning Portal</span></a>
+      <div class="portal-links">
+        <a href="../index.html#daily-topics">Daily topics</a>
+        <a href="../index.html#loop">Loop</a>
+        <a href="../index.html#graph">Graph</a>
+        <a href="../index.html#harness">Harness</a>
+      </div>
+    </div>
+  </nav>
+  <div class="shell">
+    <header class="hero">
+      <div class="chapter-mark">Daily topic &middot; AI engineering — round 2</div>
+      <h1>Preference tuning: RLHF, DPO, and teaching models what "good" means</h1>
+      <p class="lede">Supervised fine-tuning teaches a model what an answer looks like. Preference tuning teaches it which of two plausible answers people actually prefer — more helpful, more honest, less harmful. Classic RLHF turns those comparisons into a reward model and optimizes against it with PPO; DPO skips both and optimizes the same objective directly from chosen / rejected pairs.</p>
+      <p class="date-line">2026-11-07 &middot; Topic 055</p>
+    </header>
+
+    <section class="block">
+      <h2><span class="num">01</span> The skill card</h2>
+      <p class="sub">Every topic on this portal is designed like a Codex skill: a name, a trigger, and concrete steps.</p>
+      <div class="skill-card"><pre style="margin:0">---
+<span class="k">name:</span> preference-tuning-rlhf-dpo
+<span class="k">description:</span> Reach for this when a model can already produce plausible
+  answers but not reliably the ones people prefer: start from an SFT
+  model, collect (prompt, chosen, rejected) pairs, choose classic RLHF
+  (reward model + PPO) or DPO (direct classification loss, beta controls
+  drift from the reference), and evaluate on held-out human preferences
+  — never on the reward you trained against.
+---</pre></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">02</span> The one-idea version</h2>
+      <p class="idea"><strong>"Good" is easier to recognize than to demonstrate — so train on comparisons, not just examples.</strong> A labeler who cannot write the perfect summary can still reliably pick the better of two. Preference tuning turns thousands of those picks into a training signal: in RLHF a reward model learns to predict the pick and PPO chases its score under a KL leash; in DPO the model itself is the implicit reward model, and a simple classification loss widens the margin between chosen and rejected, relative to a frozen reference.</p>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">03</span> The picture: two routes from the same pairs</h2>
+      <p class="sub">Same starting point, same data, same KL constraint. RLHF builds a judge and then runs a reinforcement-learning loop; DPO folds the judge into the loss.</p>
+      <div class="fig">
+        <svg viewBox="0 0 960 420" role="img" aria-label="Diagram comparing classic RLHF, where preference pairs train a reward model and PPO optimizes the policy under a KL penalty, with DPO, where the same pairs train the policy directly with a classification loss relative to a frozen reference model.">
+          <g font-family="Source Sans 3, sans-serif" font-size="14">
+            <text x="20" y="26" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="600" fill="#163247">START: SFT MODEL + (PROMPT, CHOSEN, REJECTED) PAIRS</text>
+            <rect x="20" y="48" width="200" height="72" rx="12" fill="#e3eef4" stroke="#163247" stroke-width="2"/>
+            <text x="120" y="80" text-anchor="middle" font-weight="700" fill="#163247">SFT model</text>
+            <text x="120" y="102" text-anchor="middle" fill="#53636f">plausible answers</text>
+            <rect x="260" y="48" width="260" height="72" rx="12" fill="#f7edc8" stroke="#d8a524" stroke-width="2"/>
+            <text x="390" y="80" text-anchor="middle" font-weight="700" fill="#163247">Preference pairs</text>
+            <text x="390" y="102" text-anchor="middle" fill="#53636f">chosen &gt; rejected, per prompt</text>
+            <text x="540" y="90" text-anchor="middle" font-size="22" font-weight="700" fill="#163247">&#8594;</text>
+            <rect x="580" y="48" width="360" height="72" rx="12" fill="#ffffff" stroke="#cbd5d8"/>
+            <text x="760" y="80" text-anchor="middle" font-weight="700" fill="#163247">Bradley–Terry: P(chosen) = &#963;(r<sub>chosen</sub> &#8722; r<sub>rejected</sub>)</text>
+            <text x="760" y="102" text-anchor="middle" fill="#53636f">comparisons become probabilities</text>
+            <rect x="20" y="150" width="920" height="96" rx="12" fill="#dff2ee" stroke="#0b8174" stroke-width="2"/>
+            <text x="40" y="178" font-weight="700" fill="#163247">CLASSIC RLHF</text>
+            <text x="40" y="204" fill="#53636f">Pairs &#8594; train reward model r(x,y) &#8594; PPO samples fresh answers, reward model scores them,</text>
+            <text x="40" y="226" fill="#53636f">policy climbs the score — minus &#946; &middot; KL(policy &#8741; SFT reference), the leash against reward hacking.</text>
+            <rect x="20" y="262" width="920" height="96" rx="12" fill="#f8e4d8" stroke="#d66332" stroke-width="2"/>
+            <text x="40" y="290" font-weight="700" fill="#163247">DPO — NO REWARD MODEL, NO RL LOOP</text>
+            <text x="40" y="316" fill="#53636f">Implicit reward = &#946; &middot; log[ &#960;(y|x) / &#960;<tspan baseline-shift="sub">ref</tspan>(y|x) ] &#8594; one classification loss on the pairs:</text>
+            <text x="40" y="338" fill="#53636f">raise chosen relative to reference, lower rejected relative to reference, keep the margin honest.</text>
+            <path d="M40 378 H920" stroke="#163247" stroke-width="2" fill="none" class="flow-anim"/>
+            <rect x="20" y="386" width="920" height="28" rx="8" fill="#163247"/><text x="480" y="405" text-anchor="middle" fill="#ffffff" font-weight="600" font-size="13">SAME OBJECTIVE &middot; FEWER MOVING PARTS IN DPO &middot; SAME NEED FOR HELD-OUT EVAL</text>
+          </g>
+        </svg>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">04</span> How it works</h2>
+      <p class="sub">Six mechanics: start from SFT, collect pairs, pick your route, control drift, and prove it on preferences you did not train on.</p>
+      <div class="mechanics">
+<div class="mech"><div class="mnum">1</div><div><h3>Start from a supervised fine-tuned (SFT) model — never from the raw base</h3><p>Preference tuning is a <em>second</em> stage. First fine-tune on demonstrations so the model already produces assistant-shaped answers in-distribution. The InstructGPT recipe (Ouyang et al.) is explicit: labeler demonstrations fine-tune GPT-3, <em>then</em> rankings are collected from that SFT model&rsquo;s outputs. Hugging Face TRL says the same for DPO: train the SFT model first so the preference data is in-distribution for the algorithm. Pairs collected from a different model&rsquo;s style teach style transfer and preference at once — badly.</p></div></div>
+<div class="mech"><div class="mnum">2</div><div><h3>Collect comparisons: (prompt, chosen, rejected), not absolute scores</h3><p>Show labelers several completions for one prompt and have them rank or pick the best. Humans are far more consistent at &ldquo;A is better than B&rdquo; than at &ldquo;A is a 7.3.&rdquo; Model the pick with Bradley–Terry: P(chosen &succ; rejected) = &sigma;(r(chosen) &minus; r(rejected)). Record the rubric (helpful, honest, harmless — and what wins a tie), labeler agreement, and prompt source. Your preference dataset <em>is</em> your definition of good; if it is noisy, narrow, or all from one demographic, the tuned model faithfully learns exactly that.</p></div></div>
+<div class="mech"><div class="mnum">3</div><div><h3>Classic RLHF: distill the picks into a reward model</h3><p>Train a reward model r(x, y) — usually the SFT model with a scalar head — to assign higher scores to chosen than rejected under the Bradley–Terry loss. Now you have a fast, automatic stand-in for the labelers: it can score millions of fresh generations no human will ever see. That is both the power and the danger. The reward model is a <em>proxy</em>: it generalizes imperfectly, and everything downstream will exploit wherever the proxy differs from real human judgment.</p></div></div>
+<div class="mech"><div class="mnum">4</div><div><h3>Optimize the policy against the reward — with PPO and a KL leash</h3><p>Run reinforcement learning (classically PPO): sample completions from the current policy, score them with the reward model, and update the policy to earn more reward — while paying a KL penalty for drifting from the frozen SFT reference. The KL term is not decoration: without it the policy quickly finds degenerate, reward-model-pleasing text. Even with it, budget for instability: RLHF juggles policy, reference, reward, and often a value model, needs on-policy sampling throughout, and is notoriously sensitive to hyperparameters. InstructGPT&rsquo;s payoff for this machinery was historic — the 1.3B model&rsquo;s outputs were preferred to the 175B GPT-3&rsquo;s.</p></div></div>
+<div class="mech"><div class="mnum">5</div><div><h3>DPO: skip the reward model and the RL loop — optimize the pairs directly</h3><p>Rafailov et al. showed the KL-constrained reward-maximization problem has a closed-form optimum, so the reward can be reparameterized as r(x,y) = &beta; &middot; log[&pi;(y|x) / &pi;<sub>ref</sub>(y|x)] plus a prompt-only constant that cancels in pairs. Substitute that into Bradley–Terry and RLHF becomes a binary-classification loss on the preference pairs themselves: &minus;log &sigma;(&beta; &middot; [(log-ratio for chosen) &minus; (log-ratio for rejected)]). No separate reward model, no sampling during training, no PPO. In practice with TRL&rsquo;s <code>DPOTrainer</code>, each example is just <code>prompt</code> / <code>chosen</code> / <code>rejected</code>, and the trainer in practice often lowers the rejected likelihood more than it raises the chosen one — watch both log-probabilities, not just the margin.</p></div></div>
+<div class="mech"><div class="mnum">6</div><div><h3>Tune beta, iterate the data, and evaluate on held-out human preference</h3><p><code>beta</code> controls how strongly preferences pull the policy away from the reference: TRL documents typical values around 0.1 to 0.5, with 0.1 the common start. Too small and the model barely moves (or, at the limit, ignores the reference); too aggressive a run and you get degeneration and length blow-up. Preference tuning is rarely one-and-done: evaluate, mine the new model&rsquo;s failures, collect fresh pairs on <em>its</em> outputs (iterative / online variants), and re-train. Judge success by win-rate against the SFT model on held-out prompts scored by humans or a judge that did <em>not</em> produce the training reward — never by the training reward itself, which the policy was literally optimized to game.</p></div></div>
+</div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">05</span> Code sketch</h2>
+      <p class="sub">A minimal DPO run with TRL: SFT model in, preference pairs in the documented format, beta as the drift control.</p>
+      <pre class="code"><span class="c"># pip install trl transformers datasets peft</span>
+<span class="k">from</span> datasets <span class="k">import</span> load_dataset
+<span class="k">from</span> trl <span class="k">import</span> DPOConfig, DPOTrainer
+
+<span class="c"># Each row: {"prompt": ..., "chosen": ..., "rejected": ...}</span>
+<span class="c"># chosen / rejected are two completions for the SAME prompt,</span>
+<span class="c"># ranked by humans (or a documented AI judge = RLAIF).</span>
+train_ds = load_dataset(<span class="s">"trl-lib/ultrafeedback_binarized"</span>, split=<span class="s">"train_prefs"</span>)
+
+cfg = DPOConfig(
+    beta=0.1,                 <span class="c"># KL strength: higher = stay closer to ref</span>
+    learning_rate=5e-7,       <span class="c"># full model; ~5e-6 to 1e-5 with LoRA</span>
+    per_device_train_batch_size=4,
+    num_train_epochs=1,       <span class="c"># preference data overfits fast</span>
+    logging_steps=10,         <span class="c"># watch rewards/margins + accuracies</span>
+    output_dir=<span class="s">"out/dpo-v1"</span>,
+)
+
+trainer = DPOTrainer(
+    model=<span class="s">"my-org/my-sft-model"</span>,   <span class="c"># the SFT checkpoint, NOT the base</span>
+    args=cfg,
+    train_dataset=train_ds,
+    <span class="c"># ref model: omitted -> trainer uses a frozen copy of the SFT model;</span>
+    <span class="c"># with PEFT, the adapter-off base serves as the reference.</span>
+)
+trainer.train()
+trainer.save_model(<span class="s">"out/dpo-v1/final"</span>)
+<span class="c"># Gate on held-out win-rate vs the SFT model before shipping.</span></pre>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">06</span> Failure modes</h2>
+      <p class="sub">Five ways preference tuning makes a model worse while the training metrics look great — and the one-line fix for each.</p>
+      <div class="mechanics">
+<div class="mech fail"><div class="mnum">1</div><div><h3>Reward hacking and over-optimization<span class="fix">Fix: keep the KL / beta leash on, cap epochs, and evaluate with held-out humans — a rising training reward with a flat or falling human win-rate is the hacking signature.</span></h3><p>The policy finds what the reward model (or the DPO margin) rewards rather than what people want: longer, more confident, more flattering answers that score well and help less. Goodhart&rsquo;s law with gradients. In DPO the same pressure appears as verbosity and sycophancy learned straight from biased pairs.</p></div></div>
+<div class="mech fail"><div class="mnum">2</div><div><h3>Garbage preferences in, faithful garbage out<span class="fix">Fix: write the ranking rubric, measure inter-labeler agreement, audit a sample of pairs by hand, and drop or relabel systematic disagreements before training.</span></h3><p>Labelers reward length, formatting, or agreeableness because the rubric never said not to; two labeler pools disagree and their labels cancel into noise; AI-generated preferences (RLAIF) quietly encode the judge model&rsquo;s own biases. The tuned model does not average this out — it amplifies whatever pattern is most learnable in the pairs.</p></div></div>
+<div class="mech fail"><div class="mnum">3</div><div><h3>DPO margin grows while chosen answers get worse<span class="fix">Fix: log chosen and rejected log-probabilities separately; if both are falling, add an SFT anchor loss on chosen (as in RPO / DPO+SFT mixes) or lower the learning rate and beta pressure.</span></h3><p>The DPO loss only cares about the <em>gap</em> between chosen and rejected relative to the reference. The gap can widen by pushing rejected down — and chosen down with it, just slower (likelihood displacement). Outputs drift off-distribution even as <code>rewards/margins</code> and accuracy climb. TRL&rsquo;s own docs note DPO in practice often works mainly by suppressing the rejected completions.</p></div></div>
+<div class="mech fail"><div class="mnum">4</div><div><h3>Beta / KL mis-set: no learning, or degeneration<span class="fix">Fix: start at beta 0.1, run a small sweep, and watch KL / reward margin together — pick the smallest drift that clears your held-out win-rate bar.</span></h3><p>Too much constraint and preference training is a no-op you ship with confidence; too little and the policy chases the preference signal into repetitive, overlong, or strangely formatted text that no pair ever endorsed. The symptom is misdiagnosed as a data problem when it is a one-knob problem.</p></div></div>
+<div class="mech fail"><div class="mnum">5</div><div><h3>Grading yourself with the training judge<span class="fix">Fix: freeze a held-out preference eval set before training, score it with independent humans or a different judge, and include capability regressions (not just win-rate) in the ship gate.</span></h3><p>The team reports &ldquo;reward up 40%&rdquo; or win-rate judged by the same model that generated the RLAIF labels. Of course it agrees with itself. Meanwhile general capability quietly regressed — the alignment tax nobody measured. InstructGPT checked public NLP benchmarks precisely to keep this honest.</p></div></div>
+</div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">07</span> Go deeper</h2>
+      <p class="sub">Verified references — every link opened and checked before publishing.</p>
+      <div class="ref-list">
+        <a class="ref" href="https://arxiv.org/abs/2203.02155?context=cs"><span class="badge doc">Paper</span><div><h3>Training Language Models to Follow Instructions with Human Feedback — Ouyang et al., OpenAI (InstructGPT)</h3><p>The original RLHF recipe: SFT on demonstrations, a reward model trained on rankings, then PPO — and the result that a 1.3B aligned model was preferred to the 175B GPT-3.</p></div></a>
+        <a class="ref" href="https://arxiv.org/abs/2305.18290v3"><span class="badge doc">Paper</span><div><h3>Direct Preference Optimization: Your Language Model Is Secretly a Reward Model — Rafailov et al.</h3><p>The DPO paper: the closed-form reparameterization that turns RLHF into a classification loss on pairs, matching or beating PPO-based RLHF on sentiment, summarization, and dialogue.</p></div></a>
+        <a class="ref" href="https://huggingface.co/docs/trl/en/dpo_trainer"><span class="badge doc">Docs</span><div><h3>DPO Trainer — Hugging Face TRL</h3><p>The hands-on reference: the prompt / chosen / rejected dataset format, the exact DPO loss, beta in the 0.1–0.5 range, logged rewards / margins / accuracies, and loss variants (IPO, hinge, SimPO-style normalization).</p></div></a>
+        <a class="ref" href="https://www.youtube.com/watch?v=zQDQJAoQCJE"><span class="badge vid">Video</span><div><h3>DPO Explained: RLHF Without Reinforcement Learning</h3><p>A step-by-step walk through the actual DPO paper: Bradley–Terry, why the normalizer cancels, the loss and its gradient, a runnable toy example, and the limits the authors themselves state.</p></div></a>
+        <a class="ref" href="https://www.youtube.com/watch?v=nXVYe4MtZjU"><span class="badge vid">Video</span><div><h3>How Humans Teach AI to Behave: RLHF Explained</h3><p>The three-step RLHF story in plain language — demonstrations, rankings into a reward model, RL with a leash — plus its honest catches: reward hacking and whose preferences get encoded.</p></div></a>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">08</span> Sample prompts</h2>
+      <p class="sub">Copy one into your AI assistant and apply it to your own work.</p>
+      <p id="live-status" class="sr-only" role="status"></p>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>CHOOSE RLHF vs DPO</strong><button class="copy-btn" data-copy="p1">Copy</button></div>
+        <p class="prompt-text" id="p1">For this model and goal, recommend classic RLHF (reward model + PPO), DPO, or neither yet: [describe the SFT model, the behavior I want to change, how much preference data I have or can collect, my compute, and whether I need online exploration]. Compare the options on: data requirements, training stability and moving parts, ability to explore beyond the dataset, and evaluation burden. Give a starting beta for DPO or a KL target for PPO, the held-out eval that should gate shipping, and the failure mode you would watch first. If the honest answer is "your SFT or your data is not ready", say so and name the prerequisite.</p>
+      </div>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>DESIGN A PREFERENCE DATASET</strong><button class="copy-btn" data-copy="p2">Copy</button></div>
+        <p class="prompt-text" id="p2">Design a preference dataset for tuning this model: [describe the tasks, users, and the behaviors I care about]. Specify: (1) prompt sources that match real usage, (2) how many completions per prompt to sample and at what temperature, (3) the ranking rubric — what labelers optimize, what wins ties, what to do about length and formatting bias, (4) agreement checks and quality audits, (5) the exact record format (prompt / chosen / rejected plus metadata), and (6) how large a held-out eval set to freeze before any training. Flag where AI-generated preferences (RLAIF) are safe to use and where they would just encode the judge's biases.</p>
+      </div>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>DEBUG A PREFERENCE-TUNING REGRESSION</strong><button class="copy-btn" data-copy="p3">Copy</button></div>
+        <p class="prompt-text" id="p3">My preference-tuned model got worse in a specific way: [describe the symptom — e.g. longer but less helpful, more refusals, chosen-answer quality dropped, capability regression — with 3 before/after examples]. Here are my training details: [method (RLHF/DPO), beta or KL coefficient, learning rate, epochs, dataset size and source, and training curves including chosen/rejected log-probs or reward]. Diagnose in order: reward hacking / over-optimization, preference-data bias or noise, likelihood displacement, beta/KL mis-setting, and evaluation error (judging with the training judge). For each suspected cause, give the cheapest check that confirms it and the fix to try next.</p>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">09</span> Quiz</h2>
+      <p class="sub">Five questions. Click an answer — you get the explanation right away.</p>
+      <div id="quiz">
+<div class="quiz-q" data-answer="1"><p class="qq">1. Why add preference tuning after supervised fine-tuning?</p><div class="qopts"><button class="qopt" data-i="0">SFT cannot produce fluent text, and preferences fix fluency.</button>
+<button class="qopt" data-i="1">SFT teaches what an answer looks like from demonstrations; preferences teach which of several plausible answers people judge better — a comparative signal demonstrations do not carry.</button>
+<button class="qopt" data-i="2">Preference tuning replaces the need for any labeled data.</button>
+<button class="qopt" data-i="3">It is mainly a way to compress the model for serving.</button></div><p class="qexp" hidden></p></div>
+<div class="quiz-q" data-answer="2"><p class="qq">2. In classic RLHF, what is the reward model for?</p><div class="qopts"><button class="qopt" data-i="0">It writes the demonstrations used for SFT.</button>
+<button class="qopt" data-i="1">It compresses preference pairs so PPO uses less memory.</button>
+<button class="qopt" data-i="2">It learns from human rankings to predict which response a human would prefer, so PPO can score millions of fresh generations without a human in the loop.</button>
+<button class="qopt" data-i="3">It is the final model users talk to.</button></div><p class="qexp" hidden></p></div>
+<div class="quiz-q" data-answer="0"><p class="qq">3. What is DPO's central trick?</p><div class="qopts"><button class="qopt" data-i="0">The optimal KL-constrained policy implies a reward — beta times the log-ratio between the policy and the reference — so the reward model cancels out and preferences become a classification loss on the pairs directly.</button>
+<button class="qopt" data-i="1">It trains a much larger reward model so PPO becomes stable.</button>
+<button class="qopt" data-i="2">It replaces human labelers with the model's own rankings of its outputs, with no reference model.</button>
+<button class="qopt" data-i="3">It is just SFT on the chosen answers, renamed.</button></div><p class="qexp" hidden></p></div>
+<div class="quiz-q" data-answer="3"><p class="qq">4. What do the KL penalty in RLHF and beta in DPO jointly control?</p><div class="qopts"><button class="qopt" data-i="0">The size of the preference dataset.</button>
+<button class="qopt" data-i="1">How many labelers are needed per prompt.</button>
+<button class="qopt" data-i="2">The model's vocabulary size after tuning.</button>
+<button class="qopt" data-i="3">How far the tuned policy may drift from the frozen SFT reference while chasing preferences — the leash that limits reward hacking and degeneration.</button></div><p class="qexp" hidden></p></div>
+<div class="quiz-q" data-answer="1"><p class="qq">5. Training reward and margin climb, but real users say answers got longer, more flattering, and less helpful. Most likely diagnosis?</p><div class="qopts"><button class="qopt" data-i="0">The model needs a larger context window.</button>
+<button class="qopt" data-i="1">Reward hacking / over-optimization: the policy learned what the proxy (reward model, judge, or biased pairs) scores — length and agreeableness — not what users value; verify with held-out human eval.</button>
+<button class="qopt" data-i="2">Preference tuning always improves helpfulness, so the users must be wrong.</button>
+<button class="qopt" data-i="3">Beta was too high, which guarantees more helpful answers.</button></div><p class="qexp" hidden></p></div>
+</div>
+      <div id="quiz-score" role="status"></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">10</span> Flashcards</h2>
+      <p class="sub">Click a card (or focus it and press Enter / Space) to flip it.</p>
+      <div class="fgrid">
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Preference pair</div><div class="fface back">One training example for preference tuning: a prompt plus two completions, one chosen and one rejected by a human or documented AI judge. The dataset of pairs is the operational definition of "good".</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Bradley–Terry model</div><div class="fface back">The probability model behind both RLHF and DPO: P(chosen beats rejected) = sigmoid(r(chosen) − r(rejected)). Only reward differences matter, which is why prompt-only constants cancel in DPO.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Reward model</div><div class="fface back">In classic RLHF, a model trained on human rankings to output a scalar score predicting human preference. It lets PPO score fresh generations at scale — and it is a proxy the policy will learn to game.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">KL penalty / leash</div><div class="fface back">A term in the RLHF objective charging the policy for diverging from the frozen SFT reference. It trades raw reward for staying near known-good behavior, limiting reward hacking and degeneration.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">DPO loss</div><div class="fface back">−log sigmoid( beta × [(log π(chosen)/π_ref(chosen)) − (log π(rejected)/π_ref(rejected))] ). A classification loss on pairs that optimizes the same KL-constrained objective as RLHF, with no reward model or RL loop.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Implicit reward</div><div class="fface back">DPO's insight: a policy defines a reward, r(x,y) = beta · log[π(y|x) / π_ref(y|x)] (up to a prompt constant). Hence "your language model is secretly a reward model".</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Beta (β)</div><div class="fface back">DPO's drift-control knob, roughly the inverse temperature on the implicit reward. Typical starts around 0.1 (TRL documents ~0.1–0.5). Too weak: little learning or runaway drift in effect; too strong a pull: over-optimization on the pairs.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Reward hacking</div><div class="fface back">The policy exploits gaps between the proxy reward and real human judgment — verbosity, confidence, sycophancy — so training reward rises while true quality stalls or falls. Detect it with held-out human win-rate, never the training reward.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">RLAIF</div><div class="fface back">Reinforcement Learning from AI Feedback: preferences come from an AI judge (often guided by written principles, as in Constitutional AI) instead of humans. Cheaper and scalable, but it encodes the judge model's biases — audit it like a labeler pool.</div></div></div>
+</div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">11</span> Reach for this when&hellip;</h2>
+      <div class="triggers">
+        <div class="trigger"><strong>Your SFT model is plausible but not preferred</strong> — answers are well-formed yet verbose, hedging, unhelpful, or occasionally unsafe, and you can say which of two outputs is better more easily than you can write a perfect one. That comparative gap is exactly preference data.</div>
+        <div class="trigger"><strong>You need assistant behavior, not just task skill</strong> — helpfulness, honesty, refusal boundaries, tone. These are judgment calls without a single correct string, so demonstrations under-specify them and comparisons carry the signal.</div>
+        <div class="trigger"><strong>You have (or can collect) ranked outputs from your real distribution</strong> — production logs, labeler rankings, or audited AI-judge pairs on your own prompts. Start with DPO for its simplicity; reach for full RLHF only when you need online exploration beyond a fixed pair dataset and can afford its instability.</div>
+      </div>
+    </section>
+
+    <a class="back-link" href="../index.html#daily-topics">&larr; Back to daily topics</a>
+  </div>
+
+<script>
+
+    const status = document.getElementById('live-status');
+    document.querySelectorAll('.copy-btn').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const target = document.getElementById(button.dataset.copy);
+        const text = target.innerText;
+        try {
+          await navigator.clipboard.writeText(text);
+          const original = button.textContent;
+          button.textContent = 'Copied';
+          status.textContent = 'Prompt copied to clipboard.';
+          setTimeout(() => button.textContent = original, 1600);
+        } catch {
+          const range = document.createRange();
+          range.selectNodeContents(target);
+          const selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+          status.textContent = 'Prompt selected. Copy it with your device copy command.';
+        }
+      });
+    });
+    const explanations = [["Fluency comes from pretraining and SFT \u2014 preference tuning is not a fluency fix.", "Correct. Demonstrations show one good answer; comparisons add the ranking among plausible answers, which is where helpfulness, honesty, and harmlessness live.", "Preference tuning consumes labeled data \u2014 comparisons \u2014 it does not eliminate labeling.", "Serving compression is quantization / distillation territory, a different lesson."], ["Demonstrations come from labelers directly in the SFT stage, before the reward model exists.", "The reward model does not compress anything \u2014 it is a learned scorer.", "Correct. Rankings train the reward model under Bradley\u2013Terry; PPO then optimizes the policy against its scores, with a KL penalty to the SFT reference.", "The reward model is a training artifact (sometimes discarded); users talk to the tuned policy."], ["Correct. Because the reward can be written in terms of the policy and reference log-probabilities, the partition function cancels in pairs and training becomes binary classification on chosen vs rejected.", "DPO's point is removing the reward model, not enlarging it \u2014 that is what makes it lightweight and stable.", "DPO still needs preference labels (human or AI) and a frozen reference model; self-ranking without either is a different, riskier scheme.", "SFT on chosen only ignores the rejected half of the signal and the reference-relative margin \u2014 DPO implementations that add an SFT term do so as an anchor, not as the whole loss."], ["Dataset size is a data-collection decision, not what beta or KL set.", "Labeler count is set by your annotation budget and agreement needs.", "Vocabulary is fixed by the tokenizer and base model.", "Correct. Both knobs price drift from the reference: pay it and the policy stays recognizably the SFT model; remove it and the policy chases the proxy into degeneration."], ["Context length does not explain a helpfulness regression with rising reward.", "Correct. The proxy was optimized, the goal was not \u2014 classic over-optimization. The fix is held-out human evaluation, a stronger leash, and auditing pairs for length / agreeableness bias.", "User reports on held-out, real tasks are exactly the evidence that outranks training metrics.", "Beta's direction is about drift from the reference, and no setting guarantees helpfulness \u2014 that is what the eval is for."]];
+    const questions = [...document.querySelectorAll('.quiz-q')];
+    let score = 0, answered = 0;
+    questions.forEach((q, qi) => {
+      const correct = parseInt(q.dataset.answer, 10);
+      const exp = q.querySelector('.qexp');
+      q.querySelectorAll('.qopt').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          if (q.dataset.done) return;
+          q.dataset.done = "1";
+          const chosen = parseInt(btn.dataset.i, 10);
+          const ok = chosen === correct;
+          q.querySelectorAll('.qopt').forEach((b) => {
+            b.disabled = true;
+            if (parseInt(b.dataset.i, 10) === correct) b.classList.add('correct');
+          });
+          if (!ok) btn.classList.add('wrong');
+          else score++;
+          answered++;
+          exp.hidden = false;
+          exp.innerHTML = ok
+            ? "<strong class=\"ok\">Correct.</strong> " + explanations[qi][chosen]
+            : "<strong class=\"no\">Not quite.</strong> " + explanations[qi][chosen];
+          if (answered === questions.length) {
+            const box = document.getElementById('quiz-score');
+            box.style.display = "block";
+            box.innerHTML = "You scored <strong>" + score + " / " + questions.length + "</strong>." +
+              (score === questions.length ? " Clean sweep — now go collect 20 preference pairs on your own model's outputs and check your labelers agree." :
+               score >= 3 ? " Solid — re-read the mechanic you missed; most preference-tuning failures are data and eval failures first." :
+               " Worth a re-read of sections 04 and 06 before you ship a tuned model you have not evaluated on held-out preferences.");
+          }
+        });
+      });
+    });
+    document.querySelectorAll('.fcard').forEach((card) => {
+      const flip = () => card.classList.toggle('flipped');
+      card.addEventListener('click', flip);
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); }
+      });
+    });
+  
+</script>
+</body>
+</html>

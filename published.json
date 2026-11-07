@@ -383,5 +383,12 @@
     "date": "2026-11-06",
     "summary": "Freeze the base model and train only a tiny low-rank update: W + BA, where rank r decides capacity, alpha scales it, and target_modules decides where it lands. QLoRA quantizes the frozen base to 4-bit so a much larger model fits on one GPU \u2014 merge for zero-latency inference, keep adapters separate for cheap multi-task serving, and evaluate against the base before you trust the savings.",
     "skill": "lora-and-peft-in-practice"
+  },
+  {
+    "slug": "2026-11-07-preference-tuning-rlhf-dpo",
+    "title": "Preference tuning: RLHF, DPO, and teaching models what \"good\" means",
+    "date": "2026-11-07",
+    "summary": "SFT teaches what an answer looks like; preference tuning teaches which of two plausible answers people prefer. Classic RLHF distills rankings into a reward model and optimizes it with PPO under a KL leash; DPO reparameterizes that reward as beta times the policy/reference log-ratio and trains directly on chosen/rejected pairs with a classification loss \u2014 plus beta, reward hacking, likelihood displacement, and held-out human eval.",
+    "skill": "preference-tuning-rlhf-dpo"
   }
 ]
