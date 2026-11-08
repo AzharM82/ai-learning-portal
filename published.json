@@ -390,5 +390,12 @@
     "date": "2026-11-07",
     "summary": "SFT teaches what an answer looks like; preference tuning teaches which of two plausible answers people prefer. Classic RLHF distills rankings into a reward model and optimizes it with PPO under a KL leash; DPO reparameterizes that reward as beta times the policy/reference log-ratio and trains directly on chosen/rejected pairs with a classification loss \u2014 plus beta, reward hacking, likelihood displacement, and held-out human eval.",
     "skill": "preference-tuning-rlhf-dpo"
+  },
+  {
+    "slug": "2026-11-08-voice-and-realtime-agents",
+    "title": "Voice and realtime agents: streaming speech, turn-taking, and latency budgets",
+    "date": "2026-11-08",
+    "summary": "A voice agent is not a chatbot with a microphone \u2014 it is a realtime system with a turn-gap budget. Choose cascade (STT to LLM to TTS) vs speech-to-speech, stream every stage, detect end-of-turn with VAD plus semantic endpointing, handle barge-in by stopping playback and truncating history, and instrument p95 latency stage by stage.",
+    "skill": "voice-and-realtime-agents"
   }
 ]

@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Voice and realtime agents: streaming speech, turn-taking, and latency budgets &middot; AI Learning Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+    :root {
+      --ink: #14212b; --muted: #53636f; --paper: #f6f8f7; --white: #ffffff;
+      --line: #cbd5d8; --navy: #163247; --navy-2: #21465e; --teal: #0b8174;
+      --teal-soft: #dff2ee; --orange: #d66332; --orange-soft: #f8e4d8;
+      --gold: #d8a524; --gold-soft: #f7edc8; --blue-soft: #e3eef4;
+      --red: #b3402e; --red-soft: #f9e3de; --green: #1e7a3c; --green-soft: #e2f2e6;
+      --shadow: 0 18px 45px rgba(20, 33, 43, .09); --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; color: var(--ink); background: linear-gradient(rgba(20,33,43,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(20,33,43,.035) 1px, transparent 1px), var(--paper); background-size: 28px 28px; font-family: "Source Sans 3", sans-serif; font-size: 17px; line-height: 1.58; }
+    .shell { width: min(960px, calc(100% - 40px)); margin: 0 auto; }
+    .portal-nav{position:sticky;top:0;z-index:50;background:rgba(22,50,71,.97);border-bottom:1px solid rgba(255,255,255,.12)}
+    .portal-nav-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;flex-wrap:wrap}
+    .portal-brand{color:#fff;text-decoration:none;font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:15px}
+    .portal-brand span{color:var(--gold);font-weight:400}
+    .portal-links{display:flex;gap:18px;flex-wrap:wrap}
+    .portal-links a{color:#dbe7ee;text-decoration:none;font-size:14.5px}
+    .portal-links a:hover{color:#fff;text-decoration:underline}
+    .hero { padding: 56px 0 36px; }
+    .chapter-mark { display:inline-flex;align-items:center;gap:10px;color:var(--navy); font:600 12px/1.2 "IBM Plex Mono",monospace;letter-spacing:.09em;text-transform:uppercase;margin-bottom:18px; }
+    .chapter-mark::before { content:"";width:42px;height:3px;background:var(--orange); }
+    h1 { font-size: clamp(36px, 5vw, 58px); line-height: 1.02; letter-spacing:-.03em; margin:0 0 14px; }
+    .lede { color: var(--muted); font-size: clamp(18px,2vw,22px); max-width: 64ch; margin:0 0 8px; }
+    .date-line { font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--muted); }
+    section.block { margin: 44px 0; }
+    h2 { font-size: 26px; letter-spacing:-.02em; margin:0 0 6px; display:flex;align-items:center;gap:12px; }
+    h2 .num { font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:600;color:var(--white); background:var(--navy);border-radius:999px;min-width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center; }
+    .sub { color:var(--muted); margin:0 0 18px; max-width: 68ch; }
+    .card { background:var(--white);border:1px solid var(--line);border-radius:var(--radius); padding:24px;box-shadow:var(--shadow); }
+    .skill-card { background:var(--navy);color:#eaf2f7;border-radius:var(--radius);padding:22px 24px; font-family:"IBM Plex Mono",monospace;font-size:14.5px;overflow-x:auto;box-shadow:var(--shadow); }
+    .skill-card .k { color:var(--gold); }
+    .idea { font-size:21px;line-height:1.5;border-left:4px solid var(--teal);padding:6px 0 6px 20px;max-width:62ch; }
+    .idea strong { color:var(--navy); }
+    .mechanics { display:grid;gap:14px; }
+    .mech { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:18px 20px; display:grid;grid-template-columns:44px 1fr;gap:14px;align-items:start; }
+    .mech .mnum { font-family:"IBM Plex Mono",monospace;font-weight:600;color:var(--teal); background:var(--teal-soft);border-radius:10px;width:44px;height:44px;display:flex;align-items:center;justify-content:center; }
+    .mech h3 { margin:0 0 6px;font-size:18px; }
+    .mech p { margin:0;color:var(--muted);font-size:15.5px; }
+    .mech code, .inline-code { font-family:"IBM Plex Mono",monospace;font-size:.88em;background:var(--blue-soft); padding:2px 7px;border-radius:6px;color:var(--navy); }
+    pre.code { background:#0f2233;color:#e8f1f5;border-radius:14px;padding:20px 22px;overflow-x:auto; font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.6;margin:0; }
+    pre.code .c { color:#8ba3b0; } pre.code .s { color:#ffd479; } pre.code .k { color:#7fd6c2; }
+    .fail { border-left:4px solid var(--orange); }
+    .fail h3 .fix { display:block;margin-top:8px;font-size:15px;font-weight:500;color:var(--green); }
+    .ref-list { display:grid;gap:12px; }
+    .ref { display:flex;gap:14px;align-items:flex-start;background:var(--white);border:1px solid var(--line); border-radius:14px;padding:16px 18px;text-decoration:none;color:inherit; }
+    .ref:hover { border-color:var(--teal); }
+    .ref .badge { flex:none;font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;letter-spacing:.06em; padding:5px 10px;border-radius:999px;text-transform:uppercase; }
+    .badge.doc { background:var(--blue-soft);color:var(--navy); }
+    .badge.vid { background:var(--orange-soft);color:var(--orange); }
+    .ref h3 { margin:0 0 4px;font-size:17px; }
+    .ref p { margin:0;color:var(--muted);font-size:14.5px; }
+    .prompt-block { background:#0f2233;border-radius:var(--radius);overflow:hidden;margin-bottom:18px;box-shadow:var(--shadow); }
+    .prompt-top { display:flex;justify-content:space-between;align-items:center;gap:12px; padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.12); }
+    .prompt-top strong { color:#fff;font-size:13px;letter-spacing:.06em;font-family:"IBM Plex Mono",monospace; }
+    .copy-btn { border:1px solid #6c8796;background:transparent;color:#fff;border-radius:6px;padding:7px 11px; cursor:pointer;font-weight:700;font-size:14px; }
+    .copy-btn:hover { background:rgba(255,255,255,.1); }
+    .copy-btn:focus-visible { outline:2px solid var(--gold);outline-offset:2px; }
+    .prompt-text { color:#e8f1f5;font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.65; padding:18px;white-space:pre-wrap;margin:0; }
+    .sr-only { position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0); }
+    .quiz-q { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px; }
+    .quiz-q .qq { font-weight:700;margin:0 0 12px;font-size:18px; }
+    .qopts { display:grid;gap:8px; }
+    .qopt { text-align:left;background:var(--paper);border:1px solid var(--line);border-radius:10px; padding:12px 14px;cursor:pointer;font-size:15.5px;color:var(--ink); }
+    .qopt:hover:not(:disabled) { border-color:var(--navy); }
+    .qopt:disabled { cursor:default;opacity:.85; }
+    .qopt.correct { background:var(--green-soft);border-color:var(--green); }
+    .qopt.wrong { background:var(--red-soft);border-color:var(--red); }
+    .qexp { margin:12px 0 0;font-size:15px;color:var(--muted); }
+    .qexp strong.ok { color:var(--green); } .qexp strong.no { color:var(--red); }
+    #quiz-score { display:none;margin-top:8px;background:var(--navy);color:#fff;border-radius:14px; padding:20px 24px;font-size:19px; }
+    #quiz-score strong { color:var(--gold); }
+    .fgrid { display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px; }
+    .fcard { perspective:900px;cursor:pointer;min-height:170px; }
+    .fcard-inner { position:relative;width:100%;height:100%;min-height:170px;transform-style:preserve-3d;transition:transform .45s; }
+    .fcard.flipped .fcard-inner { transform:rotateY(180deg); }
+    .fface { position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden; border-radius:14px;padding:18px;display:flex;align-items:center;justify-content:center;text-align:center; border:1px solid var(--line);background:var(--white);box-shadow:var(--shadow);font-size:15.5px; }
+    .fface.front { font-weight:700;color:var(--navy); }
+    .fface.back { transform:rotateY(180deg);background:var(--teal-soft);color:var(--ink);font-size:14.5px; }
+    .fcard:focus-visible { outline:2px solid var(--teal);outline-offset:3px;border-radius:14px; }
+    .triggers { display:grid;gap:10px; }
+    .trigger { background:var(--gold-soft);border-radius:12px;padding:14px 18px;font-size:16px; }
+    .trigger strong { color:var(--navy); }
+    .back-link { display:inline-block;margin:8px 0 60px;font-weight:600;color:var(--teal);text-decoration:none;font-size:17px; }
+    .back-link:hover { text-decoration:underline; }
+    .fig { background:var(--white);border:1px solid var(--line);border-radius:var(--radius); padding:12px;box-shadow:var(--shadow);overflow-x:auto; }
+    .fig svg { display:block;width:100%;height:auto; }
+    .flow-anim { stroke-dasharray: 8 6; animation: dashmove 1.2s linear infinite; }
+    @keyframes dashmove { to { stroke-dashoffset: -14; } }
+    @media (prefers-reduced-motion: reduce) { .fcard-inner{transition:none;} .flow-anim{animation:none;} }
+  </style>
+</head>
+<body><nav class="portal-nav">
+    <div class="shell portal-nav-inner">
+      <a class="portal-brand" href="../index.html">AI Engineering <span>&middot; Learning Portal</span></a>
+      <div class="portal-links">
+        <a href="../index.html#daily-topics">Daily topics</a>
+        <a href="../index.html#loop">Loop</a>
+        <a href="../index.html#graph">Graph</a>
+        <a href="../index.html#harness">Harness</a>
+      </div>
+    </div>
+  </nav>
+  <div class="shell">
+    <header class="hero">
+      <div class="chapter-mark">Daily topic &middot; AI engineering — round 2</div>
+      <h1>Voice and realtime agents: streaming speech, turn-taking, and latency budgets</h1>
+      <p class="lede">A voice agent is not a chatbot with a microphone bolted on. It is a realtime system judged on one number — the gap between the user finishing and the agent audibly starting — where every stage streams, turn-taking is a prediction problem, and the user can talk over the agent at any moment. Get the budget, the endpointing, and the barge-in right, and it feels like a conversation. Get any one wrong, and it feels broken.</p>
+      <p class="date-line">2026-11-08 &middot; Topic 056</p>
+    </header>
+
+    <section class="block">
+      <h2><span class="num">01</span> The skill card</h2>
+      <p class="sub">Every topic on this portal is designed like a Codex skill: a name, a trigger, and concrete steps.</p>
+      <div class="skill-card"><pre style="margin:0">---
+<span class="k">name:</span> voice-and-realtime-agents
+<span class="k">description:</span> Reach for this when you build an agent people talk to
+  out loud: pick cascade (STT &rarr; LLM &rarr; TTS) vs speech-to-speech,
+  stream every stage, detect end-of-turn with VAD plus a semantic
+  turn detector, budget the turn gap stage by stage at p95, and
+  handle barge-in by stopping playback and truncating history to
+  what the user actually heard.
+---</pre></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">02</span> The one-idea version</h2>
+      <p class="idea"><strong>Conversation is a latency budget with a social contract.</strong> Human turn gaps average around 200&nbsp;ms; past roughly a second of silence the user assumes the agent is stuck. So a voice agent never waits for anything to finish — audio streams in, transcripts form incrementally, the model starts generating before the turn is even confirmed, speech is synthesized clause by clause, and at every instant the agent must decide: is the user done, still thinking, or interrupting me?</p>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">03</span> The picture: two architectures, one budget</h2>
+      <p class="sub">The cascade chains three models you can swap and debug; speech-to-speech collapses them into one realtime model. Either way, the turn gap is spent in the same places.</p>
+      <div class="fig">
+        <svg viewBox="0 0 960 430" role="img" aria-label="Diagram comparing a cascaded voice pipeline (streaming speech-to-text, LLM, streaming text-to-speech) with a speech-to-speech realtime model, above a latency budget bar splitting roughly 700 milliseconds across endpointing, final transcript, LLM first token, TTS first audio, and network plus jitter buffer.">
+          <g font-family="Source Sans 3, sans-serif" font-size="14">
+            <text x="20" y="26" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="600" fill="#163247">CASCADE — MODULAR, DEBUGGABLE, LATENCIES ADD UP</text>
+            <rect x="20" y="44" width="200" height="64" rx="12" fill="#e3eef4" stroke="#163247" stroke-width="2"/>
+            <text x="120" y="72" text-anchor="middle" font-weight="700" fill="#163247">Streaming STT</text>
+            <text x="120" y="92" text-anchor="middle" fill="#53636f">interim transcripts</text>
+            <text x="238" y="82" text-anchor="middle" font-size="20" font-weight="700" fill="#163247">&#8594;</text>
+            <rect x="256" y="44" width="200" height="64" rx="12" fill="#dff2ee" stroke="#0b8174" stroke-width="2"/>
+            <text x="356" y="72" text-anchor="middle" font-weight="700" fill="#163247">LLM</text>
+            <text x="356" y="92" text-anchor="middle" fill="#53636f">streams tokens + tools</text>
+            <text x="474" y="82" text-anchor="middle" font-size="20" font-weight="700" fill="#163247">&#8594;</text>
+            <rect x="492" y="44" width="200" height="64" rx="12" fill="#f8e4d8" stroke="#d66332" stroke-width="2"/>
+            <text x="592" y="72" text-anchor="middle" font-weight="700" fill="#163247">Streaming TTS</text>
+            <text x="592" y="92" text-anchor="middle" fill="#53636f">first clause, then audio</text>
+            <text x="710" y="82" text-anchor="middle" font-size="20" font-weight="700" fill="#163247">&#8594;</text>
+            <rect x="728" y="44" width="212" height="64" rx="12" fill="#ffffff" stroke="#cbd5d8"/>
+            <text x="834" y="72" text-anchor="middle" font-weight="700" fill="#163247">Speaker</text>
+            <text x="834" y="92" text-anchor="middle" fill="#53636f">small jitter buffer</text>
+
+            <text x="20" y="152" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="600" fill="#163247">SPEECH-TO-SPEECH — ONE REALTIME MODEL, FEWER HOPS, LESS CONTROL</text>
+            <rect x="20" y="170" width="440" height="64" rx="12" fill="#f7edc8" stroke="#d8a524" stroke-width="2"/>
+            <text x="240" y="198" text-anchor="middle" font-weight="700" fill="#163247">Realtime model (audio in, audio out)</text>
+            <text x="240" y="218" text-anchor="middle" fill="#53636f">tone survives; built-in VAD + turn detection</text>
+            <text x="478" y="208" text-anchor="middle" font-size="20" font-weight="700" fill="#163247">&#8594;</text>
+            <rect x="496" y="170" width="444" height="64" rx="12" fill="#ffffff" stroke="#cbd5d8"/>
+            <text x="718" y="198" text-anchor="middle" font-weight="700" fill="#163247">Tools run in YOUR code, mid-conversation</text>
+            <text x="718" y="218" text-anchor="middle" fill="#53636f">WebRTC in browser &middot; WebSocket on server &middot; ephemeral keys</text>
+
+            <text x="20" y="278" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="600" fill="#163247">THE TURN-GAP BUDGET — TARGET: FIRST AUDIO IN ~700 MS AT P95</text>
+            <rect x="20" y="296" width="230" height="52" fill="#163247"/>
+            <text x="135" y="320" text-anchor="middle" fill="#ffffff" font-weight="700">Endpointing</text>
+            <text x="135" y="338" text-anchor="middle" fill="#cbd5d8" font-size="12">~200 ms</text>
+            <rect x="250" y="296" width="150" height="52" fill="#0b8174"/>
+            <text x="325" y="320" text-anchor="middle" fill="#ffffff" font-weight="700">Final STT</text>
+            <text x="325" y="338" text-anchor="middle" fill="#dff2ee" font-size="12">~100 ms</text>
+            <rect x="400" y="296" width="230" height="52" fill="#d66332"/>
+            <text x="515" y="320" text-anchor="middle" fill="#ffffff" font-weight="700">LLM first token</text>
+            <text x="515" y="338" text-anchor="middle" fill="#f8e4d8" font-size="12">~250 ms</text>
+            <rect x="630" y="296" width="160" height="52" fill="#d8a524"/>
+            <text x="710" y="320" text-anchor="middle" fill="#163247" font-weight="700">TTS first audio</text>
+            <text x="710" y="338" text-anchor="middle" fill="#163247" font-size="12">~100 ms</text>
+            <rect x="790" y="296" width="150" height="52" fill="#e3eef4" stroke="#cbd5d8"/>
+            <text x="865" y="320" text-anchor="middle" fill="#163247" font-weight="700">Network</text>
+            <text x="865" y="338" text-anchor="middle" fill="#53636f" font-size="12">~50 ms</text>
+            <path d="M20 368 H940" stroke="#163247" stroke-width="2" fill="none" class="flow-anim"/>
+            <rect x="20" y="382" width="920" height="30" rx="8" fill="#163247"/><text x="480" y="402" text-anchor="middle" fill="#ffffff" font-weight="600" font-size="13">STREAMING OVERLAPS THE STAGES — THE USER HEARS THE SUM OF FIRSTS, NOT THE SUM OF TOTALS</text>
+          </g>
+        </svg>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">04</span> How it works</h2>
+      <p class="sub">Six mechanics: pick the architecture, stream everything, predict the end of the turn, spend the budget deliberately, yield on barge-in, and keep tools from creating dead air.</p>
+      <div class="mechanics">
+<div class="mech"><div class="mnum">1</div><div><h3>Choose the architecture first: cascade, speech-to-speech, or hybrid</h3><p>A <strong>cascade</strong> (streaming STT &rarr; LLM &rarr; streaming TTS) lets you swap each model, inspect the transcript, and reuse your text-agent tools and evals — at the cost of three latencies and losing tone at the text boundary. A <strong>speech-to-speech</strong> realtime model (OpenAI Realtime, Azure Voice Live, Gemini Live) hears audio and speaks audio in one session: fewer hops, prosody preserved, built-in turn detection — but less debuggability and vendor-shaped control. Hybrids delegate: the realtime model runs the conversation while a backend model or your agent does heavy reasoning and tool work. Decide on latency target, control needs, and telephony vs browser — not on demo wow.</p></div></div>
+<div class="mech"><div class="mnum">2</div><div><h3>Stream every stage — never wait for a stage to finish</h3><p>Send microphone audio in small frames over a persistent connection (WebRTC in the browser, WebSocket server-side) — never record-then-upload. Consume <em>interim</em> transcripts while the user is still speaking. Start the LLM on the final transcript (or preemptively, see mechanic 5), stream its tokens, and hand TTS the first complete clause while later clauses are still generating. Play audio through a small jitter buffer: large enough to smooth network variation, small enough that stale audio never piles up. The perceived latency is the sum of each stage&rsquo;s time-to-<em>first</em>-output, not its total runtime.</p></div></div>
+<div class="mech"><div class="mnum">3</div><div><h3>Detect end-of-turn with semantics, not just silence</h3><p>Voice activity detection (VAD) tells you speech started and stopped — it cannot tell a finished thought from a mid-sentence pause. Layer it: VAD for speech/silence, then a turn detector that reads meaning and acoustics to predict completion — LiveKit&rsquo;s turn detector model, OpenAI&rsquo;s <code>semantic_vad</code> (with <code>eagerness</code>), or Azure&rsquo;s <code>azure_semantic_vad</code>. Bound it with endpointing delays: a minimum wait after silence before closing the turn (LiveKit defaults: <code>min_delay</code> 0.5&nbsp;s) and a maximum after which you force the turn closed (default 3.0&nbsp;s). Tune per context — collecting a long account number needs longer pauses than casual chat. Push-to-talk (<code>manual</code>) is the honest fallback when prediction keeps failing.</p></div></div>
+<div class="mech"><div class="mnum">4</div><div><h3>Budget the turn gap stage by stage — and measure p95, not the demo</h3><p>Write the budget down before you build: endpointing ~200&nbsp;ms, final transcript ~100&nbsp;ms, LLM time-to-first-token ~250&nbsp;ms, TTS time-to-first-audio ~100&nbsp;ms, network + jitter ~50&nbsp;ms &rarr; first audio in roughly 700&nbsp;ms. Instrument every stage with one session ID and turn ID, and report p50 <em>and</em> p95/p99 by device, network, and language. A 600&nbsp;ms median with a 3-second p99 means one turn in a hundred feels broken — and users remember those. When the budget blows, the per-stage numbers tell you which stage to fix; a single end-to-end number tells you nothing.</p></div></div>
+<div class="mech"><div class="mnum">5</div><div><h3>Handle barge-in as a first-class event, and cheat latency honestly</h3><p>When the user speaks mid-response: stop playback <em>locally and immediately</em> (don&rsquo;t wait for a server round-trip), cancel the in-flight response, and truncate the conversation history to only the portion the user actually heard — otherwise the model &ldquo;remembers&rdquo; saying things the user never heard. Distinguish a real interruption from backchannel (&ldquo;mm-hmm&rdquo;, a cough): adaptive interruption handling and filler-word filtering exist precisely for this. To buy back time, use preemptive generation — start the LLM (and optionally TTS) on a likely-final transcript before the turn is confirmed, and discard it if the user keeps talking.</p></div></div>
+<div class="mech"><div class="mnum">6</div><div><h3>Keep tools, keys, and the audio path from breaking the conversation</h3><p>A tool call that takes three seconds is three seconds of dead air: run tools fast, in parallel where independent, stream a brief spoken acknowledgement for slow ones, and never block the audio loop on a database. Protect the session: mint short-lived ephemeral client secrets server-side for browser clients (OpenAI&rsquo;s <code>POST /v1/realtime/client_secrets</code>) — never ship a real API key to a client. Clean the audio path: noise suppression and server echo cancellation (so the mic doesn&rsquo;t hear the agent&rsquo;s own voice and interrupt it), and resample deliberately — providers expect specific formats (e.g. 16&nbsp;kHz or 24&nbsp;kHz PCM), and a mismatch garbles everything downstream.</p></div></div>
+</div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">05</span> Code sketch</h2>
+      <p class="sub">The shape of a streaming cascade turn: interim transcripts flow, generation starts on endpoint, TTS speaks clause by clause, and every stage is timed against the budget. Provider calls are stubs — the orchestration is the lesson.</p>
+      <pre class="code"><span class="k">import</span> asyncio, time
+<span class="k">from</span> dataclasses <span class="k">import</span> dataclass, field
+
+BUDGET_MS = {<span class="s">"endpoint"</span>: 200, <span class="s">"llm_ttft"</span>: 250, <span class="s">"tts_ttfa"</span>: 100}
+
+@dataclass
+<span class="k">class</span> Turn:
+    t_end_of_speech: float = 0.0
+    marks: dict = field(default_factory=dict)
+    <span class="k">def</span> mark(self, stage): self.marks[stage] = time.perf_counter()
+    <span class="k">def</span> gap_ms(self):  <span class="c"># user-finished -&gt; first-audio: THE metric</span>
+        <span class="k">return</span> (self.marks[<span class="s">"first_audio"</span>] - self.t_end_of_speech) * 1000
+
+<span class="k">async def</span> handle_turn(audio_stream, stt, llm, tts, player, turn: Turn):
+    final_text = <span class="s">""</span>
+    <span class="k">async for</span> partial <span class="k">in</span> stt.stream(audio_stream):   <span class="c"># interim hypotheses</span>
+        <span class="k">if</span> partial.is_endpoint:        <span class="c"># VAD + semantic turn detector agree</span>
+            final_text = partial.text
+            turn.t_end_of_speech = time.perf_counter()
+            turn.mark(<span class="s">"endpoint"</span>); <span class="k">break</span>
+
+    <span class="k">async def</span> speak_clauses():
+        buf = <span class="s">""</span>
+        <span class="k">async for</span> token <span class="k">in</span> llm.stream(final_text):  <span class="c"># tokens, not full reply</span>
+            <span class="k">if</span> <span class="s">"llm_ttft"</span> <span class="k">not in</span> turn.marks: turn.mark(<span class="s">"llm_ttft"</span>)
+            buf += token
+            <span class="k">if</span> buf.endswith((<span class="s">"."</span>, <span class="s">","</span>, <span class="s">"?"</span>)):   <span class="c"># clause boundary</span>
+                <span class="k">async for</span> frame <span class="k">in</span> tts.stream(buf):
+                    <span class="k">if</span> <span class="s">"first_audio"</span> <span class="k">not in</span> turn.marks: turn.mark(<span class="s">"first_audio"</span>)
+                    player.play(frame)   <span class="c"># small jitter buffer inside</span>
+                buf = <span class="s">""</span>
+
+    speaking = asyncio.create_task(speak_clauses())
+    <span class="k">async def</span> on_barge_in():              <span class="c"># user talks over the agent</span>
+        <span class="k">await</span> audio_stream.wait_for_speech()
+        player.stop_now()                 <span class="c"># local stop, no round-trip</span>
+        speaking.cancel()                 <span class="c"># + truncate history to heard part</span>
+    asyncio.create_task(on_barge_in())
+    <span class="k">await</span> speaking
+    <span class="k">assert</span> turn.gap_ms() &lt; 1000, f<span class="s">"turn gap {turn.gap_ms():.0f} ms — check stage marks"</span></pre>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">06</span> Failure modes</h2>
+      <p class="sub">Five ways voice agents feel broken in production while the demo sounded great — and the one-line fix for each.</p>
+      <div class="mechanics">
+<div class="mech fail"><div class="mnum">1</div><div><h3>The silence-timer seesaw: cut off, or comatose<span class="fix">Fix: replace fixed silence thresholds with a semantic turn detector plus min/max endpointing delays, tuned per task — and log cut-offs and long gaps as separate metrics.</span></h3><p>A short <code>silence_duration_ms</code> makes the agent interrupt every thinking pause; a long one makes every reply feel sedated. Both are the same bug: treating silence as if it meant &ldquo;finished&rdquo;. Users adapt by speaking unnaturally fast or giving up.</p></div></div>
+<div class="mech fail"><div class="mnum">2</div><div><h3>The serial pipeline: three fast APIs, one slow conversation<span class="fix">Fix: stream all three stages and overlap them — interim STT, token streaming, clause-level TTS — then re-measure time-to-first-audio, not total time.</span></h3><p>Each vendor benchmarks well in isolation, but the integration waits for the full utterance, then the full transcript, then the full reply, then the full WAV. Latencies that were supposed to overlap simply add: 2–5 seconds a turn. Nothing is broken; the architecture is.</p></div></div>
+<div class="mech fail"><div class="mnum">3</div><div><h3>Barge-in blindness — or barge-in hair-trigger<span class="fix">Fix: stop playback locally on speech start, truncate history to what was heard, and use adaptive interruption handling so backchannel and coughs don&rsquo;t cancel the response.</span></h3><p>Without interruption handling the agent monologues over the user — the single most &ldquo;robotic&rdquo; failure there is. With naive VAD-only handling, an &ldquo;mm-hmm&rdquo; or a door slam kills the answer mid-sentence. Both extremes come from treating interruption as an afterthought instead of a designed event.</p></div></div>
+<div class="mech fail"><div class="mnum">4</div><div><h3>The agent interrupts itself<span class="fix">Fix: enable echo cancellation (server AEC or a client playback reference) and noise suppression, and test on speakers — not just headsets — before shipping.</span></h3><p>On speakerphone, the microphone hears the agent&rsquo;s own TTS, VAD fires, and the agent stops itself, apologizes to itself, or transcribes its own output as user input. Headset-only testing hides it completely; the first real living-room user finds it in ten seconds.</p></div></div>
+<div class="mech fail"><div class="mnum">5</div><div><h3>Dead air during tools, hidden by median metrics<span class="fix">Fix: instrument per-stage p95/p99 with turn IDs, make slow tools acknowledge verbally or run async, and set an alert on turn-gap p95 — not on averages.</span></h3><p>The model calls a slow CRM lookup and the conversation just… stops. Meanwhile the dashboard shows a healthy 600&nbsp;ms median because it only measures model latency, excludes tool time, and averages away the tail. Users experience the p99, not the p50.</p></div></div>
+</div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">07</span> Go deeper</h2>
+      <p class="sub">Verified references — every link opened and checked before publishing.</p>
+      <div class="ref-list">
+        <a class="ref" href="https://developers.openai.com/api/docs/guides/realtime"><span class="badge doc">Docs</span><div><h3>Getting started with the Realtime API — OpenAI</h3><p>The canonical speech-to-speech starting point: RealtimeAgent / RealtimeSession over WebRTC or WebSocket, ephemeral client secrets, barge-in, turn detection, and tool use in one session.</p></div></a>
+        <a class="ref" href="https://learn.microsoft.com/en-us/azure/ai-services/speech-service/voice-live-how-to"><span class="badge doc">Docs</span><div><h3>How to use the Voice Live API — Microsoft Learn</h3><p>Azure&rsquo;s realtime voice surface in detail: session.update, azure_semantic_vad turn detection, noise suppression and server echo cancellation, HD voices, and WebRTC vs WebSocket guidance.</p></div></a>
+        <a class="ref" href="https://docs.livekit.io/agents/logic/turns/"><span class="badge doc">Docs</span><div><h3>Turns overview — LiveKit Documentation</h3><p>The best single reference on turn-taking mechanics: turn detector model vs VAD-only vs STT endpointing, min/max endpointing delays, adaptive interruption handling, and preemptive generation.</p></div></a>
+        <a class="ref" href="https://www.youtube.com/watch?v=XV5bhkDpL7U"><span class="badge vid">Video</span><div><h3>Building Voice Agents with Gemini 3 — Google DeepMind (Thor Schaeff)</h3><p>Gemini Live end to end: native speech-to-speech with no text in the middle, WebSocket integration, session management, interruption handling, and deploying via LiveKit / Daily / Stream.</p></div></a>
+        <a class="ref" href="https://www.youtube.com/watch?v=Fhm8goKN6rM"><span class="badge vid">Video</span><div><h3>How to build a JARVIS AI Voice Agent — Full LiveKit Tutorial</h3><p>A complete hands-on build: LiveKit setup, a working voice agent in minutes, tools (web search, browser control), a custom frontend, and mobile deployment.</p></div></a>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">08</span> Sample prompts</h2>
+      <p class="sub">Copy one into your AI assistant and apply it to your own work.</p>
+      <p id="live-status" class="sr-only" role="status"></p>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>ARCHITECT A VOICE AGENT</strong><button class="copy-btn" data-copy="p1">Copy</button></div>
+        <p class="prompt-text" id="p1">Architect a voice agent for this use case: [describe users, channel (browser / mobile / phone), tasks, and tools it must call]. Recommend cascade (STT → LLM → TTS), speech-to-speech (OpenAI Realtime / Azure Voice Live / Gemini Live), or a hybrid with delegation, and justify it on latency, debuggability, model choice, and cost. Give me: (1) a stage-by-stage turn-gap budget in ms targeting first audio under ~700 ms at p95, (2) transport choice (WebRTC vs WebSocket) and why, (3) how session keys stay off the client, and (4) the top three production risks specific to this design.</p>
+      </div>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>TUNE TURN-TAKING</strong><button class="copy-btn" data-copy="p2">Copy</button></div>
+        <p class="prompt-text" id="p2">My voice agent's turn-taking feels wrong: [describe the symptom — cuts users off mid-thought / waits too long / cancels itself on backchannel — with example timings if I have them]. Current setup: [architecture, VAD type, silence_duration_ms or endpointing min/max delay, semantic VAD or turn detector if any, headset or speakerphone]. Diagnose whether this is a VAD threshold problem, an endpointing-delay problem, or a missing semantic turn detector. Give concrete replacement settings to try first, what to log per turn to prove the fix, and which user populations (slow speakers, noisy rooms, long dictations) to regression-test before shipping.</p>
+      </div>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>DEBUG A LATENCY BLOWOUT</strong><button class="copy-btn" data-copy="p3">Copy</button></div>
+        <p class="prompt-text" id="p3">My voice agent feels slow even though each API is fast. Here are my per-stage timings (p50 / p95): [endpointing, STT final, LLM time-to-first-token, tool calls, TTS time-to-first-audio, network]. Find where the turn gap is actually spent, check first whether stages are running serially when they could overlap (interim transcripts, token streaming, clause-level TTS, preemptive generation), and rank fixes by ms saved per unit of engineering effort. Tell me what instrumentation to add if the numbers I gave you cannot localize the problem.</p>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">09</span> Quiz</h2>
+      <p class="sub">Five questions. Click an answer — you get the explanation right away.</p>
+      <div id="quiz">
+<div class="quiz-q" data-answer="1"><p class="qq">1. What is the &ldquo;turn gap&rdquo;, and why does it dominate voice-agent quality?</p><div class="qopts"><button class="qopt" data-i="0">The total length of the call — shorter calls are always better.</button>
+<button class="qopt" data-i="1">The time from the user finishing speaking to the agent&rsquo;s first audible sound. Human gaps average ~200 ms, so past roughly a second users assume the agent is stuck — it is the latency users actually judge.</button>
+<button class="qopt" data-i="2">The pause the agent inserts between sentences for dramatic effect.</button>
+<button class="qopt" data-i="3">The time spent authenticating the session before the call starts.</button></div><p class="qexp" hidden></p></div>
+<div class="quiz-q" data-answer="2"><p class="qq">2. Why is VAD (voice activity detection) alone a poor end-of-turn detector?</p><div class="qopts"><button class="qopt" data-i="0">VAD cannot detect speech at all in noisy rooms.</button>
+<button class="qopt" data-i="1">VAD uses too much GPU to run in real time.</button>
+<button class="qopt" data-i="2">VAD only sees speech vs silence — a mid-sentence thinking pause looks identical to a finished thought. Semantic turn detectors add meaning and acoustics to predict actual completion.</button>
+<button class="qopt" data-i="3">VAD only works with push-to-talk interfaces.</button></div><p class="qexp" hidden></p></div>
+<div class="quiz-q" data-answer="0"><p class="qq">3. Cascade vs speech-to-speech — what is the honest trade-off?</p><div class="qopts"><button class="qopt" data-i="0">Cascade: swappable models, visible transcripts, reusable text tooling — but three stage latencies and tone lost at the text boundary. Speech-to-speech: fewer hops and prosody preserved — but less control and debuggability.</button>
+<button class="qopt" data-i="1">Speech-to-speech is always better on every axis; cascades are legacy.</button>
+<button class="qopt" data-i="2">Cascades are always lower latency because each model is smaller.</button>
+<button class="qopt" data-i="3">The two are identical; only the billing differs.</button></div><p class="qexp" hidden></p></div>
+<div class="quiz-q" data-answer="3"><p class="qq">4. The user interrupts the agent mid-answer. What should happen, in order?</p><div class="qopts"><button class="qopt" data-i="0">Finish the current sentence politely, then ask what they wanted.</button>
+<button class="qopt" data-i="1">Keep playing — most &ldquo;interruptions&rdquo; are just background noise.</button>
+<button class="qopt" data-i="2">Restart the whole response from the beginning once they stop.</button>
+<button class="qopt" data-i="3">Stop playback locally at once, cancel the response, truncate history to only what the user heard, and listen — the unheard remainder must not stay in context as if it were said.</button></div><p class="qexp" hidden></p></div>
+<div class="quiz-q" data-answer="1"><p class="qq">5. Your dashboard shows a healthy 600 ms median turn gap, but users keep calling the agent sluggish. First move?</p><div class="qopts"><button class="qopt" data-i="0">Swap in a bigger, smarter model — quality will distract from latency.</button>
+<button class="qopt" data-i="1">Look at per-stage p95/p99 with turn IDs: medians hide the tail users remember, and a single total cannot tell you whether endpointing, a tool call, or TTS is blowing the budget.</button>
+<button class="qopt" data-i="2">Increase the jitter buffer so audio plays more smoothly.</button>
+<button class="qopt" data-i="3">Shorten the system prompt — prompt length is the main cause of turn gaps.</button></div><p class="qexp" hidden></p></div>
+</div>
+      <div id="quiz-score" role="status"></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">10</span> Flashcards</h2>
+      <p class="sub">Click a card (or focus it and press Enter / Space) to flip it.</p>
+      <div class="fgrid">
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Turn gap</div><div class="fface back">Time from the user finishing a turn to the agent&rsquo;s first audible response. The core voice-UX metric: human gaps average ~200 ms, ~700 ms feels responsive, past ~1 s feels broken. Budget it per stage, at p95.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">VAD</div><div class="fface back">Voice activity detection: classifies audio frames as speech or silence. It detects starts and stops, drives interruption detection — but cannot by itself tell a finished thought from a thinking pause.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Endpointing</div><div class="fface back">Deciding the user&rsquo;s turn has ended. Tuned with min_delay (wait at least this long after silence) and max_delay (force-close after this long) — LiveKit defaults 0.5 s / 3.0 s — ideally adapted dynamically per speaker.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Semantic VAD / turn detector</div><div class="fface back">A model that predicts end-of-turn from meaning + acoustics, not silence alone: OpenAI semantic_vad (tune eagerness), Azure azure_semantic_vad, LiveKit&rsquo;s turn detector model. Fewer cut-offs without adding dead air.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Barge-in</div><div class="fface back">The user speaking over the agent mid-response. Correct handling: stop playback locally and immediately, cancel generation, truncate history to the heard portion, and listen. Distinguish it from backchannel (&ldquo;mm-hmm&rdquo;).</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Cascade pipeline</div><div class="fface back">STT &rarr; LLM &rarr; TTS as separate streaming models. Modular, debuggable, transcript visible, text tooling reusable — but latencies add and tone is flattened to text in the middle.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Speech-to-speech</div><div class="fface back">One realtime model consuming and producing audio in a single session (OpenAI Realtime, Azure Voice Live, Gemini Live). Fewer hops, prosody preserved, built-in turn detection — traded against control and debuggability.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Preemptive generation</div><div class="fface back">Starting LLM (and optionally TTS) work on a likely-final transcript before the turn is confirmed, discarding it if the user continues. Buys back endpointing latency at the cost of some wasted compute.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Time to first audio (TTFA)</div><div class="fface back">When the first frame of agent speech reaches the speaker. Achieved by summing stage firsts — first token, first clause, first TTS frame — instead of stage totals. The number your budget and your p95 alert should track.</div></div></div>
+</div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">11</span> Reach for this when&hellip;</h2>
+      <div class="triggers">
+        <div class="trigger"><strong>The interface is a conversation, not a form</strong> — phone support, in-car assistants, accessibility-first products, hands-busy workflows. If users would rather talk than type and expect human rhythm, you are in realtime territory and need the budget discipline, not a chat API with TTS stapled on.</div>
+        <div class="trigger"><strong>Your text agent works but feels dead out loud</strong> — multi-second pauses, talking over users, or monologuing through interruptions. The fix is architectural: streaming, semantic endpointing, and designed barge-in, in that order.</div>
+        <div class="trigger"><strong>You are choosing a voice stack this quarter</strong> — decide cascade vs speech-to-speech vs hybrid from your latency target, control/debuggability needs, and channel (WebRTC browser vs telephony) before you fall for a demo; then hold the vendor to a per-stage p95 budget.</div>
+      </div>
+    </section>
+
+    <a class="back-link" href="../index.html#daily-topics">&larr; Back to daily topics</a>
+  </div>
+
+<script>
+
+    const status = document.getElementById('live-status');
+    document.querySelectorAll('.copy-btn').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const target = document.getElementById(button.dataset.copy);
+        const text = target.innerText;
+        try {
+          await navigator.clipboard.writeText(text);
+          const original = button.textContent;
+          button.textContent = 'Copied';
+          status.textContent = 'Prompt copied to clipboard.';
+          setTimeout(() => button.textContent = original, 1600);
+        } catch {
+          const range = document.createRange();
+          range.selectNodeContents(target);
+          const selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+          status.textContent = 'Prompt selected. Copy it with your device copy command.';
+        }
+      });
+    });
+    const explanations = [["Call length is a business metric, not the rhythm users feel turn by turn.", "Correct. The turn gap is the silence the user sits in after speaking — budget it per stage and watch it at p95.", "Inserted pauses make gaps worse, not better; natural agents minimize them.", "Auth happens once at session setup (with ephemeral keys) — it is not part of the per-turn gap."], ["VAD works fine in noise with proper thresholds and noise suppression — robustness is not the core issue.", "Modern VADs (e.g. Silero) are tiny CPU models; cost is not the problem.", "Correct. Silence is ambiguous: only semantics + acoustics separate a thinking pause from a completed thought, which is why turn detector models and semantic VAD exist.", "Push-to-talk is the manual alternative that sidesteps detection entirely — VAD itself works without it."], ["Correct. Neither wins outright: pick per latency target, control and debuggability needs, and channel — or hybridize with delegation.", "Speech-to-speech gives up transcript visibility, model choice, and easy evals — real costs, not legacy nostalgia.", "Three models in series add latency; a cascade only stays competitive by streaming and overlapping stages.", "Billing differs too, but the engineering trade-off — control vs hops — is the deciding one."], ["Finishing the sentence is exactly the monologue behavior users hate most.", "Ignoring speech until proven otherwise guarantees talking over real interruptions; adaptive handling filters backchannel without going deaf.", "Replaying from the start repeats content the user already heard and doubles the interruption cost.", "Correct. Stop, cancel, truncate to the heard portion, listen — anything else corrupts either the user's patience or the model's context."], ["A bigger model usually raises time-to-first-token — the opposite direction.", "Correct. Users experience the tail: per-stage p95/p99 with turn IDs localizes whether endpointing, tools, or TTS is responsible.", "A bigger jitter buffer adds delay to every turn — it trades the wrong direction.", "Prompt length matters at the margins; it cannot explain a fat latency tail and is rarely the main term in the budget."]];
+    const questions = [...document.querySelectorAll('.quiz-q')];
+    let score = 0, answered = 0;
+    questions.forEach((q, qi) => {
+      const correct = parseInt(q.dataset.answer, 10);
+      const exp = q.querySelector('.qexp');
+      q.querySelectorAll('.qopt').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          if (q.dataset.done) return;
+          q.dataset.done = "1";
+          const chosen = parseInt(btn.dataset.i, 10);
+          const ok = chosen === correct;
+          q.querySelectorAll('.qopt').forEach((b) => {
+            b.disabled = true;
+            if (parseInt(b.dataset.i, 10) === correct) b.classList.add('correct');
+          });
+          if (!ok) btn.classList.add('wrong');
+          else score++;
+          answered++;
+          exp.hidden = false;
+          exp.innerHTML = ok
+            ? "<strong class=\"ok\">Correct.</strong> " + explanations[qi][chosen]
+            : "<strong class=\"no\">Not quite.</strong> " + explanations[qi][chosen];
+          if (answered === questions.length) {
+            const box = document.getElementById('quiz-score');
+            box.style.display = "block";
+            box.innerHTML = "You scored <strong>" + score + " / " + questions.length + "</strong>." +
+              (score === questions.length ? " Clean sweep — now go write a per-stage latency budget for your own agent and instrument it before the next demo." :
+               score >= 3 ? " Solid — re-read the mechanic you missed; voice failures are almost always timing failures first." :
+               " Worth a re-read of sections 04 and 06 before you ship a voice agent judged by a stopwatch you haven't built.");
+          }
+        });
+      });
+    });
+    document.querySelectorAll('.fcard').forEach((card) => {
+      const flip = () => card.classList.toggle('flipped');
+      card.addEventListener('click', flip);
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); }
+      });
+    });
+  
+</script>
+</body>
+</html>
