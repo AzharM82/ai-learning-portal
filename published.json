@@ -397,5 +397,12 @@
     "date": "2026-11-08",
     "summary": "A voice agent is not a chatbot with a microphone \u2014 it is a realtime system with a turn-gap budget. Choose cascade (STT to LLM to TTS) vs speech-to-speech, stream every stage, detect end-of-turn with VAD plus semantic endpointing, handle barge-in by stopping playback and truncating history, and instrument p95 latency stage by stage.",
     "skill": "voice-and-realtime-agents"
+  },
+  {
+    "slug": "2026-11-09-gtm-engineering-ai-for-sales-marketing",
+    "title": "GTM engineering: AI for sales, marketing, and revenue workflows",
+    "date": "2026-11-09",
+    "summary": "Treat revenue as a state machine, not a campaign calendar: fix CRM data first, detect buying signals, enrich with a waterfall, score fit times intent, route in minutes, let AI draft grounded outreach behind a human approval gate, and measure every play like software.",
+    "skill": "gtm-engineering"
   }
 ]

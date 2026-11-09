@@ -1,7 +1,6 @@
 {
   "note": "Azharuddin's requested topics, in order. He adds topics by messaging Azhar.AI in chat. The daily publisher takes from here first; when empty, it picks from curriculum.md.",
   "queue": [
-    "GTM engineering: AI for sales, marketing, and revenue workflows",
     "AI agent systems: tool use, planning loops, and guardrails",
     "Data pipeline orchestration: Airflow, Dagster, and backfills",
     "Identity and access for AI apps: OAuth, scoped tokens, and agent permissions",

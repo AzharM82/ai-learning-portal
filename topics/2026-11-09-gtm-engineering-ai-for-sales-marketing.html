@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GTM engineering: AI for sales, marketing, and revenue workflows &middot; AI Learning Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+    :root {
+      --ink: #14212b; --muted: #53636f; --paper: #f6f8f7; --white: #ffffff;
+      --line: #cbd5d8; --navy: #163247; --navy-2: #21465e; --teal: #0b8174;
+      --teal-soft: #dff2ee; --orange: #d66332; --orange-soft: #f8e4d8;
+      --gold: #d8a524; --gold-soft: #f7edc8; --blue-soft: #e3eef4;
+      --red: #b3402e; --red-soft: #f9e3de; --green: #1e7a3c; --green-soft: #e2f2e6;
+      --shadow: 0 18px 45px rgba(20, 33, 43, .09); --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; color: var(--ink); background: linear-gradient(rgba(20,33,43,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(20,33,43,.035) 1px, transparent 1px), var(--paper); background-size: 28px 28px; font-family: "Source Sans 3", sans-serif; font-size: 17px; line-height: 1.58; }
+    .shell { width: min(960px, calc(100% - 40px)); margin: 0 auto; }
+    .portal-nav{position:sticky;top:0;z-index:50;background:rgba(22,50,71,.97);border-bottom:1px solid rgba(255,255,255,.12)}
+    .portal-nav-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;flex-wrap:wrap}
+    .portal-brand{color:#fff;text-decoration:none;font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:15px}
+    .portal-brand span{color:var(--gold);font-weight:400}
+    .portal-links{display:flex;gap:18px;flex-wrap:wrap}
+    .portal-links a{color:#dbe7ee;text-decoration:none;font-size:14.5px}
+    .portal-links a:hover{color:#fff;text-decoration:underline}
+    .hero { padding: 56px 0 36px; }
+    .chapter-mark { display:inline-flex;align-items:center;gap:10px;color:var(--navy); font:600 12px/1.2 "IBM Plex Mono",monospace;letter-spacing:.09em;text-transform:uppercase;margin-bottom:18px; }
+    .chapter-mark::before { content:"";width:42px;height:3px;background:var(--orange); }
+    h1 { font-size: clamp(36px, 5vw, 58px); line-height: 1.02; letter-spacing:-.03em; margin:0 0 14px; }
+    .lede { color: var(--muted); font-size: clamp(18px,2vw,22px); max-width: 64ch; margin:0 0 8px; }
+    .date-line { font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--muted); }
+    section.block { margin: 44px 0; }
+    h2 { font-size: 26px; letter-spacing:-.02em; margin:0 0 6px; display:flex;align-items:center;gap:12px; }
+    h2 .num { font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:600;color:var(--white); background:var(--navy);border-radius:999px;min-width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center; }
+    .sub { color:var(--muted); margin:0 0 18px; max-width: 68ch; }
+    .card { background:var(--white);border:1px solid var(--line);border-radius:var(--radius); padding:24px;box-shadow:var(--shadow); }
+    .skill-card { background:var(--navy);color:#eaf2f7;border-radius:var(--radius);padding:22px 24px; font-family:"IBM Plex Mono",monospace;font-size:14.5px;overflow-x:auto;box-shadow:var(--shadow); }
+    .skill-card .k { color:var(--gold); }
+    .idea { font-size:21px;line-height:1.5;border-left:4px solid var(--teal);padding:6px 0 6px 20px;max-width:62ch; }
+    .idea strong { color:var(--navy); }
+    .mechanics { display:grid;gap:14px; }
+    .mech { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:18px 20px; display:grid;grid-template-columns:44px 1fr;gap:14px;align-items:start; }
+    .mech .mnum { font-family:"IBM Plex Mono",monospace;font-weight:600;color:var(--teal); background:var(--teal-soft);border-radius:10px;width:44px;height:44px;display:flex;align-items:center;justify-content:center; }
+    .mech h3 { margin:0 0 6px;font-size:18px; }
+    .mech p { margin:0;color:var(--muted);font-size:15.5px; }
+    .mech code, .inline-code { font-family:"IBM Plex Mono",monospace;font-size:.88em;background:var(--blue-soft); padding:2px 7px;border-radius:6px;color:var(--navy); }
+    pre.code { background:#0f2233;color:#e8f1f5;border-radius:14px;padding:20px 22px;overflow-x:auto; font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.6;margin:0; }
+    pre.code .c { color:#8ba3b0; } pre.code .s { color:#ffd479; } pre.code .k { color:#7fd6c2; }
+    .fail { border-left:4px solid var(--orange); }
+    .fail h3 .fix { display:block;margin-top:8px;font-size:15px;font-weight:500;color:var(--green); }
+    .ref-list { display:grid;gap:12px; }
+    .ref { display:flex;gap:14px;align-items:flex-start;background:var(--white);border:1px solid var(--line); border-radius:14px;padding:16px 18px;text-decoration:none;color:inherit; }
+    .ref:hover { border-color:var(--teal); }
+    .ref .badge { flex:none;font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;letter-spacing:.06em; padding:5px 10px;border-radius:999px;text-transform:uppercase; }
+    .badge.doc { background:var(--blue-soft);color:var(--navy); }
+    .badge.vid { background:var(--orange-soft);color:var(--orange); }
+    .ref h3 { margin:0 0 4px;font-size:17px; }
+    .ref p { margin:0;color:var(--muted);font-size:14.5px; }
+    .prompt-block { background:#0f2233;border-radius:var(--radius);overflow:hidden;margin-bottom:18px;box-shadow:var(--shadow); }
+    .prompt-top { display:flex;justify-content:space-between;align-items:center;gap:12px; padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.12); }
+    .prompt-top strong { color:#fff;font-size:13px;letter-spacing:.06em;font-family:"IBM Plex Mono",monospace; }
+    .copy-btn { border:1px solid #6c8796;background:transparent;color:#fff;border-radius:6px;padding:7px 11px; cursor:pointer;font-weight:700;font-size:14px; }
+    .copy-btn:hover { background:rgba(255,255,255,.1); }
+    .copy-btn:focus-visible { outline:2px solid var(--gold);outline-offset:2px; }
+    .prompt-text { color:#e8f1f5;font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.65; padding:18px;white-space:pre-wrap;margin:0; }
+    .sr-only { position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0); }
+    .quiz-q { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px; }
+    .quiz-q .qq { font-weight:700;margin:0 0 12px;font-size:18px; }
+    .qopts { display:grid;gap:8px; }
+    .qopt { text-align:left;background:var(--paper);border:1px solid var(--line);border-radius:10px; padding:12px 14px;cursor:pointer;font-size:15.5px;color:var(--ink); }
+    .qopt:hover:not(:disabled) { border-color:var(--navy); }
+    .qopt:disabled { cursor:default;opacity:.85; }
+    .qopt.correct { background:var(--green-soft);border-color:var(--green); }
+    .qopt.wrong { background:var(--red-soft);border-color:var(--red); }
+    .qexp { margin:12px 0 0;font-size:15px;color:var(--muted); }
+    .qexp strong.ok { color:var(--green); } .qexp strong.no { color:var(--red); }
+    #quiz-score { display:none;margin-top:8px;background:var(--navy);color:#fff;border-radius:14px; padding:20px 24px;font-size:19px; }
+    #quiz-score strong { color:var(--gold); }
+    .fgrid { display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px; }
+    .fcard { perspective:900px;cursor:pointer;min-height:170px; }
+    .fcard-inner { position:relative;width:100%;height:100%;min-height:170px;transform-style:preserve-3d;transition:transform .45s; }
+    .fcard.flipped .fcard-inner { transform:rotateY(180deg); }
+    .fface { position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden; border-radius:14px;padding:18px;display:flex;align-items:center;justify-content:center;text-align:center; border:1px solid var(--line);background:var(--white);box-shadow:var(--shadow);font-size:15.5px; }
+    .fface.front { font-weight:700;color:var(--navy); }
+    .fface.back { transform:rotateY(180deg);background:var(--teal-soft);color:var(--ink);font-size:14.5px; }
+    .fcard:focus-visible { outline:2px solid var(--teal);outline-offset:3px;border-radius:14px; }
+    .triggers { display:grid;gap:10px; }
+    .trigger { background:var(--gold-soft);border-radius:12px;padding:14px 18px;font-size:16px; }
+    .trigger strong { color:var(--navy); }
+    .back-link { display:inline-block;margin:8px 0 60px;font-weight:600;color:var(--teal);text-decoration:none;font-size:17px; }
+    .back-link:hover { text-decoration:underline; }
+    .fig { background:var(--white);border:1px solid var(--line);border-radius:var(--radius); padding:12px;box-shadow:var(--shadow);overflow-x:auto; }
+    .fig svg { display:block;width:100%;height:auto; }
+    .flow-anim { stroke-dasharray: 8 6; animation: dashmove 1.2s linear infinite; }
+    @keyframes dashmove { to { stroke-dashoffset: -14; } }
+    @media (prefers-reduced-motion: reduce) { .fcard-inner{transition:none;} .flow-anim{animation:none;} }
+  </style>
+</head>
+<body><nav class="portal-nav">
+    <div class="shell portal-nav-inner">
+      <a class="portal-brand" href="../index.html">AI Engineering <span>&middot; Learning Portal</span></a>
+      <div class="portal-links">
+        <a href="../index.html#daily-topics">Daily topics</a>
+        <a href="../index.html#loop">Loop</a>
+        <a href="../index.html#graph">Graph</a>
+        <a href="../index.html#harness">Harness</a>
+      </div>
+    </div>
+  </nav>
+  <div class="shell">
+    <header class="hero">
+      <div class="chapter-mark">Daily topic &middot; GTM engineering</div>
+      <h1>GTM engineering: AI for sales, marketing, and revenue workflows</h1>
+      <p class="lede">GTM used to be campaigns and hero reps. GTM engineering treats revenue like a system: watch for a buyer changing state, enrich and score that signal, route it in minutes, and let AI draft the personalised next step — with a human owning the send. The win is not more messages. It is the right play, triggered by real data, measured like software.</p>
+      <p class="date-line">2026-11-09 &middot; Topic 057</p>
+    </header>
+
+    <section class="block">
+      <h2><span class="num">01</span> The skill card</h2>
+      <p class="sub">Every topic on this portal is designed like a Codex skill: a name, a trigger, and concrete steps.</p>
+      <div class="skill-card"><pre style="margin:0">---
+<span class="k">name:</span> gtm-engineering
+<span class="k">description:</span> Reach for this when you build revenue workflows with AI:
+  model the buyer journey as a state machine, fix CRM data first,
+  detect buying signals, enrich with a waterfall, score and route
+  in minutes, let AI draft grounded outreach, and gate every
+  external send behind a human — then measure each play.
+---</pre></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">02</span> The one-idea version</h2>
+      <p class="idea"><strong>The buyer journey is a state machine, and every GTM problem is a data problem.</strong> A company is not &ldquo;a lead&rdquo; forever — it moves: unaware &rarr; visiting &rarr; trialling &rarr; expanding &rarr; at risk. Clay&rsquo;s GTM team builds exactly on this: name the states, find the signals that mark a transition (a hiring post, a second trial signup, a support ticket asking about enterprise features), and automate a specific, personalised response to that transition. AI does research, enrichment, and drafting at scale; humans keep judgment, relationships, and the final send.</p>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">03</span> The picture: signal to revenue play</h2>
+      <p class="sub">One play, end to end. The same loop runs for outbound, inbound, trial conversion, and expansion — only the signal and the play change.</p>
+      <div class="fig">
+        <svg viewBox="0 0 960 360" role="img" aria-label="Diagram of a GTM engineering play: signals such as website visits, trial signups, hiring posts and product usage flow into enrichment and scoring, then routing, then an AI-drafted human-approved action, then CRM write-back and measurement feeding back to the signal layer.">
+          <g font-family="Source Sans 3, sans-serif" font-size="14">
+            <text x="20" y="26" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="600" fill="#163247">A GTM PLAY — TRIGGERED BY A STATE CHANGE, NOT A CALENDAR</text>
+            <rect x="20" y="44" width="170" height="84" rx="12" fill="#e3eef4" stroke="#163247" stroke-width="2"/>
+            <text x="105" y="72" text-anchor="middle" font-weight="700" fill="#163247">Signals</text>
+            <text x="105" y="92" text-anchor="middle" fill="#53636f">visit &middot; trial &middot; hiring</text>
+            <text x="105" y="110" text-anchor="middle" fill="#53636f">usage &middot; support</text>
+            <text x="202" y="90" text-anchor="middle" font-size="20" font-weight="700" fill="#163247">&#8594;</text>
+            <rect x="220" y="44" width="170" height="84" rx="12" fill="#dff2ee" stroke="#0b8174" stroke-width="2"/>
+            <text x="305" y="72" text-anchor="middle" font-weight="700" fill="#163247">Enrich + Score</text>
+            <text x="305" y="92" text-anchor="middle" fill="#53636f">waterfall data</text>
+            <text x="305" y="110" text-anchor="middle" fill="#53636f">ICP fit + intent</text>
+            <text x="402" y="90" text-anchor="middle" font-size="20" font-weight="700" fill="#163247">&#8594;</text>
+            <rect x="420" y="44" width="170" height="84" rx="12" fill="#f8e4d8" stroke="#d66332" stroke-width="2"/>
+            <text x="505" y="72" text-anchor="middle" font-weight="700" fill="#163247">Route</text>
+            <text x="505" y="92" text-anchor="middle" fill="#53636f">owner in minutes</text>
+            <text x="505" y="110" text-anchor="middle" fill="#53636f">not days</text>
+            <text x="602" y="90" text-anchor="middle" font-size="20" font-weight="700" fill="#163247">&#8594;</text>
+            <rect x="620" y="44" width="150" height="84" rx="12" fill="#f7edc8" stroke="#d8a524" stroke-width="2"/>
+            <text x="695" y="72" text-anchor="middle" font-weight="700" fill="#163247">AI Draft</text>
+            <text x="695" y="92" text-anchor="middle" fill="#53636f">grounded in CRM</text>
+            <text x="695" y="110" text-anchor="middle" fill="#53636f">+ call evidence</text>
+            <text x="782" y="90" text-anchor="middle" font-size="20" font-weight="700" fill="#163247">&#8594;</text>
+            <rect x="800" y="44" width="140" height="84" rx="12" fill="#ffffff" stroke="#cbd5d8"/>
+            <text x="870" y="72" text-anchor="middle" font-weight="700" fill="#163247">Human Sends</text>
+            <text x="870" y="92" text-anchor="middle" fill="#53636f">approve / edit</text>
+            <text x="870" y="110" text-anchor="middle" fill="#53636f">owns relationship</text>
+            <text x="20" y="172" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="600" fill="#163247">WRITE-BACK AND MEASUREMENT — EVERY PLAY IS AN EXPERIMENT</text>
+            <rect x="20" y="190" width="920" height="64" rx="12" fill="#163247"/>
+            <text x="480" y="218" text-anchor="middle" fill="#ffffff" font-weight="700">Log outcome to CRM &rarr; reply / meeting / pipeline per play &rarr; kill, tune, or scale</text>
+            <text x="480" y="238" text-anchor="middle" fill="#cbd5d8" font-size="13">No write-back, no learning. No per-play metric, no GTM engineering — just automation.</text>
+            <path d="M480 270 V310 H105 V132" stroke="#0b8174" stroke-width="2" fill="none" class="flow-anim"/>
+            <text x="480" y="338" text-anchor="middle" fill="#53636f" font-size="13">Feedback: what converted tunes scoring, signals, and the next play</text>
+          </g>
+        </svg>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">04</span> How it works</h2>
+      <p class="sub">Six mechanics: state machine first, data before AI, signals, plays, grounded copilots, and engineering-grade measurement.</p>
+      <div class="mechanics">
+<div class="mech"><div class="mnum">1</div><div><h3>Model the journey as a state machine before you automate anything</h3><p>List the states a buyer actually moves through for <em>your</em> product — e.g. target account &rarr; engaged &rarr; trial &rarr; activated &rarr; customer &rarr; expanding &rarr; at risk — and for each transition write the observable signal and the one play that should fire. This is Clay&rsquo;s first GTME principle. If you cannot name the state change, you do not have a play; you have a campaign with extra tooling.</p></div></div>
+<div class="mech"><div class="mnum">2</div><div><h3>Fix the data foundation — AI amplifies whatever data it touches</h3><p>Dedupe accounts, define your ICP in fields (not in a slide), normalise titles/industries, and keep CRM hygiene continuous. Then enrich with a <strong>waterfall</strong>: try provider A, fall back to B, then C, paying only on a hit, and use an AI research agent (Claygent-style) for the unstructured residue — does this company use a competitor, what did its 10-K say, who just joined. Bad data in, confidently wrong outreach out — at 10&times; the volume.</p></div></div>
+<div class="mech"><div class="mnum">3</div><div><h3>Build a signal layer, and score fit &times; intent separately</h3><p>Collect first-party signals (pricing-page visits, trial signups, product usage, support conversations), second-party intent, and public triggers (hiring for relevant roles, funding, tech-stack changes, leadership moves). Score two axes independently: <code>fit</code> (is this our ICP?) and <code>intent</code> (are they moving <em>now</em>?). Route only where both clear a threshold; a perfect-fit account with no signal gets nurture, a high-intent poor-fit account gets a polite no — not SDR time.</p></div></div>
+<div class="mech"><div class="mnum">4</div><div><h3>Orchestrate plays, not blasts: trigger &rarr; enrich &rarr; score &rarr; route &rarr; draft</h3><p>Each play is a small workflow with an owner and an SLA: e.g. &ldquo;2+ trial signups from one company in 7 days&rdquo; &rarr; enrich the company, pick the highest-grade decision-maker, pull prior call context, draft outreach referencing the team&rsquo;s actual usage, route to the account owner in Slack/CRM within minutes. Inbound speed matters the same way: automated routing and first response in minutes, not the next business day, is itself a conversion lever.</p></div></div>
+<div class="mech"><div class="mnum">5</div><div><h3>Ground the AI in the CRM, and keep humans on every external send</h3><p>Use the copilot patterns the platforms now ship: Dynamics 365 Sales Copilot summarises records, prepares meetings, and drafts email <em>from the records the signed-in seller can access</em>; HubSpot Breeze summarises records and generates content across sales/marketing/service; Salesforce Agentforce SDR qualifies and books within configured topics and actions. The pattern to copy: generation is grounded in CRM + approved content, permissions are inherited, and a human approves, edits, or rejects anything customer-facing. Autonomy inside the CRM; approval at the boundary.</p></div></div>
+<div class="mech"><div class="mnum">6</div><div><h3>Measure each play like a product feature, and iterate or kill it</h3><p>Instrument per play, not per channel: signals fired, enrichment hit rate, drafts approved vs edited vs rejected, reply rate, meetings, pipeline, and cost per outcome (credits, tokens, rep minutes). Run one change at a time, compare against the previous version, and expect a tuning period — the Cylindo AI-SDR rebuild in the video below took months of segmentation/message/offer iteration before replies jumped. A play with no owner, no metric, and no kill criterion will decay into spam infrastructure.</p></div></div>
+</div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">05</span> Code sketch</h2>
+      <p class="sub">A minimal play engine: a signal arrives, a waterfall enriches it, fit &times; intent decides routing, and AI drafts — but never sends.</p>
+      <pre class="code"><span class="k">from</span> dataclasses <span class="k">import</span> dataclass
+
+@dataclass
+<span class="k">class</span> Signal:
+    account: str; kind: str          <span class="c"># "trial_signup", "hiring", "pricing_visit"</span>
+    strength: float                  <span class="c"># 0..1, set by the detector</span>
+
+<span class="k">def</span> waterfall(account, providers):
+    <span class="c"># Try each provider in order; pay / stop on first hit</span>
+    <span class="k">for</span> p <span class="k">in</span> providers:
+        data = p.enrich(account)
+        <span class="k">if</span> data: <span class="k">return</span> data
+    <span class="k">return</span> {}
+
+<span class="k">def</span> run_play(sig: Signal, crm, providers, llm):
+    acct = waterfall(sig.account, providers)
+    fit = icp_fit(acct)                       <span class="c"># fields, not vibes: size, industry, stack</span>
+    intent = sig.strength
+    <span class="k">if</span> fit &lt; 0.6 <span class="k">or</span> intent &lt; 0.5:
+        crm.log(sig, outcome=<span class="s">"nurture"</span>); <span class="k">return</span> <span class="s">"nurture"</span>
+    owner = crm.owner_of(sig.account)         <span class="c"># route in minutes, with context</span>
+    context = crm.history(sig.account)        <span class="c"># calls, emails, usage — what seller can see</span>
+    draft = llm.draft(                        <span class="c"># grounded draft, NOT a send</span>
+        template=<span class="s">"trial_team_expansion"</span>, account=acct, context=context)
+    crm.create_task(owner, draft=draft, sla_minutes=30,
+                    requires_approval=<span class="k">True</span>)  <span class="c"># human approves / edits / rejects</span>
+    crm.log(sig, outcome=<span class="s">"routed"</span>, fit=fit, intent=intent)
+    <span class="k">return</span> <span class="s">"routed"</span></pre>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">06</span> Failure modes</h2>
+      <p class="sub">Five ways AI GTM goes wrong in production — each with a one-line fix.</p>
+      <div class="mechanics">
+<div class="mech fail"><div class="mnum">1</div><div><h3>Automating a dirty CRM<span class="fix">Fix: dedupe, normalise, and define ICP in fields first; add a continuous hygiene play before any outreach play.</span></h3><p>Enrichment and AI drafting on stale, duplicated records do not create pipeline — they create wrong-person emails, merged-account errors, and reps who stop trusting the system within a week.</p></div></div>
+<div class="mech fail"><div class="mnum">2</div><div><h3>The AI SDR spam cannon<span class="fix">Fix: cap volume by signal quality, require a real trigger per message, and measure replies and meetings per play — never sends.</span></h3><p>When drafting gets cheap, the temptation is volume: thousands of &ldquo;personalised&rdquo; emails with a first name and a funding headline swapped in. Buyers learn to ignore the pattern, domains burn, and the brand pays for the pipeline team&rsquo;s metric.</p></div></div>
+<div class="mech fail"><div class="mnum">3</div><div><h3>Bolt-on AI on an unbuilt process<span class="fix">Fix: redesign the play first (states, signals, owner, SLA), then choose the tool — expect a tuning period measured in weeks.</span></h3><p>Buying an agent for a workflow nobody has defined produces demos, not revenue. The teams in the references got results only after rebuilding segmentation, routing, and the offer underneath the AI.</p></div></div>
+<div class="mech fail"><div class="mnum">4</div><div><h3>Ungrounded, unapproved external sends<span class="fix">Fix: ground drafts in CRM records the rep can access, cite the source facts, and require human approval for every customer-facing send.</span></h3><p>An agent that invents a customer&rsquo;s stack, quotes a price, or emails a prospect with no human review turns a hallucination into a legal and brand incident. Least-privilege data access is not optional here — it is the design.</p></div></div>
+<div class="mech fail"><div class="mnum">5</div><div><h3>Vanity metrics and set-and-forget plays<span class="fix">Fix: give every play an owner, a per-play outcome metric, a review cadence, and a kill criterion; log every outcome back to the CRM.</span></h3><p>Dashboards full of emails sent and credits burned hide the only question that matters: did this play create qualified pipeline per dollar and rep-hour? Without write-back, scoring never improves and dead plays run forever.</p></div></div>
+</div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">07</span> Go deeper</h2>
+      <p class="sub">Verified references — every link opened and checked before publishing.</p>
+      <div class="ref-list">
+        <a class="ref" href="https://www.clay.com/blog/inside-clays-gtm-engineering-lab"><span class="badge doc">Article</span><div><h3>Inside Clay&rsquo;s GTM Engineering Lab: Plays &amp; Principles — Clay</h3><p>The defining GTME write-up: journey as a state machine, all GTM problems are data problems, and four real plays (job listings, trial conversion, sales-to-CX handoffs, support-to-enterprise).</p></div></a>
+        <a class="ref" href="https://learn.microsoft.com/en-us/dynamics365/sales/copilot-overview"><span class="badge doc">Docs</span><div><h3>Copilot in Dynamics 365 Sales overview — Microsoft Learn</h3><p>The grounded-copilot pattern in production: record summarisation, meeting prep, and email assistance, limited to records the signed-in seller can access.</p></div></a>
+        <a class="ref" href="https://knowledge.hubspot.com/ai/use-breeze-assistant"><span class="badge doc">Docs</span><div><h3>Use Breeze Assistant — HubSpot Knowledge Base</h3><p>HubSpot&rsquo;s AI across sales, marketing, and service: generate content, summarise records, prepare for meetings — plus its AI settings, trust, and data-sharing controls.</p></div></a>
+        <a class="ref" href="https://www.youtube.com/watch?v=OFCh6Fc1cIE"><span class="badge vid">Video</span><div><h3>Rebuilding the GTM Engine for the AI Era — Beyond Revenue (Jennifer Rasmussen)</h3><p>A CMO&rsquo;s grounded rebuild: fix data before AI, an AI SDR taking researched prospects from 40–50 to 200–220/day, and why the offer — not the tool — drove a 6–7&times; reply lift.</p></div></a>
+        <a class="ref" href="https://www.youtube.com/watch?v=zsGpSPtE5_8"><span class="badge vid">Video</span><div><h3>From Campaigns to Code: How GTM Is Engineering Growth — super{summit} 2026</h3><p>Programmatic GTM in practice: the Ramp system that spotted visiting companies, researched each account, and drove 30% of pipeline — plus what must exist before you automate.</p></div></a>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">08</span> Sample prompts</h2>
+      <p class="sub">Copy one into your AI assistant and apply it to your own work.</p>
+      <p id="live-status" class="sr-only" role="status"></p>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>DESIGN A GTM PLAY</strong><button class="copy-btn" data-copy="p1">Copy</button></div>
+        <p class="prompt-text" id="p1">Design one GTM engineering play for my product: [product, ICP, average deal size]. Start from a state change, not a campaign. Give me: (1) the trigger signal and how we detect it, (2) the enrichment waterfall (which fields, which provider order, AI research for what), (3) fit and intent scoring thresholds for routing vs nurture, (4) the AI-drafted action and exactly what a human must approve, (5) CRM write-back fields, and (6) the per-play metrics and kill criterion. Flag any step that assumes data we probably do not have yet.</p>
+      </div>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>AUDIT MY CRM FOR AI READINESS</strong><button class="copy-btn" data-copy="p2">Copy</button></div>
+        <p class="prompt-text" id="p2">Audit my CRM before we add AI GTM tooling. Here is my current state: [CRM, record counts, known duplicate / missing-field problems, how ICP is defined today, enrichment tools if any]. Produce a pre-AI cleanup plan ordered by damage done if skipped: dedupe rules, fields to normalise, ICP-as-fields definition, missing enrichment, and a continuous hygiene workflow. For each item, say which GTM play it blocks. Do not recommend any outreach automation until you list what must be fixed first.</p>
+      </div>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>REVIEW AN AI OUTREACH PLAY</strong><button class="copy-btn" data-copy="p3">Copy</button></div>
+        <p class="prompt-text" id="p3">Review this AI outreach play like a sceptical RevOps lead: [paste the trigger, audience, draft template, volume, and current reply / meeting rates]. Check: is there a real signal per recipient or is this a blast in disguise? Is every factual claim in the draft grounded in a named source field? Where can a hallucination reach a customer? Is a human approving sends? Rewrite the play with a tighter trigger, a lower volume cap, grounded personalisation, and the metrics that would justify scaling it — or killing it.</p>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">09</span> Quiz</h2>
+      <p class="sub">Five questions. Click an answer — you get the explanation right away.</p>
+      <div id="quiz">
+<div class="quiz-q" data-answer="1"><p class="qq">1. What does &ldquo;treat the buyer journey as a state machine&rdquo; actually change in practice?</p><div class="qopts"><button class="qopt" data-i="0">You rename funnel stages with engineering words.</button>
+<button class="qopt" data-i="1">You define each state, the observable signal that marks a transition, and the specific play that fires on that transition — automation responds to state changes, not to a campaign calendar.</button>
+<button class="qopt" data-i="2">You let an AI decide which stage a deal is in and never check it.</button>
+<button class="qopt" data-i="3">You remove humans from every stage transition.</button></div><p class="qexp" hidden></p></div>
+<div class="quiz-q" data-answer="2"><p class="qq">2. Why score fit and intent as separate axes?</p><div class="qopts"><button class="qopt" data-i="0">Two scores look more rigorous in a dashboard.</button>
+<button class="qopt" data-i="1">Fit alone is enough; intent is marketing vanity.</button>
+<button class="qopt" data-i="2">They answer different questions — fit: is this our ICP? intent: are they moving now? Routing only where both are high protects rep time; high fit with no intent gets nurture, not outreach.</button>
+<button class="qopt" data-i="3">Intent alone is enough; any interested account is worth SDR time.</button></div><p class="qexp" hidden></p></div>
+<div class="quiz-q" data-answer="0"><p class="qq">3. What is waterfall enrichment?</p><div class="qopts"><button class="qopt" data-i="0">Trying data providers in sequence for a field, stopping (and paying) on the first hit, with AI research for unstructured residue — maximising coverage per dollar.</button>
+<button class="qopt" data-i="1">Buying the same field from every provider and averaging the answers.</button>
+<button class="qopt" data-i="2">Enriching every record with every available field, just in case.</button>
+<button class="qopt" data-i="3">A chart type for showing enrichment spend to finance.</button></div><p class="qexp" hidden></p></div>
+<div class="quiz-q" data-answer="3"><p class="qq">4. A team buys an AI SDR, points it at a stale CRM, and sends 10,000 emails in week one. What is the most likely outcome?</p><div class="qopts"><button class="qopt" data-i="0">Pipeline, because volume always wins eventually.</button>
+<button class="qopt" data-i="1">Nothing — email providers ignore AI-generated mail.</button>
+<button class="qopt" data-i="2">A deliverability warning, then normal results.</button>
+<button class="qopt" data-i="3">Wrong-person, ungrounded outreach at scale: burned domain and brand, near-zero qualified replies, and reps who distrust the system — the data and process were never built.</button></div><p class="qexp" hidden></p></div>
+<div class="quiz-q" data-answer="1"><p class="qq">5. Which metric set actually tells you a GTM play is working?</p><div class="qopts"><button class="qopt" data-i="0">Emails sent, credits burned, and dashboards viewed.</button>
+<button class="qopt" data-i="1">Per play: signals fired, enrichment hit rate, draft approval rate, reply rate, meetings and pipeline per dollar and rep-hour — compared with the play&rsquo;s previous version.</button>
+<button class="qopt" data-i="2">Total followers and content impressions across channels.</button>
+<button class="qopt" data-i="3">How many AI tools the stack contains.</button></div><p class="qexp" hidden></p></div>
+</div>
+      <div id="quiz-score" role="status"></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">10</span> Flashcards</h2>
+      <p class="sub">Click a card (or focus it and press Enter / Space) to flip it.</p>
+      <div class="fgrid">
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">GTM engineering</div><div class="fface back">Building revenue as a system: engineers (or engineer-minded operators) who design signal detection, enrichment, routing, and AI-assisted plays for sales, marketing, and success — and measure them like software.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">State machine (journey)</div><div class="fface back">Modelling the buyer journey as discrete states with observable transition signals. The GTME job: detect the transition and fire the right play automatically. Clay&rsquo;s first principle.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Signal</div><div class="fface back">An observable event suggesting a state change or buying readiness: pricing-page visit, second trial signup, relevant hiring post, usage spike, support ticket asking about enterprise features.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Waterfall enrichment</div><div class="fface back">Querying data providers in order for a field, stopping on the first hit so you pay only for found data. AI research agents handle unstructured questions a database cannot answer.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Fit vs intent</div><div class="fface back">Fit = how well an account matches the ICP (size, industry, stack). Intent = evidence they are moving now. Route where both are high; nurture high-fit / low-intent.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Play</div><div class="fface back">A triggered workflow with an owner and an SLA: signal &rarr; enrich &rarr; score &rarr; route &rarr; AI draft &rarr; human send &rarr; CRM write-back. The unit of GTM engineering, replacing the one-off campaign.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">AI SDR</div><div class="fface back">An agent that researches accounts, qualifies leads, and drafts (or, in some products, sends) outreach and books meetings. Works only on clean data, a real signal per recipient, and a tuned offer.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Grounded copilot</div><div class="fface back">CRM copilots (Dynamics Copilot, HubSpot Breeze, Agentforce) that summarise and draft from records the user can access, inheriting permissions — generation inside the system of record, approval at the boundary.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">RevOps</div><div class="fface back">Revenue operations: the team owning the CRM, routing, scoring, and measurement that GTM engineering builds on. In an AI GTM stack, RevOps owns the data model and the play metrics.</div></div></div>
+</div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">11</span> Reach for this when&hellip;</h2>
+      <div class="triggers">
+        <div class="trigger"><strong>Reps are doing research robots should do</strong> — pre-call account research, lead enrichment, routing, and first-draft outreach consume the week. Automate the research and drafting; keep humans on judgment and relationships.</div>
+        <div class="trigger"><strong>Signals exist but nobody acts in time</strong> — trial signups, pricing visits, and support intent sit in dashboards until they are stale. Build the play: detect, enrich, route in minutes, with an SLA.</div>
+        <div class="trigger"><strong>You are evaluating AI sales/marketing tools</strong> — ask first whether your states, signals, CRM data, and per-play metrics exist. If they do not, the engineering work comes before the purchase, whatever the demo promises.</div>
+      </div>
+    </section>
+
+    <a class="back-link" href="../index.html#daily-topics">&larr; Back to daily topics</a>
+  </div>
+
+<script>
+    const status = document.getElementById('live-status');
+    document.querySelectorAll('.copy-btn').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const target = document.getElementById(button.dataset.copy);
+        const text = target.innerText;
+        try {
+          await navigator.clipboard.writeText(text);
+          const original = button.textContent;
+          button.textContent = 'Copied';
+          status.textContent = 'Prompt copied to clipboard.';
+          setTimeout(() => button.textContent = original, 1600);
+        } catch {
+          const range = document.createRange();
+          range.selectNodeContents(target);
+          const selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+          status.textContent = 'Prompt selected. Copy it with your device copy command.';
+        }
+      });
+    });
+    const explanations = [["Renaming stages changes nothing about when or why a play fires.", "Correct. States + transition signals + a play per transition is the whole model — it is what Clay's GTME team builds on.", "Letting a model assign stages unchecked removes the observability the model exists to create.", "Humans still own sends and relationships; transitions are where automation helps, not where humans vanish."], ["Rigour is in the routing decision the two axes enable, not in the count of scores.", "Fit without intent sends reps after accounts that are not moving — the classic territory-plan trap.", "Correct. Two questions, two axes: ICP fit decides worth pursuing at all, intent decides whether now is the moment.", "Intent without fit burns SDR time on accounts that can never buy — both gates matter."], ["Correct. Sequential fallback with pay-on-hit is the cost/coverage optimum, and AI research covers what structured providers cannot.", "Buying everything from everyone multiplies cost and still leaves conflicts to resolve.", "Enriching everything is waste: enrich the fields a play actually uses, when the play fires.", "It is an enrichment strategy, not a visualisation."], ["Volume on bad data compounds the error, it does not average out.", "Providers deliver AI mail fine — which is exactly why the brand damage arrives.", "Deliverability is only the first bill; trust and reply quality are the larger ones.", "Correct. Stale data + no process + instant scale is the canonical AI GTM failure — fix data, define the play, tune the offer first."], ["Sends and credits are inputs; a play is judged on outcomes per unit of input.", "Correct. Per-play outcome metrics, version-compared, are how GTM engineering iterates — and how dead plays get killed.", "Impressions may matter for brand, but they cannot validate a revenue play.", "Stack size is a cost line, not a result."]];
+    const questions = [...document.querySelectorAll('.quiz-q')];
+    let score = 0, answered = 0;
+    questions.forEach((q, qi) => {
+      const correct = parseInt(q.dataset.answer, 10);
+      const exp = q.querySelector('.qexp');
+      q.querySelectorAll('.qopt').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          if (q.dataset.done) return;
+          q.dataset.done = "1";
+          const chosen = parseInt(btn.dataset.i, 10);
+          const ok = chosen === correct;
+          q.querySelectorAll('.qopt').forEach((b) => {
+            b.disabled = true;
+            if (parseInt(b.dataset.i, 10) === correct) b.classList.add('correct');
+          });
+          if (!ok) btn.classList.add('wrong');
+          else score++;
+          answered++;
+          exp.hidden = false;
+          exp.innerHTML = ok
+            ? "<strong class=\"ok\">Correct.</strong> " + explanations[qi][chosen]
+            : "<strong class=\"no\">Not quite.</strong> " + explanations[qi][chosen];
+          if (answered === questions.length) {
+            const box = document.getElementById('quiz-score');
+            box.style.display = "block";
+            box.innerHTML = "You scored <strong>" + score + " / " + questions.length + "</strong>." +
+              (score === questions.length ? " Clean sweep — now go name one state change in your own funnel and design the play that should fire on it." :
+               score >= 3 ? " Solid — re-read the mechanic you missed; GTM failures are usually data or process failures wearing an AI costume." :
+               " Worth a re-read of sections 04 and 06 before you point any agent at a CRM.");
+          }
+        });
+      });
+    });
+    document.querySelectorAll('.fcard').forEach((card) => {
+      const flip = () => card.classList.toggle('flipped');
+      card.addEventListener('click', flip);
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); }
+      });
+    });
+</script>
+</body>
+</html>
