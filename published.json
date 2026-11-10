@@ -404,5 +404,12 @@
     "date": "2026-11-09",
     "summary": "Treat revenue as a state machine, not a campaign calendar: fix CRM data first, detect buying signals, enrich with a waterfall, score fit times intent, route in minutes, let AI draft grounded outreach behind a human approval gate, and measure every play like software.",
     "skill": "gtm-engineering"
+  },
+  {
+    "slug": "2026-11-10-ai-agent-systems-tool-use-planning-guardrails",
+    "title": "AI agent systems: tool use, planning loops, and guardrails",
+    "date": "2026-11-10",
+    "summary": "An agent is a model in a loop, not a model with magic: it plans a step, requests a tool, your code validates and runs it, and the observation decides the next step \u2014 bounded by step, cost, and time budgets, least-privilege tools, and guardrails in code that stop, escalate, or hand off before autonomy becomes damage.",
+    "skill": "ai-agent-systems"
   }
 ]

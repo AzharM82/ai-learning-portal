@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI agent systems: tool use, planning loops, and guardrails &middot; AI Learning Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+    :root {
+      --ink: #14212b; --muted: #53636f; --paper: #f6f8f7; --white: #ffffff;
+      --line: #cbd5d8; --navy: #163247; --navy-2: #21465e; --teal: #0b8174;
+      --teal-soft: #dff2ee; --orange: #d66332; --orange-soft: #f8e4d8;
+      --gold: #d8a524; --gold-soft: #f7edc8; --blue-soft: #e3eef4;
+      --red: #b3402e; --red-soft: #f9e3de; --green: #1e7a3c; --green-soft: #e2f2e6;
+      --shadow: 0 18px 45px rgba(20, 33, 43, .09); --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; color: var(--ink); background: linear-gradient(rgba(20,33,43,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(20,33,43,.035) 1px, transparent 1px), var(--paper); background-size: 28px 28px; font-family: "Source Sans 3", sans-serif; font-size: 17px; line-height: 1.58; }
+    .shell { width: min(960px, calc(100% - 40px)); margin: 0 auto; }
+    .portal-nav{position:sticky;top:0;z-index:50;background:rgba(22,50,71,.97);border-bottom:1px solid rgba(255,255,255,.12)}
+    .portal-nav-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;flex-wrap:wrap}
+    .portal-brand{color:#fff;text-decoration:none;font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:15px}
+    .portal-brand span{color:var(--gold);font-weight:400}
+    .portal-links{display:flex;gap:18px;flex-wrap:wrap}
+    .portal-links a{color:#dbe7ee;text-decoration:none;font-size:14.5px}
+    .portal-links a:hover{color:#fff;text-decoration:underline}
+    .hero { padding: 56px 0 36px; }
+    .chapter-mark { display:inline-flex;align-items:center;gap:10px;color:var(--navy); font:600 12px/1.2 "IBM Plex Mono",monospace;letter-spacing:.09em;text-transform:uppercase;margin-bottom:18px; }
+    .chapter-mark::before { content:"";width:42px;height:3px;background:var(--orange); }
+    h1 { font-size: clamp(36px, 5vw, 58px); line-height: 1.02; letter-spacing:-.03em; margin:0 0 14px; }
+    .lede { color: var(--muted); font-size: clamp(18px,2vw,22px); max-width: 64ch; margin:0 0 8px; }
+    .date-line { font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--muted); }
+    section.block { margin: 44px 0; }
+    h2 { font-size: 26px; letter-spacing:-.02em; margin:0 0 6px; display:flex;align-items:center;gap:12px; }
+    h2 .num { font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:600;color:var(--white); background:var(--navy);border-radius:999px;min-width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center; }
+    .sub { color:var(--muted); margin:0 0 18px; max-width: 68ch; }
+    .card { background:var(--white);border:1px solid var(--line);border-radius:var(--radius); padding:24px;box-shadow:var(--shadow); }
+    .skill-card { background:var(--navy);color:#eaf2f7;border-radius:var(--radius);padding:22px 24px; font-family:"IBM Plex Mono",monospace;font-size:14.5px;overflow-x:auto;box-shadow:var(--shadow); }
+    .skill-card .k { color:var(--gold); }
+    .idea { font-size:21px;line-height:1.5;border-left:4px solid var(--teal);padding:6px 0 6px 20px;max-width:62ch; }
+    .idea strong { color:var(--navy); }
+    .mechanics { display:grid;gap:14px; }
+    .mech { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:18px 20px; display:grid;grid-template-columns:44px 1fr;gap:14px;align-items:start; }
+    .mech .mnum { font-family:"IBM Plex Mono",monospace;font-weight:600;color:var(--teal); background:var(--teal-soft);border-radius:10px;width:44px;height:44px;display:flex;align-items:center;justify-content:center; }
+    .mech h3 { margin:0 0 6px;font-size:18px; }
+    .mech p { margin:0;color:var(--muted);font-size:15.5px; }
+    .mech code, .inline-code { font-family:"IBM Plex Mono",monospace;font-size:.88em;background:var(--blue-soft); padding:2px 7px;border-radius:6px;color:var(--navy); }
+    pre.code { background:#0f2233;color:#e8f1f5;border-radius:14px;padding:20px 22px;overflow-x:auto; font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.6;margin:0; }
+    pre.code .c { color:#8ba3b0; } pre.code .s { color:#ffd479; } pre.code .k { color:#7fd6c2; }
+    .fail { border-left:4px solid var(--orange); }
+    .fail h3 .fix { display:block;margin-top:8px;font-size:15px;font-weight:500;color:var(--green); }
+    .ref-list { display:grid;gap:12px; }
+    .ref { display:flex;gap:14px;align-items:flex-start;background:var(--white);border:1px solid var(--line); border-radius:14px;padding:16px 18px;text-decoration:none;color:inherit; }
+    .ref:hover { border-color:var(--teal); }
+    .ref .badge { flex:none;font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;letter-spacing:.06em; padding:5px 10px;border-radius:999px;text-transform:uppercase; }
+    .badge.doc { background:var(--blue-soft);color:var(--navy); }
+    .badge.vid { background:var(--orange-soft);color:var(--orange); }
+    .ref h3 { margin:0 0 4px;font-size:17px; }
+    .ref p { margin:0;color:var(--muted);font-size:14.5px; }
+    .prompt-block { background:#0f2233;border-radius:var(--radius);overflow:hidden;margin-bottom:18px;box-shadow:var(--shadow); }
+    .prompt-top { display:flex;justify-content:space-between;align-items:center;gap:12px; padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.12); }
+    .prompt-top strong { color:#fff;font-size:13px;letter-spacing:.06em;font-family:"IBM Plex Mono",monospace; }
+    .copy-btn { border:1px solid #6c8796;background:transparent;color:#fff;border-radius:6px;padding:7px 11px; cursor:pointer;font-weight:700;font-size:14px; }
+    .copy-btn:hover { background:rgba(255,255,255,.1); }
+    .copy-btn:focus-visible { outline:2px solid var(--gold);outline-offset:2px; }
+    .prompt-text { color:#e8f1f5;font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.65; padding:18px;white-space:pre-wrap;margin:0; }
+    .sr-only { position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0); }
+    .quiz-q { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px; }
+    .quiz-q .qq { font-weight:700;margin:0 0 12px;font-size:18px; }
+    .qopts { display:grid;gap:8px; }
+    .qopt { text-align:left;background:var(--paper);border:1px solid var(--line);border-radius:10px; padding:12px 14px;cursor:pointer;font-size:15.5px;color:var(--ink); }
+    .qopt:hover:not(:disabled) { border-color:var(--navy); }
+    .qopt:disabled { cursor:default;opacity:.85; }
+    .qopt.correct { background:var(--green-soft);border-color:var(--green); }
+    .qopt.wrong { background:var(--red-soft);border-color:var(--red); }
+    .qexp { margin:12px 0 0;font-size:15px;color:var(--muted); }
+    .qexp strong.ok { color:var(--green); } .qexp strong.no { color:var(--red); }
+    #quiz-score { display:none;margin-top:8px;background:var(--navy);color:#fff;border-radius:14px; padding:20px 24px;font-size:19px; }
+    #quiz-score strong { color:var(--gold); }
+    .fgrid { display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px; }
+    .fcard { perspective:900px;cursor:pointer;min-height:170px; }
+    .fcard-inner { position:relative;width:100%;height:100%;min-height:170px;transform-style:preserve-3d;transition:transform .45s; }
+    .fcard.flipped .fcard-inner { transform:rotateY(180deg); }
+    .fface { position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden; border-radius:14px;padding:18px;display:flex;align-items:center;justify-content:center;text-align:center; border:1px solid var(--line);background:var(--white);box-shadow:var(--shadow);font-size:15.5px; }
+    .fface.front { font-weight:700;color:var(--navy); }
+    .fface.back { transform:rotateY(180deg);background:var(--teal-soft);color:var(--ink);font-size:14.5px; }
+    .fcard:focus-visible { outline:2px solid var(--teal);outline-offset:3px;border-radius:14px; }
+    .triggers { display:grid;gap:10px; }
+    .trigger { background:var(--gold-soft);border-radius:12px;padding:14px 18px;font-size:16px; }
+    .trigger strong { color:var(--navy); }
+    .back-link { display:inline-block;margin:8px 0 60px;font-weight:600;color:var(--teal);text-decoration:none;font-size:17px; }
+    .back-link:hover { text-decoration:underline; }
+    .fig { background:var(--white);border:1px solid var(--line);border-radius:var(--radius); padding:12px;box-shadow:var(--shadow);overflow-x:auto; }
+    .fig svg { display:block;width:100%;height:auto; }
+    .flow-anim { stroke-dasharray: 8 6; animation: dashmove 1.2s linear infinite; }
+    @keyframes dashmove { to { stroke-dashoffset: -14; } }
+    @media (prefers-reduced-motion: reduce) { .fcard-inner{transition:none;} .flow-anim{animation:none;} }
+  </style>
+</head>
+<body><nav class="portal-nav">
+    <div class="shell portal-nav-inner">
+      <a class="portal-brand" href="../index.html">AI Engineering <span>&middot; Learning Portal</span></a>
+      <div class="portal-links">
+        <a href="../index.html#daily-topics">Daily topics</a>
+        <a href="../index.html#loop">Loop</a>
+        <a href="../index.html#graph">Graph</a>
+        <a href="../index.html#harness">Harness</a>
+      </div>
+    </div>
+  </nav>
+  <div class="shell">
+    <header class="hero">
+      <div class="chapter-mark">Daily topic &middot; AI agent systems</div>
+      <h1>AI agent systems: tool use, planning loops, and guardrails</h1>
+      <p class="lede">An agent is not a smarter prompt. It is a model in a loop: plan a step, request a tool, let your code validate and run it, read the real result, and decide again. That loop is where the power comes from — and where every failure lives. Build the loop deliberately, scope the tools narrowly, and put the guardrails in code, not in a polite request to the model.</p>
+      <p class="date-line">2026-11-10 &middot; Topic 058</p>
+    </header>
+
+    <section class="block">
+      <h2><span class="num">01</span> The skill card</h2>
+      <p class="sub">Every topic on this portal is designed like a Codex skill: a name, a trigger, and concrete steps.</p>
+      <div class="skill-card"><pre style="margin:0">---
+<span class="k">name:</span> ai-agent-systems
+<span class="k">description:</span> Reach for this when a task needs several dependent steps
+  and real tools: choose a workflow or an agent honestly, design
+  narrow schema-typed tools the model only requests (never runs),
+  run a plan-act-observe loop with ground truth each step, enforce
+  step / cost / time budgets in code, and gate irreversible
+  actions behind least privilege and human approval.
+---</pre></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">02</span> The one-idea version</h2>
+      <p class="idea"><strong>An agent is a model using tools in a loop, and your code — not the model — owns the loop.</strong> Anthropic draws the line by who decides the next step: in a workflow, your code paths decide; in an agent, the model dynamically directs its own process from environmental feedback. Either way, the model never executes anything. It emits a structured tool request, your runtime validates, authorises, and runs it, and the observation that comes back is the ground truth the next decision must answer to. Autonomy is earned inside budgets and guardrails, never granted by a prompt.</p>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">03</span> The picture: the loop your code owns</h2>
+      <p class="sub">One run, end to end. The model proposes; the runtime disposes — at the validation gate, at the budget check, and at the human gate.</p>
+      <div class="fig">
+        <svg viewBox="0 0 960 360" role="img" aria-label="Diagram of an agent loop: a goal flows into planning, then a structured tool request, then a validation and guardrail gate in code, then execution, then an observation feeding back to planning, with step, cost and time budgets and a human approval gate for irreversible actions.">
+          <g font-family="Source Sans 3, sans-serif" font-size="14">
+            <text x="20" y="26" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="600" fill="#163247">THE AGENT LOOP — MODEL PROPOSES, RUNTIME DECIDES</text>
+            <rect x="20" y="44" width="150" height="84" rx="12" fill="#e3eef4" stroke="#163247" stroke-width="2"/>
+            <text x="95" y="72" text-anchor="middle" font-weight="700" fill="#163247">Goal + Plan</text>
+            <text x="95" y="92" text-anchor="middle" fill="#53636f">state the goal</text>
+            <text x="95" y="110" text-anchor="middle" fill="#53636f">next step only</text>
+            <text x="182" y="90" text-anchor="middle" font-size="20" font-weight="700" fill="#163247">&#8594;</text>
+            <rect x="200" y="44" width="160" height="84" rx="12" fill="#dff2ee" stroke="#0b8174" stroke-width="2"/>
+            <text x="280" y="72" text-anchor="middle" font-weight="700" fill="#163247">Tool Request</text>
+            <text x="280" y="92" text-anchor="middle" fill="#53636f">name + JSON args</text>
+            <text x="280" y="110" text-anchor="middle" fill="#53636f">schema-typed</text>
+            <text x="372" y="90" text-anchor="middle" font-size="20" font-weight="700" fill="#163247">&#8594;</text>
+            <rect x="390" y="44" width="170" height="84" rx="12" fill="#f8e4d8" stroke="#d66332" stroke-width="2"/>
+            <text x="475" y="72" text-anchor="middle" font-weight="700" fill="#163247">Gate in Code</text>
+            <text x="475" y="92" text-anchor="middle" fill="#53636f">validate &middot; authorise</text>
+            <text x="475" y="110" text-anchor="middle" fill="#53636f">budget &middot; policy</text>
+            <text x="572" y="90" text-anchor="middle" font-size="20" font-weight="700" fill="#163247">&#8594;</text>
+            <rect x="590" y="44" width="150" height="84" rx="12" fill="#f7edc8" stroke="#d8a524" stroke-width="2"/>
+            <text x="665" y="72" text-anchor="middle" font-weight="700" fill="#163247">Execute Tool</text>
+            <text x="665" y="92" text-anchor="middle" fill="#53636f">your code runs it</text>
+            <text x="665" y="110" text-anchor="middle" fill="#53636f">timeout + idempotent</text>
+            <text x="752" y="90" text-anchor="middle" font-size="20" font-weight="700" fill="#163247">&#8594;</text>
+            <rect x="770" y="44" width="170" height="84" rx="12" fill="#ffffff" stroke="#cbd5d8"/>
+            <text x="855" y="72" text-anchor="middle" font-weight="700" fill="#163247">Observe</text>
+            <text x="855" y="92" text-anchor="middle" fill="#53636f">result or error</text>
+            <text x="855" y="110" text-anchor="middle" fill="#53636f">ground truth</text>
+            <path d="M855 132 V176 H95 V132" stroke="#0b8174" stroke-width="2" fill="none" class="flow-anim"/>
+            <text x="475" y="200" text-anchor="middle" fill="#53636f" font-size="13">Observation feeds the next plan — or the run stops: done, budget out, no progress, or escalate</text>
+            <text x="20" y="238" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="600" fill="#163247">GUARDRAILS THAT LIVE OUTSIDE THE MODEL</text>
+            <rect x="20" y="256" width="920" height="64" rx="12" fill="#163247"/>
+            <text x="480" y="284" text-anchor="middle" fill="#ffffff" font-weight="700">Least-privilege tools &rarr; human approval for irreversible actions &rarr; trace every step</text>
+            <text x="480" y="304" text-anchor="middle" fill="#cbd5d8" font-size="13">A prompt is not an access-control system. If the code does not enforce it, it is not a guardrail.</text>
+          </g>
+        </svg>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">04</span> How it works</h2>
+      <p class="sub">Six mechanics: simplest system first, tools as an interface, the loop, stopping, guardrails in code, and approval plus evaluation.</p>
+      <div class="mechanics">
+<div class="mech"><div class="mnum">1</div><div><h3>Start with the simplest system that works — workflow before agent</h3><p>Ask who must decide the next step. If the steps are known in advance, build a <strong>workflow</strong>: prompt chaining, routing, parallelisation, orchestrator-workers, or evaluator-optimiser, all on predefined code paths. Reserve a free-running agent for open-ended work where the number and order of steps cannot be predicted — and accept its price: more latency, more cost, and compounding errors. Anthropic and OpenAI give the same advice: a single well-built agent (or one optimised LLM call) beats a premature multi-agent system almost every time.</p></div></div>
+<div class="mech"><div class="mnum">2</div><div><h3>Design tools as the agent-computer interface — the model only requests</h3><p>The model never runs your code. It emits a tool name plus JSON arguments matching a schema you published; your runtime does everything else. So design tools like a UI for the model (Anthropic&rsquo;s ACI): few, distinct, non-overlapping tools at natural task size; names and descriptions with examples and edge cases; argument formats the model cannot easily mangle (absolute paths, not relative ones); and return values that are concise and cite their source. Split OpenAI&rsquo;s three kinds consciously: <code>data</code> tools that fetch, <code>action</code> tools that change state, and <code>orchestration</code> tools that call other agents.</p></div></div>
+<div class="mech"><div class="mnum">3</div><div><h3>Run the planning loop: think, act, observe — with ground truth each turn</h3><p>Use ReAct as the default rhythm: a short thought, one tool call, then the observation appended to the transcript before the next thought, so reality corrects the plan instead of the plan hallucinating forward. For reviewable or parallelisable work, prefer plan-and-execute: write the full plan first (a human can inspect it), then execute step by step and replan only on failure. Make planning transparent — show the steps — because a loop you cannot read is a loop you cannot debug, grade, or trust.</p></div></div>
+<div class="mech"><div class="mnum">4</div><div><h3>Give the loop explicit stopping conditions, enforced before every step</h3><p>Never let &ldquo;the model stopped calling tools&rdquo; be your only exit. Enforce, in code and before each iteration: a hard <code>max_steps</code> cap, a cost / token budget, and a wall-clock timeout; an explicit done signal (a final-answer output or a <code>finish</code> tool); loop detection (the same tool + same arguments repeating); and no-progress detection (steps adding no new information). On budget exhaustion, force a finalisation: answer from what the run has, or fail explicitly — never return silence, and never let a retry double-send a side effect (use idempotency keys).</p></div></div>
+<div class="mech"><div class="mnum">5</div><div><h3>Put guardrails in code, in layers — never only in the prompt</h3><p>Layer them, as OpenAI&rsquo;s guide prescribes: <strong>input</strong> guardrails (relevance, moderation, injection screening — tool results and web pages are data, never instructions), <strong>tool</strong> guardrails (validate arguments against the schema, authorise with the <em>caller&rsquo;s</em> permissions — never the model&rsquo;s assertion — and scope credentials per task, read-only by default, minutes-long), and <strong>output</strong> guardrails (schema, policy, and groundedness checks before anything reaches a user or another system). A guardrail that lives only in the system prompt is a suggestion an injected instruction can talk its way past.</p></div></div>
+<div class="mech"><div class="mnum">6</div><div><h3>Gate irreversible actions, checkpoint the run, and evaluate outcomes</h3><p>Classify every tool as auto, approval-required, or never-automated — by reversibility and blast radius, in the runtime, not by the model. On a gated action, pause, persist the full state (messages, plan, budget, step), present the exact action and its preview, and resume on approve / edit / reject without re-running completed steps. Trace every model call, tool call, argument, result, token count, and timing, and grade the run on whether the task actually succeeded — an eval harness over real tasks, not on whether the final paragraph sounded confident.</p></div></div>
+</div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">05</span> Code sketch</h2>
+      <p class="sub">A minimal owned loop: the model requests, code validates and authorises, budgets stop the run, and irreversible tools wait for a human.</p>
+      <pre class="code"><span class="k">def</span> run_agent(goal, model, tools, *, max_steps=12, budget_usd=1.00):
+    messages = [{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: goal}]
+    seen_calls = set()
+    <span class="k">for</span> step <span class="k">in</span> range(max_steps):              <span class="c"># hard cap, checked every turn</span>
+        <span class="k">if</span> spent(messages) &gt; budget_usd:
+            <span class="k">return</span> finalize(messages, reason=<span class="s">"budget"</span>)   <span class="c"># answer from what we have</span>
+        reply = model(messages, tool_schemas(tools))
+        <span class="k">if</span> <span class="k">not</span> reply.tool_calls:
+            <span class="k">return</span> reply.text                       <span class="c"># explicit done: no tool requested</span>
+        <span class="k">for</span> call <span class="k">in</span> reply.tool_calls:
+            key = (call.name, str(sorted(call.args.items())))
+            <span class="k">if</span> key <span class="k">in</span> seen_calls:                  <span class="c"># loop detection</span>
+                result = {<span class="s">"error"</span>: <span class="s">"repeated call blocked; change approach"</span>}
+            <span class="k">else</span>:
+                seen_calls.add(key)
+                tool = tools[call.name]
+                validate(call.args, tool.schema)          <span class="c"># raises -> error result, not a crash</span>
+                authorize(tool, caller_perms)             <span class="c"># caller's rights, not the model's</span>
+                <span class="k">if</span> tool.irreversible <span class="k">and</span> <span class="k">not</span> human_approved(call):
+                    result = {<span class="s">"error"</span>: <span class="s">"awaiting human approval"</span>}
+                <span class="k">else</span>:
+                    result = tool.run(call.args, idempotency_key=key)
+            messages.append(tool_result(call, result))    <span class="c"># observation = ground truth</span>
+    <span class="k">return</span> finalize(messages, reason=<span class="s">"max_steps"</span>)</pre>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">06</span> Failure modes</h2>
+      <p class="sub">Five ways agent systems fail in production — each with a one-line fix.</p>
+      <div class="mechanics">
+<div class="mech fail"><div class="mnum">1</div><div><h3>An agent where a workflow would do<span class="fix">Fix: if the steps are predictable, hard-code the path (chain, route, parallelise) and give the model only the step it is good at.</span></h3><p>Building a free-running loop for a fixed three-step task buys 10&times; the cost, compounding error, and a debugging story nobody wants — for flexibility the task never uses. Complexity must be earned by the problem, not by the demo.</p></div></div>
+<div class="mech fail"><div class="mnum">2</div><div><h3>The god tool and the overlapping toolbox<span class="fix">Fix: split into few, distinct, schema-typed tools at natural task size, with examples in the description — and delete tools the evals never need.</span></h3><p>One <code>do_anything</code> tool, or fifteen tools that half-overlap, leaves the model guessing which to call and inventing plausible arguments. Tool-selection errors look like reasoning errors but are interface errors — they are fixed in the ACI, not with a bigger model.</p></div></div>
+<div class="mech fail"><div class="mnum">3</div><div><h3>The runaway loop<span class="fix">Fix: enforce max steps, cost and time budgets before every iteration, detect repeated identical calls, and force a finalisation on exhaustion.</span></h3><p>Without hard stops, a confused agent retries the same failing call forever, burns the budget, and — if a tool has side effects — repeats the damage. &ldquo;It will figure it out eventually&rdquo; is not a stopping condition.</p></div></div>
+<div class="mech fail"><div class="mnum">4</div><div><h3>Guardrails that live only in the prompt<span class="fix">Fix: move every real limit into code — schema validation, caller-based authorisation, scoped credentials, and approval gates the model cannot bypass.</span></h3><p>&ldquo;Never refund over $500&rdquo; in the system prompt fails the first time an injected web page, a jailbreak, or a confident hallucination argues otherwise. Instructions and data share one text channel; only the runtime sits outside it.</p></div></div>
+<div class="mech fail"><div class="mnum">5</div><div><h3>Flying blind: no trace, no eval, self-graded success<span class="fix">Fix: trace every step, checkpoint at gates, and grade runs on task outcomes in an eval harness — never on the agent&rsquo;s own claim that it finished.</span></h3><p>An agent that reports success in fluent prose while the tool call failed, the record never updated, or the wrong account was charged is worse than one that crashes loudly. Without traces you cannot find the bad step; without outcome evals you cannot tell a fix from a regression.</p></div></div>
+</div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">07</span> Go deeper</h2>
+      <p class="sub">Verified references — every link opened and checked before publishing.</p>
+      <div class="ref-list">
+        <a class="ref" href="https://www.anthropic.com/research/building-effective-agents?ref=hackernoon.com"><span class="badge doc">Article</span><div><h3>Building effective AI agents — Anthropic</h3><p>The canonical simplicity brief: workflows vs agents by who decides the next step, the five composable workflow patterns, agents as models using tools in a loop, and tool design as the agent-computer interface.</p></div></a>
+        <a class="ref" href="https://openai.com/business/guides-and-resources/a-practical-guide-to-building-ai-agents/"><span class="badge doc">Guide</span><div><h3>A Practical Guide to Building AI Agents — OpenAI</h3><p>The practitioner&rsquo;s counterpart: model + tools + instructions, single-agent before multi-agent, orchestration patterns, and layered guardrails with human intervention as a first-class safeguard.</p></div></a>
+        <a class="ref" href="https://www.youtube.com/watch?v=9mQznOXHjV8"><span class="badge vid">Video</span><div><h3>Planning and the ReAct Pattern — AI Agents for Beginners</h3><p>A hands-on build: Thought &rarr; Action &rarr; Observation in plain Python, why native tool calling is the same loop with structured messages, plan-and-execute, and stopping rules so an agent never loops forever.</p></div></a>
+        <a class="ref" href="https://www.youtube.com/watch?v=DNjJ3fbUGMg"><span class="badge vid">Video</span><div><h3>AI Agent Guardrails: 5 Limits Before You Let AI Act — TechShift</h3><p>Five practical controls walked through on an IT-support agent: limit access, separate investigation from change, require approvals, set execution limits, and monitor — autonomy without unlimited authority.</p></div></a>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">08</span> Sample prompts</h2>
+      <p class="sub">Copy one into your AI assistant and apply it to your own work.</p>
+      <p id="live-status" class="sr-only" role="status"></p>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>DESIGN AN AGENT SYSTEM</strong><button class="copy-btn" data-copy="p1">Copy</button></div>
+        <p class="prompt-text" id="p1">Design an agent system for this task: [task, tools available, what success looks like]. First argue honestly whether this should be an agent at all: if a fixed workflow (chaining, routing, parallelisation, orchestrator-workers, evaluator-optimiser) solves it, design that instead and say why. If an agent is justified, give me: (1) the tool list — few, distinct, schema-typed, split into data / action / orchestration, (2) the planning style (ReAct or plan-and-execute) and why, (3) stopping conditions in code: max steps, cost and time budgets, loop and no-progress detection, (4) guardrails per layer (input, tool, output) plus which actions need human approval, and (5) how we will eval the run on task outcomes. Flag any tool that is too broad to be safe.</p>
+      </div>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>AUDIT MY TOOL SURFACE</strong><button class="copy-btn" data-copy="p2">Copy</button></div>
+        <p class="prompt-text" id="p2">Audit this agent tool surface like an interface designer, not a fan: [paste tool names, descriptions, and schemas]. For each tool check: is it at natural task size or a god tool? Does it overlap another tool enough to confuse selection? Could the model mangle its argument format (relative paths, free-text dates, ambiguous IDs)? Does its return value waste context or hide errors? Is it read-only by default, and are its credentials scoped to this task? Rewrite the surface: rename, split, merge, or delete tools, and write model-ready descriptions with one example and one edge case each. Show the before / after tool count.</p>
+      </div>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>STRESS-TEST MY LOOP AND GUARDRAILS</strong><button class="copy-btn" data-copy="p3">Copy</button></div>
+        <p class="prompt-text" id="p3">Stress-test this agent design before I build it: [paste the loop, stopping conditions, guardrails, and approval gates]. Attack it in five passes: (1) runaway — how could it loop, retry, or spend without bound? (2) injection — a tool result or web page tells it to ignore its instructions; what, in code, stops that? (3) authority — can it perform any irreversible action with more privilege than the caller has? (4) duplicates — if a step is retried or a run resumes, can a side effect happen twice? (5) evidence — from the traces alone, could I prove what it did and grade whether the task succeeded? For each hole, give the smallest code-level fix, not a prompt edit.</p>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">09</span> Quiz</h2>
+      <p class="sub">Five questions. Click an answer — you get the explanation right away.</p>
+      <div id="quiz">
+<div class="quiz-q" data-answer="1"><p class="qq">1. What actually distinguishes an agent from a workflow?</p><div class="qopts"><button class="qopt" data-i="0">Agents use a bigger model; workflows use a smaller one.</button>
+<button class="qopt" data-i="1">Who decides the next step: in a workflow your predefined code paths decide; in an agent the model dynamically directs its own process and tool use from feedback.</button>
+<button class="qopt" data-i="2">Workflows cannot call tools; agents can.</button>
+<button class="qopt" data-i="3">Agents never need stopping conditions; workflows do.</button></div><p class="qexp" hidden></p></div>
+<div class="quiz-q" data-answer="2"><p class="qq">2. When the model &ldquo;calls a tool&rdquo;, what has actually happened?</p><div class="qopts"><button class="qopt" data-i="0">The model executed your function inside its own runtime.</button>
+<button class="qopt" data-i="1">The tool ran automatically, and your code just logs it afterwards.</button>
+<button class="qopt" data-i="2">The model emitted a structured request (name + JSON args); your runtime validates, authorises, and executes it, then returns the result as the next observation.</button>
+<button class="qopt" data-i="3">The model gained the tool&rsquo;s credentials for the rest of the session.</button></div><p class="qexp" hidden></p></div>
+<div class="quiz-q" data-answer="0"><p class="qq">3. What is the ReAct pattern?</p><div class="qopts"><button class="qopt" data-i="0">Alternating a short thought, one tool action, and the observation that comes back, repeated until the task is done — so each decision is corrected by real results.</button>
+<button class="qopt" data-i="1">Writing the entire plan and all tool calls in one response, then executing them blind.</button>
+<button class="qopt" data-i="2">A UI framework agents use to render their answers.</button>
+<button class="qopt" data-i="3">Retrying a failed tool call until it succeeds, with no other change.</button></div><p class="qexp" hidden></p></div>
+<div class="quiz-q" data-answer="3"><p class="qq">4. Your system prompt says &ldquo;never refund more than $500&rdquo;, but there is no code check. A retrieved web page urges a $900 refund. What is true?</p><div class="qopts"><button class="qopt" data-i="0">The prompt rule wins, because system instructions outrank web content.</button>
+<button class="qopt" data-i="1">The refund is safe anyway, because the model will feel uncertain.</button>
+<button class="qopt" data-i="2">Nothing to fix — guardrails are a prompting technique.</button>
+<button class="qopt" data-i="3">There is no real guardrail: instructions and injected data share one text channel, so only a code-level limit / approval gate on the refund tool reliably stops it.</button></div><p class="qexp" hidden></p></div>
+<div class="quiz-q" data-answer="1"><p class="qq">5. Which set of stopping conditions makes a loop production-safe?</p><div class="qopts"><button class="qopt" data-i="0">Trust the model to stop when it feels finished.</button>
+<button class="qopt" data-i="1">A hard max-steps cap, cost and time budgets checked before every iteration, an explicit done signal, repeated-call and no-progress detection, and a forced finalisation on exhaustion.</button>
+<button class="qopt" data-i="2">A max-steps cap alone, set very high so it never interferes.</button>
+<button class="qopt" data-i="3">Stopping only on errors, so successful exploration is never cut short.</button></div><p class="qexp" hidden></p></div>
+</div>
+      <div id="quiz-score" role="status"></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">10</span> Flashcards</h2>
+      <p class="sub">Click a card (or focus it and press Enter / Space) to flip it.</p>
+      <div class="fgrid">
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Agent</div><div class="fface back">A system where the model dynamically directs its own process: it plans, requests tools, reads observations, and decides the next step and when to stop — inside budgets and guardrails your code enforces.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Workflow</div><div class="fface back">LLMs and tools orchestrated through predefined code paths: chaining, routing, parallelisation, orchestrator-workers, evaluator-optimiser. Predictable — and the right answer whenever the steps are known in advance.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Tool call</div><div class="fface back">A structured request the model emits — a tool name plus JSON arguments matching a published schema. The model never executes it; the runtime validates, authorises, runs it, and returns the result.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">ACI (agent-computer interface)</div><div class="fface back">Everything the model sees of its tools: names, descriptions, schemas, return formats, error messages. Anthropic&rsquo;s point: design and test it as carefully as a human UI — most &ldquo;reasoning&rdquo; errors start here.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">ReAct</div><div class="fface back">Reasoning + Acting: thought, action (one tool call), observation, repeat. The observation is ground truth that corrects the next thought, instead of a long plan hallucinating forward unchecked.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Plan-and-execute</div><div class="fface back">Write the full plan first, then execute it step by step, replanning only on failure. Easier for a human to review before anything real happens; less adaptive than interleaved ReAct when results keep surprising you.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Guardrail (in code)</div><div class="fface back">A limit enforced by the runtime, not requested in a prompt: schema validation, caller-based authorisation, scoped credentials, budget checks, approval gates. Layered at input, tool, and output.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Least privilege</div><div class="fface back">Give the agent only the tools, data, and credentials this task needs: read-only by default, per-task scoped tokens with short lifetimes, egress only to named hosts. What it cannot reach, it cannot be tricked into misusing.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Stopping condition</div><div class="fface back">How a run ends on purpose: an explicit done signal, a max-steps cap, a cost / time budget, or loop / no-progress detection — with a forced finalisation that answers from what it has or fails explicitly.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Human-in-the-loop gate</div><div class="fface back">A pause before an irreversible or high-blast-radius action: checkpoint the state, show the exact action and preview, resume on approve / edit / reject. The tool&rsquo;s risk class — set in code — decides, not the model.</div></div></div>
+</div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">11</span> Reach for this when&hellip;</h2>
+      <div class="triggers">
+        <div class="trigger"><strong>The steps depend on what you find</strong> — investigation, support, coding, and research tasks where step three cannot be written until step two answers. That mid-task decision is the agent loop&rsquo;s signature; a fixed pipeline cannot make it.</div>
+        <div class="trigger"><strong>A demo agent is heading for production</strong> — before it ships, move its limits into code: budgets, validation, least-privilege credentials, approval gates, traces, and outcome evals. If a safeguard is only a sentence in the prompt, it is not yet a safeguard.</div>
+        <div class="trigger"><strong>You are choosing between frameworks and patterns</strong> — decide workflow vs agent, ReAct vs plan-and-execute, and single vs multi-agent from the task&rsquo;s shape first. The framework is the last choice, and the simplest pattern that passes your evals wins.</div>
+      </div>
+    </section>
+
+    <a class="back-link" href="../index.html#daily-topics">&larr; Back to daily topics</a>
+  </div>
+
+<script>
+    const status = document.getElementById('live-status');
+    document.querySelectorAll('.copy-btn').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const target = document.getElementById(button.dataset.copy);
+        const text = target.innerText;
+        try {
+          await navigator.clipboard.writeText(text);
+          const original = button.textContent;
+          button.textContent = 'Copied';
+          status.textContent = 'Prompt copied to clipboard.';
+          setTimeout(() => button.textContent = original, 1600);
+        } catch {
+          const range = document.createRange();
+          range.selectNodeContents(target);
+          const selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+          status.textContent = 'Prompt selected. Copy it with your device copy command.';
+        }
+      });
+    });
+    const explanations = [["Model size is a tuning choice inside either shape; it does not define the shape.", "Correct. The Anthropic line is about control: predefined code paths (workflow) vs the model directing its own process (agent).", "Workflows call tools constantly — chaining and routing are tool-using patterns with fixed paths.", "Agents need stopping conditions most of all: autonomy without a hard exit is a runaway loop waiting for a trigger."], ["The model has no runtime of yours inside it — that separation is what makes authorisation possible.", "Automatic execution after the fact is backwards: validation and authorisation must happen before the tool runs.", "Correct. Request, validate, authorise, execute, observe — your code owns every step except the request.", "Credentials belong to the runtime and are scoped per task; handing them to the model ends least privilege on the spot."], ["Correct. Thought, action, observation, repeated — the observation is ground truth that keeps the reasoning honest.", "Writing everything blind up front is the failure ReAct exists to prevent; plan-and-execute still observes and replans between steps.", "ReAct is a control-loop pattern from the agent literature, not a rendering library.", "Blind retry is thrashing, not reasoning — a repeated identical call should be detected and blocked, not celebrated."], ["Ranking helps, but a determined injection plus a compliant model is exactly the case prompts lose — that is why the check must live in code.", "Uncertainty is not a control; the same model that feels uncertain can be talked out of it in the next turn.", "Prompting is where you state intent; enforcement is a separate, code-level job.", "Correct. Only a limit on the tool itself — a cap, a validation rule, an approval gate — holds regardless of what any text in the context says."], ["A feeling is not an exit condition; models routinely believe they are finished, or never do.", "Correct. Caps, budgets, a done signal, loop / no-progress detection, and forced finalisation together are what make autonomy bounded.", "A cap set never to fire is decoration — and cost and time can still run away underneath it.", "Errors are one exit, not the exit set: success, budgets, and stagnation must each be able to end a run."]];
+    const questions = [...document.querySelectorAll('.quiz-q')];
+    let score = 0, answered = 0;
+    questions.forEach((q, qi) => {
+      const correct = parseInt(q.dataset.answer, 10);
+      const exp = q.querySelector('.qexp');
+      q.querySelectorAll('.qopt').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          if (q.dataset.done) return;
+          q.dataset.done = "1";
+          const chosen = parseInt(btn.dataset.i, 10);
+          const ok = chosen === correct;
+          q.querySelectorAll('.qopt').forEach((b) => {
+            b.disabled = true;
+            if (parseInt(b.dataset.i, 10) === correct) b.classList.add('correct');
+          });
+          if (!ok) btn.classList.add('wrong');
+          else score++;
+          answered++;
+          exp.hidden = false;
+          exp.innerHTML = ok
+            ? "<strong class=\"ok\">Correct.</strong> " + explanations[qi][chosen]
+            : "<strong class=\"no\">Not quite.</strong> " + explanations[qi][chosen];
+          if (answered === questions.length) {
+            const box = document.getElementById('quiz-score');
+            box.style.display = "block";
+            box.innerHTML = "You scored <strong>" + score + " / " + questions.length + "</strong>." +
+              (score === questions.length ? " Clean sweep — now take one agent you use and name, in code, its budgets, its gates, and its done signal." :
+               score >= 3 ? " Solid — re-read the mechanic you missed; agent failures are usually loop, tool, or guardrail failures wearing a reasoning costume." :
+               " Worth a re-read of sections 04 and 06 before you give any loop a tool that can change state.");
+          }
+        });
+      });
+    });
+    document.querySelectorAll('.fcard').forEach((card) => {
+      const flip = () => card.classList.toggle('flipped');
+      card.addEventListener('click', flip);
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); }
+      });
+    });
+</script>
+</body>
+</html>
