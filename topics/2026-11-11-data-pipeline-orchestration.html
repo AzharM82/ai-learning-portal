@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Data pipeline orchestration: Airflow, Dagster, and backfills &middot; AI Learning Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+    :root {
+      --ink: #14212b; --muted: #53636f; --paper: #f6f8f7; --white: #ffffff;
+      --line: #cbd5d8; --navy: #163247; --navy-2: #21465e; --teal: #0b8174;
+      --teal-soft: #dff2ee; --orange: #d66332; --orange-soft: #f8e4d8;
+      --gold: #d8a524; --gold-soft: #f7edc8; --blue-soft: #e3eef4;
+      --red: #b3402e; --red-soft: #f9e3de; --green: #1e7a3c; --green-soft: #e2f2e6;
+      --shadow: 0 18px 45px rgba(20, 33, 43, .09); --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; color: var(--ink); background: linear-gradient(rgba(20,33,43,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(20,33,43,.035) 1px, transparent 1px), var(--paper); background-size: 28px 28px; font-family: "Source Sans 3", sans-serif; font-size: 17px; line-height: 1.58; }
+    .shell { width: min(960px, calc(100% - 40px)); margin: 0 auto; }
+    .portal-nav{position:sticky;top:0;z-index:50;background:rgba(22,50,71,.97);border-bottom:1px solid rgba(255,255,255,.12)}
+    .portal-nav-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;flex-wrap:wrap}
+    .portal-brand{color:#fff;text-decoration:none;font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:15px}
+    .portal-brand span{color:var(--gold);font-weight:400}
+    .portal-links{display:flex;gap:18px;flex-wrap:wrap}
+    .portal-links a{color:#dbe7ee;text-decoration:none;font-size:14.5px}
+    .portal-links a:hover{color:#fff;text-decoration:underline}
+    .hero { padding: 56px 0 36px; }
+    .chapter-mark { display:inline-flex;align-items:center;gap:10px;color:var(--navy); font:600 12px/1.2 "IBM Plex Mono",monospace;letter-spacing:.09em;text-transform:uppercase;margin-bottom:18px; }
+    .chapter-mark::before { content:"";width:42px;height:3px;background:var(--orange); }
+    h1 { font-size: clamp(36px, 5vw, 58px); line-height: 1.02; letter-spacing:-.03em; margin:0 0 14px; }
+    .lede { color: var(--muted); font-size: clamp(18px,2vw,22px); max-width: 64ch; margin:0 0 8px; }
+    .date-line { font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--muted); }
+    section.block { margin: 44px 0; }
+    h2 { font-size: 26px; letter-spacing:-.02em; margin:0 0 6px; display:flex;align-items:center;gap:12px; }
+    h2 .num { font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:600;color:var(--white); background:var(--navy);border-radius:999px;min-width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center; }
+    .sub { color:var(--muted); margin:0 0 18px; max-width: 68ch; }
+    .card { background:var(--white);border:1px solid var(--line);border-radius:var(--radius); padding:24px;box-shadow:var(--shadow); }
+    .skill-card { background:var(--navy);color:#eaf2f7;border-radius:var(--radius);padding:22px 24px; font-family:"IBM Plex Mono",monospace;font-size:14.5px;overflow-x:auto;box-shadow:var(--shadow); }
+    .skill-card .k { color:var(--gold); }
+    .idea { font-size:21px;line-height:1.5;border-left:4px solid var(--teal);padding:6px 0 6px 20px;max-width:62ch; }
+    .idea strong { color:var(--navy); }
+    .mechanics { display:grid;gap:14px; }
+    .mech { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:18px 20px; display:grid;grid-template-columns:44px 1fr;gap:14px;align-items:start; }
+    .mech .mnum { font-family:"IBM Plex Mono",monospace;font-weight:600;color:var(--teal); background:var(--teal-soft);border-radius:10px;width:44px;height:44px;display:flex;align-items:center;justify-content:center; }
+    .mech h3 { margin:0 0 6px;font-size:18px; }
+    .mech p { margin:0;color:var(--muted);font-size:15.5px; }
+    .mech code, .inline-code { font-family:"IBM Plex Mono",monospace;font-size:.88em;background:var(--blue-soft); padding:2px 7px;border-radius:6px;color:var(--navy); }
+    pre.code { background:#0f2233;color:#e8f1f5;border-radius:14px;padding:20px 22px;overflow-x:auto; font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.6;margin:0; }
+    pre.code .c { color:#8ba3b0; } pre.code .s { color:#ffd479; } pre.code .k { color:#7fd6c2; }
+    .fail { border-left:4px solid var(--orange); }
+    .fail h3 .fix { display:block;margin-top:8px;font-size:15px;font-weight:500;color:var(--green); }
+    .ref-list { display:grid;gap:12px; }
+    .ref { display:flex;gap:14px;align-items:flex-start;background:var(--white);border:1px solid var(--line); border-radius:14px;padding:16px 18px;text-decoration:none;color:inherit; }
+    .ref:hover { border-color:var(--teal); }
+    .ref .badge { flex:none;font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;letter-spacing:.06em; padding:5px 10px;border-radius:999px;text-transform:uppercase; }
+    .badge.doc { background:var(--blue-soft);color:var(--navy); }
+    .badge.vid { background:var(--orange-soft);color:var(--orange); }
+    .ref h3 { margin:0 0 4px;font-size:17px; }
+    .ref p { margin:0;color:var(--muted);font-size:14.5px; }
+    .prompt-block { background:#0f2233;border-radius:var(--radius);overflow:hidden;margin-bottom:18px;box-shadow:var(--shadow); }
+    .prompt-top { display:flex;justify-content:space-between;align-items:center;gap:12px; padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.12); }
+    .prompt-top strong { color:#fff;font-size:13px;letter-spacing:.06em;font-family:"IBM Plex Mono",monospace; }
+    .copy-btn { border:1px solid #6c8796;background:transparent;color:#fff;border-radius:6px;padding:7px 11px; cursor:pointer;font-weight:700;font-size:14px; }
+    .copy-btn:hover { background:rgba(255,255,255,.1); }
+    .copy-btn:focus-visible { outline:2px solid var(--gold);outline-offset:2px; }
+    .prompt-text { color:#e8f1f5;font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.65; padding:18px;white-space:pre-wrap;margin:0; }
+    .sr-only { position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0); }
+    .quiz-q { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px; }
+    .quiz-q .qq { font-weight:700;margin:0 0 12px;font-size:18px; }
+    .qopts { display:grid;gap:8px; }
+    .qopt { text-align:left;background:var(--paper);border:1px solid var(--line);border-radius:10px; padding:12px 14px;cursor:pointer;font-size:15.5px;color:var(--ink); }
+    .qopt:hover:not(:disabled) { border-color:var(--navy); }
+    .qopt:disabled { cursor:default;opacity:.85; }
+    .qopt.correct { background:var(--green-soft);border-color:var(--green); }
+    .qopt.wrong { background:var(--red-soft);border-color:var(--red); }
+    .qexp { margin:12px 0 0;font-size:15px;color:var(--muted); }
+    .qexp strong.ok { color:var(--green); } .qexp strong.no { color:var(--red); }
+    #quiz-score { display:none;margin-top:8px;background:var(--navy);color:#fff;border-radius:14px; padding:20px 24px;font-size:19px; }
+    #quiz-score strong { color:var(--gold); }
+    .fgrid { display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px; }
+    .fcard { perspective:900px;cursor:pointer;min-height:170px; }
+    .fcard-inner { position:relative;width:100%;height:100%;min-height:170px;transform-style:preserve-3d;transition:transform .45s; }
+    .fcard.flipped .fcard-inner { transform:rotateY(180deg); }
+    .fface { position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden; border-radius:14px;padding:18px;display:flex;align-items:center;justify-content:center;text-align:center; border:1px solid var(--line);background:var(--white);box-shadow:var(--shadow);font-size:15.5px; }
+    .fface.front { font-weight:700;color:var(--navy); }
+    .fface.back { transform:rotateY(180deg);background:var(--teal-soft);color:var(--ink);font-size:14.5px; }
+    .fcard:focus-visible { outline:2px solid var(--teal);outline-offset:3px;border-radius:14px; }
+    .triggers { display:grid;gap:10px; }
+    .trigger { background:var(--gold-soft);border-radius:12px;padding:14px 18px;font-size:16px; }
+    .trigger strong { color:var(--navy); }
+    .back-link { display:inline-block;margin:8px 0 60px;font-weight:600;color:var(--teal);text-decoration:none;font-size:17px; }
+    .back-link:hover { text-decoration:underline; }
+    .fig { background:var(--white);border:1px solid var(--line);border-radius:var(--radius); padding:12px;box-shadow:var(--shadow);overflow-x:auto; }
+    .fig svg { display:block;width:100%;height:auto; }
+    .flow-anim { stroke-dasharray: 8 6; animation: dashmove 1.2s linear infinite; }
+    @keyframes dashmove { to { stroke-dashoffset: -14; } }
+    @media (prefers-reduced-motion: reduce) { .fcard-inner{transition:none;} .flow-anim{animation:none;} }
+  </style>
+
+<body><nav class="portal-nav">
+    <div class="shell portal-nav-inner">
+      <a class="portal-brand" href="../index.html">AI Engineering <span>&middot; Learning Portal</span></a>
+      <div class="portal-links">
+        <a href="../index.html#daily-topics">Daily topics</a>
+        <a href="../index.html#loop">Loop</a>
+        <a href="../index.html#graph">Graph</a>
+        <a href="../index.html#harness">Harness</a>
+      </div>
+    </div>
+  </nav>
+  <div class="shell">
+    <header class="hero">
+      <div class="chapter-mark">Daily topic &middot; Data pipeline orchestration</div>
+      <h1>Data pipeline orchestration: Airflow, Dagster, and backfills</h1>
+      <p class="lede">Cron knows the clock. It does not know that the extract failed, that the load ran on yesterday&rsquo;s file, or that Tuesday&rsquo;s partition was never built. An orchestrator replaces time-only sequencing with a declared graph, a run for every data interval or partition, retries and lineage you can see &mdash; and backfills that re-run history on purpose, in range, without duplicating a row.</p>
+      <p class="date-line">2026-11-11 &middot; Topic 059</p>
+    </header>
+
+    <section class="block">
+      <h2><span class="num">01</span> The skill card</h2>
+      <p class="sub">Every topic on this portal is designed like a Codex skill: a name, a trigger, and concrete steps.</p>
+      <div class="skill-card"><pre style="margin:0">---
+<span class="k">name:</span> data-pipeline-orchestration
+<span class="k">description:</span> Reach for this when scheduled jobs must run in dependency
+  order over named slices of data: declare tasks (Airflow DAG) or
+  assets (Dagster) with explicit dependencies, give every run one
+  logical date / partition key, make each slice idempotent, cap
+  retries and concurrency, and backfill a bounded range safely.
+---</pre></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">02</span> The one-idea version</h2>
+      <p class="idea"><strong>Orchestration is a graph plus a slice: declare what depends on what, and make every run own exactly one interval of data.</strong> In Airflow the graph is tasks in a DAG and the slice is the data interval behind a logical date; in Dagster the graph is data assets and the slice is a partition key. Once a run is addressed by its slice &mdash; not by &ldquo;whenever the clock fired&rdquo; &mdash; retries, reruns, and backfills become the same safe operation: recompute that slice, idempotently, and overwrite only it.</p>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">03</span> The picture: one slice, end to end</h2>
+      <p class="sub">A daily pipeline for one partition. A backfill is not a different system &mdash; it is this same picture, launched for many slices in a bounded range.</p>
+      <div class="fig">
+        <svg viewBox="0 0 960 340" role="img" aria-label="Diagram of a data pipeline for one daily partition: extract, transform and load tasks in dependency order, addressed by logical date or partition key, with retries, concurrency caps, and a backfill launching the same graph for a range of partitions.">
+          <g font-family="Source Sans 3, sans-serif" font-size="14">
+            <text x="20" y="26" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="600" fill="#163247">ONE SLICE: PARTITION 2026-11-10</text>
+            <rect x="20" y="44" width="170" height="84" rx="12" fill="#e3eef4" stroke="#163247" stroke-width="2"/>
+            <text x="105" y="72" text-anchor="middle" font-weight="700" fill="#163247">Extract</text>
+            <text x="105" y="92" text-anchor="middle" fill="#53636f">read only this slice</text>
+            <text x="105" y="110" text-anchor="middle" fill="#53636f">source &rarr; staging</text>
+            <text x="202" y="90" text-anchor="middle" font-size="20" font-weight="700" fill="#163247">&#8594;</text>
+            <rect x="220" y="44" width="170" height="84" rx="12" fill="#dff2ee" stroke="#0b8174" stroke-width="2"/>
+            <text x="305" y="72" text-anchor="middle" font-weight="700" fill="#163247">Transform</text>
+            <text x="305" y="92" text-anchor="middle" fill="#53636f">clean + model</text>
+            <text x="305" y="110" text-anchor="middle" fill="#53636f">tests on the slice</text>
+            <text x="402" y="90" text-anchor="middle" font-size="20" font-weight="700" fill="#163247">&#8594;</text>
+            <rect x="420" y="44" width="170" height="84" rx="12" fill="#f8e4d8" stroke="#d66332" stroke-width="2"/>
+            <text x="505" y="72" text-anchor="middle" font-weight="700" fill="#163247">Load</text>
+            <text x="505" y="92" text-anchor="middle" fill="#53636f">overwrite partition</text>
+            <text x="505" y="110" text-anchor="middle" fill="#53636f">atomic swap</text>
+            <text x="602" y="90" text-anchor="middle" font-size="20" font-weight="700" fill="#163247">&#8594;</text>
+            <rect x="620" y="44" width="150" height="84" rx="12" fill="#f7edc8" stroke="#d8a524" stroke-width="2"/>
+            <text x="695" y="72" text-anchor="middle" font-weight="700" fill="#163247">Check</text>
+            <text x="695" y="92" text-anchor="middle" fill="#53636f">row counts, nulls</text>
+            <text x="695" y="110" text-anchor="middle" fill="#53636f">freshness alert</text>
+            <text x="782" y="90" text-anchor="middle" font-size="20" font-weight="700" fill="#163247">&#8594;</text>
+            <rect x="800" y="44" width="140" height="84" rx="12" fill="#ffffff" stroke="#cbd5d8"/>
+            <text x="870" y="72" text-anchor="middle" font-weight="700" fill="#163247">Asset / Table</text>
+            <text x="870" y="92" text-anchor="middle" fill="#53636f">one partition</text>
+            <text x="870" y="110" text-anchor="middle" fill="#53636f">materialised</text>
+            <path d="M480 132 V168" stroke="#0b8174" stroke-width="2" fill="none" class="flow-anim"/>
+            <text x="20" y="200" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="600" fill="#163247">BACKFILL = SAME GRAPH, MANY SLICES, BOUNDED</text>
+            <rect x="20" y="216" width="920" height="84" rx="12" fill="#163247"/>
+            <text x="480" y="246" text-anchor="middle" fill="#ffffff" font-weight="700">Range 2026-10-01 &hellip; 2026-10-31 &rarr; one run per day &middot; capped parallelism &middot; failed slices only on retry</text>
+            <text x="480" y="268" text-anchor="middle" fill="#cbd5d8" font-size="13">Safe only because each slice is idempotent: re-running a day replaces that day, it never appends a second copy.</text>
+            <text x="480" y="288" text-anchor="middle" fill="#cbd5d8" font-size="13">Airflow: logical date + data interval per DAG run. Dagster: partition_key per asset run.</text>
+          </g>
+        </svg>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">04</span> How it works</h2>
+      <p class="sub">Six mechanics: declare the graph, address the slice, pick a centre of gravity, schedule honestly, bound execution, and backfill like an operator.</p>
+      <div class="mechanics">
+<div class="mech"><div class="mnum">1</div><div><h3>Declare dependencies in code &mdash; never sequence by clock, sleep, or hope</h3><p>Write the graph down: in Airflow, tasks in a DAG wired with <code>&gt;&gt;</code>; in Dagster, assets whose function inputs are their upstream assets. The scheduler &mdash; not cron &mdash; starts a step only when its upstream succeeded, parallelises independent branches, and marks downstream work <code>upstream_failed</code> instead of running it on missing data. If ordering lives in five separate cron entries, a slow upstream does not delay anything; it silently corrupts everything after it.</p></div></div>
+<div class="mech"><div class="mnum">2</div><div><h3>Address every run by its data slice, not by wall-clock time</h3><p>Pass the slice in, never compute &ldquo;now&rdquo; inside the task. Airflow gives each DAG run a <strong>logical date</strong> and a <strong>data interval</strong>: a daily run for 2026-11-10 usually executes after that day ends, and its tasks must read the interval, not the execution timestamp. Dagster gives each run a <code>partition_key</code> (for example <code>2026-11-10</code> from <code>DailyPartitionsDefinition</code>), and the asset reads <code>context.partition_key</code>. Same code path for the scheduled run, a retry, and a backfill three months later.</p></div></div>
+<div class="mech"><div class="mnum">3</div><div><h3>Choose the centre of gravity: Airflow tasks vs Dagster assets</h3><p><strong>Airflow is task-centric:</strong> it asks &ldquo;did this task succeed for this logical date?&rdquo; &mdash; a huge operator ecosystem, general workflows (not just data), and the incumbent in most platforms. <strong>Dagster is asset-centric:</strong> it asks &ldquo;is this table / file / model fresh for this partition?&rdquo; &mdash; lineage, partition status, and materialisation history are first-class, which is how analysts actually ask the question. Pick by the question your team answers at 2 a.m., not by demo aesthetics; both schedule, retry, and backfill.</p></div></div>
+<div class="mech"><div class="mnum">4</div><div><h3>Schedule deliberately: interval, catchup, and readiness</h3><p>Set <code>start_date</code> and schedule explicitly, and decide <code>catchup</code> on purpose. With catchup on, a scheduler creates a run for every missed interval since <code>start_date</code> &mdash; correct for partition-shaped data, a flood for anything else. Airflow 3 defaults catchup to off; earlier defaults surprised many teams. For data that arrives irregularly, do not poll blindly: use a sensor, a deferrable operator, or Dagster asset / automation conditions so a run starts when its input is actually ready, with a timeout that fails loudly.</p></div></div>
+<div class="mech"><div class="mnum">5</div><div><h3>Make every slice idempotent, then bound retries and concurrency</h3><p>Retries and backfills re-execute code, so a slice must be safe to run twice: write to a staging partition and swap, <code>DELETE</code> / <code>MERGE</code> by partition key before insert, never bare-append. Then bound the blast radius in config: retries with exponential backoff for transient faults only, a timeout per task, and a concurrency cap (Airflow pools / <code>max_active_runs</code>; Dagster run concurrency and backfill policy) so 90 historical runs cannot starve today&rsquo;s run or the source system.</p></div></div>
+<div class="mech"><div class="mnum">6</div><div><h3>Backfill as a planned operation, and observe by slice</h3><p>A backfill is a ranged re-run: Airflow <code>airflow dags backfill --start-date &hellip; --end-date &hellip;</code>, Dagster a backfill over a partition range (one run per partition by default, or a single-run <code>BackfillPolicy</code> when one range query is cheaper). Plan it: prove the new logic on one slice, run a small range, cap parallelism against source rate limits and cost, then expand. Observe per slice &mdash; partition status, freshness, row counts &mdash; so &ldquo;the pipeline is green&rdquo; is replaced by &ldquo;every partition through yesterday is materialised and checked.&rdquo;</p></div></div>
+</div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">05</span> Code sketch</h2>
+      <p class="sub">A Dagster partitioned asset: the partition key is the whole contract. The Airflow equivalent is a TaskFlow DAG whose tasks read <code>data_interval_start / end</code> instead of the clock.</p>
+      <pre class="code"><span class="k">import</span> dagster <span class="k">as</span> dg
+
+daily = dg.DailyPartitionsDefinition(start_date=<span class="s">"2026-01-01"</span>)
+
+@dg.asset(partitions_def=daily, group_name=<span class="s">"orders"</span>)
+<span class="k">def</span> orders_daily(context: dg.AssetExecutionContext) -&gt; None:
+    day = context.partition_key                  <span class="c"># e.g. "2026-11-10" — never date.today()</span>
+    rows = extract_orders(day)                   <span class="c"># read only this slice</span>
+    rows = dedupe(rows, key=<span class="s">"order_id"</span>)
+    write_partition(rows, table=<span class="s">"orders"</span>, partition=day)  <span class="c"># overwrite, not append</span>
+
+@dg.asset(partitions_def=daily, deps=[orders_daily])
+<span class="k">def</span> revenue_daily(context: dg.AssetExecutionContext) -&gt; None:
+    day = context.partition_key
+    assert_fresh(<span class="s">"orders"</span>, partition=day)       <span class="c"># fail loudly on a missing slice</span>
+    write_partition(aggregate(day), table=<span class="s">"revenue"</span>, partition=day)
+
+<span class="c"># Schedule fills yesterday's partition daily; a backfill from the UI / CLI</span>
+<span class="c"># launches the same two assets for any range, one run per partition.</span>
+defs = dg.Definitions(
+    assets=[orders_daily, revenue_daily],
+    schedules=[dg.ScheduleDefinition(
+        job=dg.define_asset_job(<span class="s">"daily"</span>, selection=<span class="s">"*"</span>), cron_schedule=<span class="s">"0 2 * * *"</span>)],
+)</pre>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">06</span> Failure modes</h2>
+      <p class="sub">Five ways orchestrated pipelines fail in production &mdash; each with a one-line fix.</p>
+      <div class="mechanics">
+<div class="mech fail"><div class="mnum">1</div><div><h3>The non-idempotent task<span class="fix">Fix: write per slice &mdash; stage, then overwrite / MERGE that partition atomically; prove it by running one slice twice and diffing.</span></h3><p>An append-only load looks fine until the first retry, clear-and-rerun, or backfill doubles the rows. Orchestrators re-run code by design; if twice is not equal to once, every recovery mechanism becomes a corruption mechanism.</p></div></div>
+<div class="mech fail"><div class="mnum">2</div><div><h3>The catchup flood<span class="fix">Fix: set start_date and catchup deliberately (off unless the DAG is partition-shaped and a historical fill is actually wanted).</span></h3><p>Deploy a DAG with a start_date months in the past and catchup on, and the scheduler dutifully creates hundreds of runs on day one &mdash; queue saturated, source hammered, today&rsquo;s run stuck behind history nobody asked for.</p></div></div>
+<div class="mech fail"><div class="mnum">3</div><div><h3>The backfill stampede<span class="fix">Fix: cap concurrency (pools / max_active_runs / backfill limits), backfill in chunks, and respect source rate limits and cost budgets.</span></h3><p>A year-long backfill at unlimited parallelism is a self-inflicted denial-of-service: API quotas exhausted, warehouse credits burned, and the daily pipeline competing with its own history. A backfill is a migration, not a button.</p></div></div>
+<div class="mech fail"><div class="mnum">4</div><div><h3>Wall-clock date logic<span class="fix">Fix: derive every filter from the logical date / data interval / partition_key passed to the run &mdash; ban date.today() in task code.</span></h3><p>A task that reads &ldquo;yesterday relative to now&rdquo; processes the right day only when it runs on schedule. Run it late, early, or as a backfill and it silently processes the wrong slice while reporting success &mdash; the worst failure shape in data engineering.</p></div></div>
+<div class="mech fail"><div class="mnum">5</div><div><h3>Big data through the orchestrator<span class="fix">Fix: pass references (paths, table + partition), never payloads &mdash; keep XComs / return values to small metadata only.</span></h3><p>Returning a DataFrame between tasks (or shoving rows through XCom) moves your data through the metadata database and memory of the scheduler. It works in the tutorial and dies at real volume; the orchestrator coordinates work, the data plane does the lifting.</p></div></div>
+</div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">07</span> Go deeper</h2>
+      <p class="sub">Verified references &mdash; every link opened and checked before publishing.</p>
+      <div class="ref-list">
+        <a class="ref" href="https://airflow.apache.org/docs/apache-airflow/2.6.0/core-concepts/dags.html"><span class="badge doc">Docs</span><div><h3>DAGs &mdash; Apache Airflow Documentation</h3><p>The core concept from the source: a DAG collects tasks with dependencies, cares about how they run (order, retries, timeouts) not what they do, plus data intervals and why a rewritten DAG can backfill three months at once.</p></div></a>
+        <a class="ref" href="https://airflow.apache.org/docs/apache-airflow/2.3.1/dag-run.html"><span class="badge doc">Docs</span><div><h3>DAG Runs, Catchup and Backfill &mdash; Apache Airflow Documentation</h3><p>The precise semantics: logical date vs execution time, catchup creating a run per missed interval, and the <code>airflow dags backfill --start-date / --end-date</code> command for a specified historical period.</p></div></a>
+        <a class="ref" href="https://dagster.io/docs/guides/build/partitions-and-backfills/backfilling-data"><span class="badge doc">Docs</span><div><h3>Backfilling data &mdash; Dagster Docs</h3><p>The asset-side counterpart: launch a backfill over partitions from the asset graph, one run per partition by default, or a single-run BackfillPolicy when one range query (for example in Snowflake) is cheaper.</p></div></a>
+        <a class="ref" href="https://www.youtube.com/watch?v=tMOG5EgPbZY"><span class="badge vid">Video</span><div><h3>Apache Airflow 3 for Beginners: Build Your First DAG &mdash; Pipeline Whiteboard</h3><p>A worked first DAG on Airflow 3: TaskFlow API, retries and clearing a failed task, schedules and catchup, backfills, and the Airflow 3 default that relabels your daily run &mdash; every command actually run on screen.</p></div></a>
+        <a class="ref" href="https://www.youtube.com/watch?v=9U5OEQtDl-s"><span class="badge vid">Video</span><div><h3>Thinking in Partitions (A Dagster Deep Dive) &mdash; Dagster</h3><p>Why partitioning is the mental model, not a setting: embrace partitions to speed execution and cut cost, gain control over backfills, and observe assets at partition granularity.</p></div></a>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">08</span> Sample prompts</h2>
+      <p class="sub">Copy one into your AI assistant and apply it to your own work.</p>
+      <p id="live-status" class="sr-only" role="status"></p>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>DESIGN AN ORCHESTRATED PIPELINE</strong><button class="copy-btn" data-copy="p1">Copy</button></div>
+        <p class="prompt-text" id="p1">Design an orchestrated data pipeline for this job: [sources, transformations, destination, cadence, history needed]. Give me: (1) the graph — tasks or assets with explicit dependencies, drawn as a list of edges, (2) the slice — logical date / data interval (Airflow) or partition definition (Dagster) and exactly how each step receives its slice, (3) the schedule and catchup decision, with reasoning, (4) idempotency: how each step overwrites only its slice, proven by a run-it-twice test, (5) retries, timeouts and a concurrency cap, and (6) how we will know every partition through yesterday is present and checked. Argue Airflow vs Dagster for this case in three lines, then commit to one.</p>
+      </div>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>PLAN A SAFE BACKFILL</strong><button class="copy-btn" data-copy="p2">Copy</button></div>
+        <p class="prompt-text" id="p2">Plan a safe backfill for this pipeline: [pipeline, date range, why we are backfilling — new logic / bug fix / first load, source limits, downstream consumers]. Produce an operator plan, not just a command: (1) preconditions — idempotency proof on one slice, downstream freeze or versioning, (2) the exact Airflow backfill command or Dagster backfill selection, (3) chunking and concurrency caps with the arithmetic against source rate limits and cost, (4) validation per chunk — row counts, checksums, partition status — and the abort threshold, (5) what happens to the normal daily run during the backfill, and (6) rollback: how we restore the old partitions if the new logic is wrong. Flag any step that could double-write.</p>
+      </div>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>AUDIT MY DAG FOR PRODUCTION</strong><button class="copy-btn" data-copy="p3">Copy</button></div>
+        <p class="prompt-text" id="p3">Audit this orchestrated pipeline like a production reviewer: [paste the DAG / asset definitions and schedule config]. Check in order: (1) date logic — does any task use wall-clock now / today instead of its logical date, data interval, or partition key? (2) idempotency — run every task twice: what duplicates? (3) catchup and start_date — what happens on first deploy and after a week paused? (4) failure shape — retries on non-transient errors, sensors with no timeout, downstream running on missing data? (5) data plane — is any large payload passed between tasks instead of a reference? (6) backfill safety — concurrency caps and source limits. For each finding give severity and the smallest code fix.</p>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">09</span> Quiz</h2>
+      <p class="sub">Five questions. Click an answer &mdash; you get the explanation right away.</p>
+      <div id="quiz">
+<div class="quiz-q" data-answer="1"><p class="qq">1. What does an orchestrator add that cron fundamentally cannot?</p><div class="qopts"><button class="qopt" data-i="0">A nicer web UI for the same time-based schedule.</button>
+<button class="qopt" data-i="1">Dependency awareness: a step runs only when its upstream succeeded for the same data slice, with retries, rerun and lineage recorded per run.</button>
+<button class="qopt" data-i="2">Faster tasks — cron is slow because it is old.</button>
+<button class="qopt" data-i="3">Automatic data quality: green runs guarantee correct data.</button></div><p class="qexp" hidden></p></div>
+<div class="quiz-q" data-answer="2"><p class="qq">2. A daily Airflow run with logical date 2026-11-10 executes on the morning of 2026-11-11. Which data should its tasks process?</p><div class="qopts"><button class="qopt" data-i="0">2026-11-11 so far — the day it is actually running.</button>
+<button class="qopt" data-i="1">Whatever the newest file in the bucket is.</button>
+<button class="qopt" data-i="2">Its data interval — the 2026-11-10 day named by the logical date — regardless of when the run executes.</button>
+<button class="qopt" data-i="3">Both days, to be safe.</button></div><p class="qexp" hidden></p></div>
+<div class="quiz-q" data-answer="0"><p class="qq">3. What is the cleanest statement of the Airflow vs Dagster difference?</p><div class="qopts"><button class="qopt" data-i="0">Airflow is task-centric (did this task succeed for this logical date?); Dagster is asset-centric (is this dataset fresh for this partition?) — lineage and partition status are first-class in Dagster.</button>
+<button class="qopt" data-i="1">Airflow is for batch, Dagster is for streaming.</button>
+<button class="qopt" data-i="2">Dagster has no scheduler; Airflow has no UI.</button>
+<button class="qopt" data-i="3">They are identical; only the logo differs.</button></div><p class="qexp" hidden></p></div>
+<div class="quiz-q" data-answer="3"><p class="qq">4. You fix a transformation bug and must reprocess the last 90 days. What makes that backfill safe?</p><div class="qopts"><button class="qopt" data-i="0">Running it at maximum parallelism so it finishes before anyone notices.</button>
+<button class="qopt" data-i="1">Nothing special — a backfill is just a schedule that runs faster.</button>
+<button class="qopt" data-i="2">Deleting the destination table first and hoping the backfill completes.</button>
+<button class="qopt" data-i="3">Idempotent per-slice writes (overwrite the partition, never append), a proved single slice first, capped concurrency against source limits, and per-chunk validation.</button></div><p class="qexp" hidden></p></div>
+<div class="quiz-q" data-answer="1"><p class="qq">5. A new DAG has start_date three months ago and catchup enabled. What happens on first unpause?</p><div class="qopts"><button class="qopt" data-i="0">Only tomorrow&rsquo;s run is created; history is never auto-created.</button>
+<button class="qopt" data-i="1">The scheduler creates a run for every missed interval since start_date — a catchup flood unless the DAG is partition-shaped and that fill is intended.</button>
+<button class="qopt" data-i="2">Airflow refuses to start until start_date is set to today.</button>
+<button class="qopt" data-i="3">A single run processes all three months in one data interval.</button></div><p class="qexp" hidden></p></div>
+</div>
+      <div id="quiz-score" role="status"></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">10</span> Flashcards</h2>
+      <p class="sub">Click a card (or focus it and press Enter / Space) to flip it.</p>
+      <div class="fgrid">
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">DAG</div><div class="fface back">Directed Acyclic Graph: tasks as nodes, dependencies as edges, no cycles. It declares how work runs — order, retries, timeouts — not what happens inside each task.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Logical date / data interval</div><div class="fface back">Airflow&rsquo;s name for the slice a run owns: the logical date is the start of the data interval the run processes, not when it executes. A daily run for Nov 10 runs after Nov 10 ends — and must still read Nov 10.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Partition</div><div class="fface back">A named slice of a dataset — usually a day, hour, or region. Dagster&rsquo;s PartitionsDefinition enumerates the slices; each run materialises one partition_key, tracked independently.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Asset (Dagster)</div><div class="fface back">A data object — table, file, model — plus the code that produces it. Orchestration asks &ldquo;is this asset fresh for this partition?&rdquo; and lineage falls out of asset dependencies.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Backfill</div><div class="fface back">A ranged re-run of history: the same graph launched for many slices — Airflow dags backfill over a date range, or a Dagster backfill over a partition range. Used for first loads, bug fixes, and logic changes.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Catchup</div><div class="fface back">The scheduler creating runs for every missed interval since start_date. Correct when a historical fill is intended; a flood when it is a surprise. Set it deliberately — Airflow 3 defaults it off.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Idempotent slice</div><div class="fface back">A slice that is safe to compute twice: the second run overwrites / MERGEs exactly its partition, so retry, rerun, and backfill all converge to the same data. Append-only is the opposite.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Sensor</div><div class="fface back">A task that waits for a condition — a file, an upstream dataset, an API state — before downstream work starts. Always give it a timeout; a sensor with none waits forever, silently.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Pool / concurrency cap</div><div class="fface back">A limit on how many runs or tasks execute at once. It is what keeps a 90-day backfill from starving today&rsquo;s run and overwhelming the source system it reads from.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">XCom trap</div><div class="fface back">Passing data itself between Airflow tasks via XCom / return values routes it through the metadata store. Pass references — a path, a table plus partition — and let the data plane move the bytes.</div></div></div>
+</div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">11</span> Reach for this when&hellip;</h2>
+      <div class="triggers">
+        <div class="trigger"><strong>Jobs are sequenced by the clock and failing silently</strong> — extracts, loads, and reports in separate cron entries with no dependency between them. Declare the graph once; a failed upstream then stops the line instead of poisoning it.</div>
+        <div class="trigger"><strong>History must be reprocessed</strong> — a bug fix, a logic change, or a first load over months of data. If each slice is addressed and idempotent, a backfill is a bounded, validated operation instead of a weekend of manual reruns.</div>
+        <div class="trigger"><strong>Nobody can answer &ldquo;is the data fresh?&rdquo;</strong> — green runs, stale tables. Move to per-slice status: partition materialisation, freshness and checks in Dagster&rsquo;s asset view or Airflow&rsquo;s dataset / run history, alerted by slice.</div>
+      </div>
+    </section>
+
+    <a class="back-link" href="../index.html#daily-topics">&larr; Back to daily topics</a>
+  </div>
+
+<script>
+    const status = document.getElementById('live-status');
+    document.querySelectorAll('.copy-btn').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const target = document.getElementById(button.dataset.copy);
+        const text = target.innerText;
+        try {
+          await navigator.clipboard.writeText(text);
+          const original = button.textContent;
+          button.textContent = 'Copied';
+          status.textContent = 'Prompt copied to clipboard.';
+          setTimeout(() => button.textContent = original, 1600);
+        } catch {
+          const range = document.createRange();
+          range.selectNodeContents(target);
+          const selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+          status.textContent = 'Prompt selected. Copy it with your device copy command.';
+        }
+      });
+    });
+    const explanations = [["A UI helps, but cron with a UI is still blind to dependencies and slices.", "Correct. Dependency order per slice, plus recorded retries and lineage, is the actual upgrade over time-only scheduling.", "Cron is not slow at running commands; it is blind — it fires on time whether or not the inputs exist.", "Green means the tasks exited cleanly, not that the data is right — checks per slice are still your job."], ["That is wall-clock thinking: a late or backfilled run would read the wrong day and report success.", "The newest file is arrival order, not identity — the run owns a named interval, not a guess.", "Correct. Logical date / data interval names the slice; execution time is irrelevant to what gets processed.", "Processing both double-counts one of them; one run, one slice is the discipline that makes reruns safe."], ["Correct. Task success per logical date (Airflow) vs asset freshness per partition (Dagster) is the centre-of-gravity difference.", "Both are primarily batch orchestrators; streaming is a different tool category.", "Dagster has a scheduler and daemon, and Airflow has a full web UI — neither claim survives the docs.", "The data model differs — tasks vs assets — and that difference changes lineage, backfills, and how freshness is answered."], ["Speed is the danger, not the safeguard: unlimited parallelism is how a backfill takes down its own source.", "A backfill re-executes history; without idempotency and caps it is the riskiest operation in the system.", "Deleting first converts a safe re-run into a bet. Overwrite per partition, validated chunk by chunk, keeps a restore path.", "Correct. Idempotent slices, a proved pilot slice, capped concurrency, and per-chunk validation are the backfill checklist."], ["Catchup exists precisely to auto-create those missed runs — assuming it will not is the classic first-deploy surprise.", "Correct. One run per missed interval since start_date — intended for partition-shaped fills, a flood otherwise.", "No such guardrail exists; start_date in the past is legal and, with catchup on, consequential.", "Each interval gets its own run with its own data interval — that per-slice separation is what makes catchup composable."]];
+    const questions = [...document.querySelectorAll('.quiz-q')];
+    let score = 0, answered = 0;
+    questions.forEach((q, qi) => {
+      const correct = parseInt(q.dataset.answer, 10);
+      const exp = q.querySelector('.qexp');
+      q.querySelectorAll('.qopt').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          if (q.dataset.done) return;
+          q.dataset.done = "1";
+          const chosen = parseInt(btn.dataset.i, 10);
+          const ok = chosen === correct;
+          q.querySelectorAll('.qopt').forEach((b) => {
+            b.disabled = true;
+            if (parseInt(b.dataset.i, 10) === correct) b.classList.add('correct');
+          });
+          if (!ok) btn.classList.add('wrong');
+          else score++;
+          answered++;
+          exp.hidden = false;
+          exp.innerHTML = ok
+            ? "<strong class=\"ok\">Correct.</strong> " + explanations[qi][chosen]
+            : "<strong class=\"no\">Not quite.</strong> " + explanations[qi][chosen];
+          if (answered === questions.length) {
+            const box = document.getElementById('quiz-score');
+            box.style.display = "block";
+            box.innerHTML = "You scored <strong>" + score + " / " + questions.length + "</strong>." +
+              (score === questions.length ? " Clean sweep — now take one pipeline you own and prove a single slice is idempotent by running it twice." :
+               score >= 3 ? " Solid — re-read the mechanic you missed; orchestration failures are usually slice, catchup, or idempotency failures." :
+               " Worth a re-read of sections 04 and 06 before your next backfill.");
+          }
+        });
+      });
+    });
+    document.querySelectorAll('.fcard').forEach((card) => {
+      const flip = () => card.classList.toggle('flipped');
+      card.addEventListener('click', flip);
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); }
+      });
+    });
+</script>
+</body>
+</html>

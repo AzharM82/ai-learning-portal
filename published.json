@@ -411,5 +411,12 @@
     "date": "2026-11-10",
     "summary": "An agent is a model in a loop, not a model with magic: it plans a step, requests a tool, your code validates and runs it, and the observation decides the next step \u2014 bounded by step, cost, and time budgets, least-privilege tools, and guardrails in code that stop, escalate, or hand off before autonomy becomes damage.",
     "skill": "ai-agent-systems"
+  },
+  {
+    "slug": "2026-11-11-data-pipeline-orchestration",
+    "title": "Data pipeline orchestration: Airflow, Dagster, and backfills",
+    "date": "2026-11-11",
+    "summary": "Cron knows the clock, not the data: declare dependencies as a DAG or asset graph, make every run own exactly one data interval or partition, keep each slice idempotent, and a backfill becomes a safe ranged re-run \u2014 capped, observable, and resumable \u2014 instead of a stampede. Airflow task-centric vs Dagster asset-centric, and how to choose.",
+    "skill": "data-pipeline-orchestration"
   }
 ]
