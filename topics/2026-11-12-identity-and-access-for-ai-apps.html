@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Identity and access for AI apps: OAuth, scoped tokens, and agent permissions &middot; AI Learning Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+    :root {
+      --ink: #14212b; --muted: #53636f; --paper: #f6f8f7; --white: #ffffff;
+      --line: #cbd5d8; --navy: #163247; --navy-2: #21465e; --teal: #0b8174;
+      --teal-soft: #dff2ee; --orange: #d66332; --orange-soft: #f8e4d8;
+      --gold: #d8a524; --gold-soft: #f7edc8; --blue-soft: #e3eef4;
+      --red: #b3402e; --red-soft: #f9e3de; --green: #1e7a3c; --green-soft: #e2f2e6;
+      --shadow: 0 18px 45px rgba(20, 33, 43, .09); --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; color: var(--ink); background: linear-gradient(rgba(20,33,43,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(20,33,43,.035) 1px, transparent 1px), var(--paper); background-size: 28px 28px; font-family: "Source Sans 3", sans-serif; font-size: 17px; line-height: 1.58; }
+    .shell { width: min(960px, calc(100% - 40px)); margin: 0 auto; }
+    .portal-nav{position:sticky;top:0;z-index:50;background:rgba(22,50,71,.97);border-bottom:1px solid rgba(255,255,255,.12)}
+    .portal-nav-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;flex-wrap:wrap}
+    .portal-brand{color:#fff;text-decoration:none;font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:15px}
+    .portal-brand span{color:var(--gold);font-weight:400}
+    .portal-links{display:flex;gap:18px;flex-wrap:wrap}
+    .portal-links a{color:#dbe7ee;text-decoration:none;font-size:14.5px}
+    .portal-links a:hover{color:#fff;text-decoration:underline}
+    .hero { padding: 56px 0 36px; }
+    .chapter-mark { display:inline-flex;align-items:center;gap:10px;color:var(--navy); font:600 12px/1.2 "IBM Plex Mono",monospace;letter-spacing:.09em;text-transform:uppercase;margin-bottom:18px; }
+    .chapter-mark::before { content:"";width:42px;height:3px;background:var(--orange); }
+    h1 { font-size: clamp(36px, 5vw, 58px); line-height: 1.02; letter-spacing:-.03em; margin:0 0 14px; }
+    .lede { color: var(--muted); font-size: clamp(18px,2vw,22px); max-width: 64ch; margin:0 0 8px; }
+    .date-line { font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--muted); }
+    section.block { margin: 44px 0; }
+    h2 { font-size: 26px; letter-spacing:-.02em; margin:0 0 6px; display:flex;align-items:center;gap:12px; }
+    h2 .num { font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:600;color:var(--white); background:var(--navy);border-radius:999px;min-width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center; }
+    .sub { color:var(--muted); margin:0 0 18px; max-width: 68ch; }
+    .card { background:var(--white);border:1px solid var(--line);border-radius:var(--radius); padding:24px;box-shadow:var(--shadow); }
+    .skill-card { background:var(--navy);color:#eaf2f7;border-radius:var(--radius);padding:22px 24px; font-family:"IBM Plex Mono",monospace;font-size:14.5px;overflow-x:auto;box-shadow:var(--shadow); }
+    .skill-card .k { color:var(--gold); }
+    .idea { font-size:21px;line-height:1.5;border-left:4px solid var(--teal);padding:6px 0 6px 20px;max-width:62ch; }
+    .idea strong { color:var(--navy); }
+    .mechanics { display:grid;gap:14px; }
+    .mech { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:18px 20px; display:grid;grid-template-columns:44px 1fr;gap:14px;align-items:start; }
+    .mech .mnum { font-family:"IBM Plex Mono",monospace;font-weight:600;color:var(--teal); background:var(--teal-soft);border-radius:10px;width:44px;height:44px;display:flex;align-items:center;justify-content:center; }
+    .mech h3 { margin:0 0 6px;font-size:18px; }
+    .mech p { margin:0;color:var(--muted);font-size:15.5px; }
+    .mech code, .inline-code { font-family:"IBM Plex Mono",monospace;font-size:.88em;background:var(--blue-soft); padding:2px 7px;border-radius:6px;color:var(--navy); }
+    pre.code { background:#0f2233;color:#e8f1f5;border-radius:14px;padding:20px 22px;overflow-x:auto; font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.6;margin:0; }
+    pre.code .c { color:#8ba3b0; } pre.code .s { color:#ffd479; } pre.code .k { color:#7fd6c2; }
+    .fail { border-left:4px solid var(--orange); }
+    .fail h3 .fix { display:block;margin-top:8px;font-size:15px;font-weight:500;color:var(--green); }
+    .ref-list { display:grid;gap:12px; }
+    .ref { display:flex;gap:14px;align-items:flex-start;background:var(--white);border:1px solid var(--line); border-radius:14px;padding:16px 18px;text-decoration:none;color:inherit; }
+    .ref:hover { border-color:var(--teal); }
+    .ref .badge { flex:none;font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;letter-spacing:.06em; padding:5px 10px;border-radius:999px;text-transform:uppercase; }
+    .badge.doc { background:var(--blue-soft);color:var(--navy); }
+    .badge.vid { background:var(--orange-soft);color:var(--orange); }
+    .ref h3 { margin:0 0 4px;font-size:17px; }
+    .ref p { margin:0;color:var(--muted);font-size:14.5px; }
+    .prompt-block { background:#0f2233;border-radius:var(--radius);overflow:hidden;margin-bottom:18px;box-shadow:var(--shadow); }
+    .prompt-top { display:flex;justify-content:space-between;align-items:center;gap:12px; padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.12); }
+    .prompt-top strong { color:#fff;font-size:13px;letter-spacing:.06em;font-family:"IBM Plex Mono",monospace; }
+    .copy-btn { border:1px solid #6c8796;background:transparent;color:#fff;border-radius:6px;padding:7px 11px; cursor:pointer;font-weight:700;font-size:14px; }
+    .copy-btn:hover { background:rgba(255,255,255,.1); }
+    .copy-btn:focus-visible { outline:2px solid var(--gold);outline-offset:2px; }
+    .prompt-text { color:#e8f1f5;font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.65; padding:18px;white-space:pre-wrap;margin:0; }
+    .sr-only { position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0); }
+    .quiz-q { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px; }
+    .quiz-q .qq { font-weight:700;margin:0 0 12px;font-size:18px; }
+    .qopts { display:grid;gap:8px; }
+    .qopt { text-align:left;background:var(--paper);border:1px solid var(--line);border-radius:10px; padding:12px 14px;cursor:pointer;font-size:15.5px;color:var(--ink); }
+    .qopt:hover:not(:disabled) { border-color:var(--navy); }
+    .qopt:disabled { cursor:default;opacity:.85; }
+    .qopt.correct { background:var(--green-soft);border-color:var(--green); }
+    .qopt.wrong { background:var(--red-soft);border-color:var(--red); }
+    .qexp { margin:12px 0 0;font-size:15px;color:var(--muted); }
+    .qexp strong.ok { color:var(--green); } .qexp strong.no { color:var(--red); }
+    #quiz-score { display:none;margin-top:8px;background:var(--navy);color:#fff;border-radius:14px; padding:20px 24px;font-size:19px; }
+    #quiz-score strong { color:var(--gold); }
+    .fgrid { display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px; }
+    .fcard { perspective:900px;cursor:pointer;min-height:170px; }
+    .fcard-inner { position:relative;width:100%;height:100%;min-height:170px;transform-style:preserve-3d;transition:transform .45s; }
+    .fcard.flipped .fcard-inner { transform:rotateY(180deg); }
+    .fface { position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden; border-radius:14px;padding:18px;display:flex;align-items:center;justify-content:center;text-align:center; border:1px solid var(--line);background:var(--white);box-shadow:var(--shadow);font-size:15.5px; }
+    .fface.front { font-weight:700;color:var(--navy); }
+    .fface.back { transform:rotateY(180deg);background:var(--teal-soft);color:var(--ink);font-size:14.5px; }
+    .fcard:focus-visible { outline:2px solid var(--teal);outline-offset:3px;border-radius:14px; }
+    .triggers { display:grid;gap:10px; }
+    .trigger { background:var(--gold-soft);border-radius:12px;padding:14px 18px;font-size:16px; }
+    .trigger strong { color:var(--navy); }
+    .back-link { display:inline-block;margin:8px 0 60px;font-weight:600;color:var(--teal);text-decoration:none;font-size:17px; }
+    .back-link:hover { text-decoration:underline; }
+    .fig { background:var(--white);border:1px solid var(--line);border-radius:var(--radius); padding:12px;box-shadow:var(--shadow);overflow-x:auto; }
+    .fig svg { display:block;width:100%;height:auto; }
+    .flow-anim { stroke-dasharray: 8 6; animation: dashmove 1.2s linear infinite; }
+    @keyframes dashmove { to { stroke-dashoffset: -14; } }
+    @media (prefers-reduced-motion: reduce) { .fcard-inner{transition:none;} .flow-anim{animation:none;} }
+  </style>
+</head>
+<body><nav class="portal-nav">
+    <div class="shell portal-nav-inner">
+      <a class="portal-brand" href="../index.html">AI Engineering <span>&middot; Learning Portal</span></a>
+      <div class="portal-links">
+        <a href="../index.html#daily-topics">Daily topics</a>
+        <a href="../index.html#loop">Loop</a>
+        <a href="../index.html#graph">Graph</a>
+        <a href="../index.html#harness">Harness</a>
+      </div>
+    </div>
+  </nav>
+  <div class="shell">
+    <header class="hero">
+      <div class="chapter-mark">Daily topic &middot; Identity and access for AI apps</div>
+      <h1>Identity and access for AI apps: OAuth, scoped tokens, and agent permissions</h1>
+      <p class="lede">An AI agent that can read mail, send mail, move money, or call tools is only as safe as the credential it carries. Give it the user&rsquo;s password or a long-lived master key and every prompt injection inherits the whole account. Give it a valet key instead &mdash; a short-lived OAuth token, consented to by the user, bound to one service, carrying only the scopes this task needs, checked on every call &mdash; and a compromised agent has a small, expiring, revocable blast radius.</p>
+      <p class="date-line">2026-11-12 &middot; Topic 060</p>
+    </header>
+
+    <section class="block">
+      <h2><span class="num">01</span> The skill card</h2>
+      <p class="sub">Every topic on this portal is designed like a Codex skill: a name, a trigger, and concrete steps.</p>
+      <div class="skill-card"><pre style="margin:0">---
+<span class="k">name:</span> identity-and-access-for-ai-apps
+<span class="k">description:</span> Reach for this when an AI app or agent acts on a user&rsquo;s
+  data in another service: authenticate the user with OpenID Connect,
+  authorize the agent with OAuth 2.0 Authorization Code + PKCE,
+  request only the scopes the current task needs, bind every token
+  to one audience, validate it on every call, and enforce per-tool,
+  per-record permission in your own code behind a human approval
+  gate for irreversible actions.
+---</pre></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">02</span> The one-idea version</h2>
+      <p class="idea"><strong>Never hand an agent the master key &mdash; hand it a valet key.</strong> OAuth is delegated authorization: the user consents on the authorization server&rsquo;s own page (the agent never sees the password), and the agent receives an access token that names one audience, carries only named scopes, and expires soon. OpenID Connect answers <em>who</em> the user is; OAuth answers <em>what</em> this client may do &mdash; and your own code still decides, per tool and per record, whether this action by this user is allowed.</p>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">03</span> The picture: the valet key, end to end</h2>
+      <p class="sub">One delegated grant for one task. The token is checked on every call, and a token minted for a different service is rejected &mdash; not forwarded.</p>
+      <div class="fig">
+        <svg viewBox="0 0 960 340" role="img" aria-label="Diagram of OAuth delegation for an AI agent: the user consents on the authorization server page, the agent receives a scoped short-lived access token bound to one audience, the resource or MCP server validates issuer, audience, expiry and scope on every call before the tool runs, and a token issued for a different audience is rejected.">
+          <g font-family="Source Sans 3, sans-serif" font-size="14">
+            <text x="20" y="26" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="600" fill="#163247">DELEGATION: USER CONSENTS, AGENT NEVER SEES THE PASSWORD</text>
+            <rect x="20" y="44" width="150" height="84" rx="12" fill="#e3eef4" stroke="#163247" stroke-width="2"/>
+            <text x="95" y="72" text-anchor="middle" font-weight="700" fill="#163247">User</text>
+            <text x="95" y="92" text-anchor="middle" fill="#53636f">signs in + consents</text>
+            <text x="95" y="110" text-anchor="middle" fill="#53636f">on the AS page only</text>
+            <text x="182" y="90" text-anchor="middle" font-size="20" font-weight="700" fill="#163247">&#8594;</text>
+            <rect x="200" y="44" width="170" height="84" rx="12" fill="#dff2ee" stroke="#0b8174" stroke-width="2"/>
+            <text x="285" y="72" text-anchor="middle" font-weight="700" fill="#163247">Authorization Server</text>
+            <text x="285" y="92" text-anchor="middle" fill="#53636f">issues the token</text>
+            <text x="285" y="110" text-anchor="middle" fill="#53636f">Entra / Okta / Google</text>
+            <text x="382" y="90" text-anchor="middle" font-size="20" font-weight="700" fill="#163247">&#8594;</text>
+            <rect x="400" y="44" width="170" height="84" rx="12" fill="#f8e4d8" stroke="#d66332" stroke-width="2"/>
+            <text x="485" y="72" text-anchor="middle" font-weight="700" fill="#163247">Agent (client)</text>
+            <text x="485" y="92" text-anchor="middle" fill="#53636f">holds scoped token</text>
+            <text x="485" y="110" text-anchor="middle" fill="#53636f">code + PKCE flow</text>
+            <text x="582" y="90" text-anchor="middle" font-size="20" font-weight="700" fill="#163247">&#8594;</text>
+            <rect x="600" y="44" width="170" height="84" rx="12" fill="#f7edc8" stroke="#d8a524" stroke-width="2"/>
+            <text x="685" y="72" text-anchor="middle" font-weight="700" fill="#163247">Resource / MCP Server</text>
+            <text x="685" y="92" text-anchor="middle" fill="#53636f">validates iss, aud,</text>
+            <text x="685" y="110" text-anchor="middle" fill="#53636f">exp + scope, every call</text>
+            <text x="782" y="90" text-anchor="middle" font-size="20" font-weight="700" fill="#163247">&#8594;</text>
+            <rect x="800" y="44" width="140" height="84" rx="12" fill="#ffffff" stroke="#cbd5d8"/>
+            <text x="870" y="72" text-anchor="middle" font-weight="700" fill="#163247">Tool / API</text>
+            <text x="870" y="92" text-anchor="middle" fill="#53636f">runs only if the</text>
+            <text x="870" y="110" text-anchor="middle" fill="#53636f">checks pass</text>
+            <path d="M480 132 V168" stroke="#0b8174" stroke-width="2" fill="none" class="flow-anim"/>
+            <text x="20" y="200" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="600" fill="#163247">THE TOKEN ITSELF: A VALET KEY, NOT A MASTER KEY</text>
+            <rect x="20" y="216" width="920" height="84" rx="12" fill="#163247"/>
+            <text x="480" y="246" text-anchor="middle" fill="#ffffff" font-weight="700">aud = this server only &middot; scope = mail.read (not mail.send) &middot; exp = minutes, not months &middot; revocable per user, per agent</text>
+            <text x="480" y="268" text-anchor="middle" fill="#cbd5d8" font-size="13">Wrong audience, expired, or missing scope &#8594; 401 / 403 insufficient_scope. The server never accepts or forwards another service&rsquo;s token.</text>
+            <text x="480" y="288" text-anchor="middle" fill="#cbd5d8" font-size="13">MCP: the client finds the authorization server via Protected Resource Metadata (RFC 9728) after a 401 challenge.</text>
+          </g>
+        </svg>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">04</span> How it works</h2>
+      <p class="sub">Six mechanics: split identity from authorization, use the one safe flow, scope tightly, bind and validate every token, manage lifetimes, and enforce agent permission in code.</p>
+      <div class="mechanics">
+<div class="mech"><div class="mnum">1</div><div><h3>Separate &ldquo;who&rdquo; from &ldquo;what&rdquo; &mdash; OIDC for identity, OAuth for access</h3><p>OAuth 2.0 is an <strong>authorization</strong> framework: its access token says what a client may do at a resource server, and its audience is that resource server. OpenID Connect adds the identity layer on top: the <strong>ID token</strong> proves who signed in, and its audience is your client app. Never send an ID token to an API, never treat an access token as proof of identity in your UI, and never let an agent &ldquo;log in as the user&rdquo; &mdash; it acts <em>on behalf of</em> the user, with the user&rsquo;s <code>sub</code> carried in the token it presents.</p></div></div>
+<div class="mech"><div class="mnum">2</div><div><h3>Use Authorization Code + PKCE for every client &mdash; no exceptions for agents</h3><p>Run the authorization code flow with PKCE (<code>S256</code>) for web, mobile, SPA, CLI, and agent clients alike. PKCE binds the code exchange to the client that started the flow, so an intercepted code is useless. The implicit grant and the password grant are deprecated &mdash; removed in OAuth 2.1 and called out in RFC 9700, the OAuth Security Best Current Practice. Add <code>state</code> (and <code>nonce</code> in OIDC) against CSRF and mix-up, validate the <code>iss</code> in the authorization response (RFC 9207), and match redirect URIs exactly.</p></div></div>
+<div class="mech"><div class="mnum">3</div><div><h3>Design scopes as least-privilege, and step up instead of hoarding</h3><p>Name scopes <code>resource.operation</code> and split reads from writes: <code>mail.read</code> is not <code>mail.send</code>, and neither is <code>*.ReadWrite.All</code>. Request only the scopes the current operation needs &mdash; Microsoft&rsquo;s guidance is explicit: developers should always abide by the principle of least privilege. When a call comes back <code>403 insufficient_scope</code>, run a step-up authorization for just the extra scope instead of requesting everything up front. For MCP servers, take the scopes from the <code>401</code> <code>WWW-Authenticate</code> challenge first; that challenge set is authoritative for the operation.</p></div></div>
+<div class="mech"><div class="mnum">4</div><div><h3>Bind every token to one audience, and validate it on every request</h3><p>A token is minted <em>for</em> one resource server. The client names it with the RFC 8707 <code>resource</code> parameter on both the authorization and token requests (in MCP, the server&rsquo;s canonical URI); the resource server then verifies, on <em>every</em> request: signature against the issuer&rsquo;s JWKS, <code>iss</code>, <code>aud</code> (must be itself), <code>exp</code>, and the scope the operation requires. The MCP specification states the hard rule plainly: servers must only accept tokens issued for their own resources and must not accept or transit any other tokens &mdash; forwarding a received token upstream is the token-passthrough anti-pattern.</p></div></div>
+<div class="mech"><div class="mnum">5</div><div><h3>Keep lifetimes short, refresh safely, and keep tokens out of the model&rsquo;s sight</h3><p>Access tokens live minutes to about an hour; refresh tokens are the long-lived secret, so rotate them on every use, detect reuse (a replayed old refresh token means theft &mdash; revoke the family), and sender-constrain high-value tokens with DPoP (RFC 9449) or mTLS (RFC 8705) so a leaked token is useless without the client&rsquo;s key. Store tokens server-side or in a backend-for-frontend vault &mdash; never in <code>localStorage</code>, URLs, logs, or the model&rsquo;s context. The agent asks for a tool call; your harness attaches the token outside the prompt, so the token never becomes text the model can leak or be tricked into repeating.</p></div></div>
+<div class="mech"><div class="mnum">6</div><div><h3>Enforce agent permission in your own code &mdash; per tool, per record, per action</h3><p>Scopes are client-level and coarse; they do not say whether <em>this</em> user may touch <em>this</em> record. Behind the token check, enforce a second layer: an allowlist of tools per agent and per task, an ownership / policy check on every object (token <code>sub</code> must own the resource it acts on), and a human approval gate for irreversible or high-blast-radius actions (send, pay, delete, publish). Watch for the confused deputy: an agent holding its own privileged service credential must not spend that privilege on a user request &mdash; use on-behalf-of / token exchange so downstream calls keep the user&rsquo;s identity and limits. Log <code>sub</code>, client, scope, tool, and outcome for every call, and make each agent&rsquo;s grant independently revocable.</p></div></div>
+</div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">05</span> Code sketch</h2>
+      <p class="sub">A resource server&rsquo;s tool gate in Python: validate the token properly first, then check scope, then check ownership &mdash; three distinct decisions.</p>
+      <pre class="code"><span class="k">import</span> jwt
+<span class="k">from</span> jwt <span class="k">import</span> PyJWKClient
+
+JWKS = PyJWKClient(<span class="s">"https://login.example.com/.well-known/jwks.json"</span>)
+ISSUER = <span class="s">"https://login.example.com/"</span>
+AUDIENCE = <span class="s">"https://api.example.com"</span>  <span class="c"># this server only (RFC 8707)</span>
+
+<span class="k">def</span> require_scope(token: str, needed: str) -&gt; dict:
+    claims = jwt.decode(
+        token, JWKS.get_signing_key_from_jwt(token).key,
+        algorithms=[<span class="s">"RS256"</span>], audience=AUDIENCE, issuer=ISSUER,
+    )  <span class="c"># raises on bad signature, wrong iss/aud, or expiry</span>
+    granted = set(claims.get(<span class="s">"scope"</span>, <span class="s">""</span>).split())
+    <span class="k">if</span> needed <span class="k">not in</span> granted:
+        <span class="k">raise</span> PermissionError(<span class="s">"403 insufficient_scope: step up"</span>)
+    <span class="k">return</span> claims
+
+<span class="c"># Tool handler: scope check first, ownership check second,</span>
+<span class="c"># human approval before anything irreversible actually sends.</span>
+<span class="k">def</span> send_mail_tool(token: str, draft: dict, approved: bool) -&gt; str:
+    claims = require_scope(token, <span class="s">"mail.send"</span>)
+    <span class="k">assert</span> claims[<span class="s">"sub"</span>] == draft[<span class="s">"owner_id"</span>]  <span class="c"># act only for the owner</span>
+    <span class="k">if</span> <span class="k">not</span> approved:
+        <span class="k">return</span> <span class="s">"held for human approval"</span>
+    <span class="k">return</span> mail_api.send(as_user=claims[<span class="s">"sub"</span>], **draft)</pre>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">06</span> Failure modes</h2>
+      <p class="sub">Five ways identity and access fail in AI apps &mdash; each with a one-line fix.</p>
+      <div class="mechanics">
+<div class="mech fail"><div class="mnum">1</div><div><h3>The master-key agent<span class="fix">Fix: per-user OAuth grants &mdash; short-lived, scoped tokens issued after consent, revocable per user and per agent.</span></h3><p>The agent runs on one long-lived API key, a shared service password, or the user&rsquo;s own credentials pasted into a config file. It works in the demo, and then any prompt injection, log leak, or rogue tool call inherits the entire account, for every user, forever.</p></div></div>
+<div class="mech fail"><div class="mnum">2</div><div><h3>Token passthrough and the confused deputy<span class="fix">Fix: validate audience and never transit a received token; use on-behalf-of / token exchange so downstream calls carry the user&rsquo;s identity and limits.</span></h3><p>Your MCP server or agent forwards the token it received to an upstream API, or quietly uses its own broader service credential to fulfil a user&rsquo;s request. Either way the downstream service can no longer tell who really authorized the call &mdash; and a token stolen in one place becomes a key everywhere.</p></div></div>
+<div class="mech fail"><div class="mnum">3</div><div><h3>Scope hoarding<span class="fix">Fix: request the minimal scope per operation and step up on 403 insufficient_scope instead of pre-collecting broad grants.</span></h3><p>The app requests <code>.default</code>, <code>Mail.ReadWrite</code>, and admin-flavoured scopes at first sign-in &ldquo;to avoid friction later.&rdquo; Consent screens get scarier, admins refuse the app, and when the token leaks the attacker inherits permissions the feature never used.</p></div></div>
+<div class="mech fail"><div class="mnum">4</div><div><h3>Wrong token, no validation<span class="fix">Fix: verify signature, iss, aud, exp, and required scope on every request &mdash; and reject ID tokens at APIs outright.</span></h3><p>The API accepts an ID token (audience: some other client), skips audience checking, or trusts a token because it &ldquo;looks like a JWT.&rdquo; Any token from any app in the tenant &mdash; or from a lookalike issuer &mdash; now opens your endpoints.</p></div></div>
+<div class="mech fail"><div class="mnum">5</div><div><h3>Tokens where the model can see them<span class="fix">Fix: hold tokens in a server-side vault / BFF, attach them in the harness outside the prompt, send them header-only, and redact them from logs and traces.</span></h3><p>Access and refresh tokens end up in prompts, tool results, browser <code>localStorage</code>, query strings, and debug logs. Anything in the context window can be exfiltrated by injection, and anything in a log tends to live forever &mdash; the token&rsquo;s short expiry stops mattering once the refresh token leaks with it.</p></div></div>
+</div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">07</span> Go deeper</h2>
+      <p class="sub">Verified references &mdash; every link opened and checked before publishing.</p>
+      <div class="ref-list">
+        <a class="ref" href="https://modelcontextprotocol.io/specification/2026-07-28/basic/authorization"><span class="badge doc">Spec</span><div><h3>Authorization &mdash; Model Context Protocol specification</h3><p>The AI-native source: a protected MCP server is an OAuth 2.1 resource server, discovery runs through Protected Resource Metadata (RFC 9728), clients use PKCE and the RFC 8707 resource parameter, and servers must only accept tokens issued for their own resources &mdash; never transit another token.</p></div></a>
+        <a class="ref" href="https://learn.microsoft.com/en-us/entra/identity-platform/scopes-oidc"><span class="badge doc">Docs</span><div><h3>Scopes and permissions in the Microsoft identity platform &mdash; Microsoft Learn</h3><p>How scopes work in production Entra ID: permissions as resource-scoped strings such as https://graph.microsoft.com/Calendars.Read, delegated vs application permissions, admin-restricted scopes, offline_access and refresh tokens, and the least-privilege rule stated outright.</p></div></a>
+        <a class="ref" href="https://cheatsheetseries.owasp.org/cheatsheets/OAuth2_Cheat_Sheet.html"><span class="badge doc">Guide</span><div><h3>OAuth 2.0 Protocol Cheat Sheet &mdash; OWASP</h3><p>The security checklist distilled from the RFCs and RFC 9700: Authorization Code + PKCE for all clients, implicit grant deprecated, audience restriction to a single resource server, refresh-token rotation, and sender-constrained tokens (DPoP / mTLS) against replay.</p></div></a>
+        <a class="ref" href="https://www.youtube.com/watch?v=99luCyygavE"><span class="badge vid">Video</span><div><h3>How OAuth actually works &mdash; How It Actually Works, Ep. 2</h3><p>OAuth for AI agents in 80 seconds, using GitHub&rsquo;s real MCP server responses: the 401 that points to discovery, why you sign in on the tool&rsquo;s own page (not through the AI), and the one-door, expiring key checked on every call.</p></div></a>
+        <a class="ref" href="https://www.youtube.com/watch?v=2a9ADhbjnrw"><span class="badge vid">Video</span><div><h3>OAuth 2.0 and JWT Explained: How Sign in with Google Works &mdash; CodeFlow Daily</h3><p>The full animated walkthrough: the four OAuth roles, the authorization code flow, scopes, access vs refresh tokens and PKCE, then JWT internals &mdash; header, payload, signature verification &mdash; and the mistakes that cause real breaches.</p></div></a>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">08</span> Sample prompts</h2>
+      <p class="sub">Copy one into your AI assistant and apply it to your own work.</p>
+      <p id="live-status" class="sr-only" role="status"></p>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>DESIGN THE AUTH FOR AN AI APP</strong><button class="copy-btn" data-copy="p1">Copy</button></div>
+        <p class="prompt-text" id="p1">Design identity and access for this AI app: [what it does, which user data in which services it touches, which actions are read-only vs irreversible]. Give me: (1) the identity layer — how the user signs in with OpenID Connect and where the ID token is used (and where it must never be used), (2) the authorization layer — OAuth flow (argue for Authorization Code + PKCE), the exact scope list using resource.operation names, split read vs write, with reasoning for each scope, (3) token design — audience per service, access-token lifetime, refresh-token rotation and storage location, (4) per-tool enforcement in my code — allowlist, per-record ownership checks, and which actions sit behind a human approval gate, and (5) revocation: how a user or admin kills one agent&rsquo;s access without breaking everything else.</p>
+      </div>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>THREAT-MODEL MY AGENT&rsquo;S PERMISSIONS</strong><button class="copy-btn" data-copy="p2">Copy</button></div>
+        <p class="prompt-text" id="p2">Threat-model this agent&rsquo;s identity and access setup like an attacker: [paste the scopes requested, token lifetimes and storage, the tools the agent can call, and how tokens reach the APIs]. Walk these attacks in order: (1) prompt injection makes the agent misuse a legitimate token — what is the blast radius, scope by scope? (2) token theft — where could an access or refresh token leak (context window, logs, localStorage, URLs), and is it replayable or sender-constrained? (3) confused deputy — anywhere the agent spends its own privilege on a user&rsquo;s behalf, or forwards a token upstream? (4) wrong-audience acceptance — would any endpoint accept a token minted for another app or service? For each, give severity and the smallest concrete fix.</p>
+      </div>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>AUDIT MY OAUTH IMPLEMENTATION</strong><button class="copy-btn" data-copy="p3">Copy</button></div>
+        <p class="prompt-text" id="p3">Audit this OAuth / OIDC implementation against current best practice (RFC 9700 and OAuth 2.1): [paste the flow config, scope list, and token validation code]. Check in order: (1) flow — is anything still on implicit or password grant, and is PKCE S256 enforced for every client type? (2) validation — are signature, iss, aud, exp, and required scope verified on every request, and are ID tokens rejected at APIs? (3) scopes — what is over-requested, what should be split read/write, and where should step-up replace up-front grants? (4) lifecycle — refresh rotation and reuse detection, token storage, tokens in logs or URLs? (5) agent layer — per-tool allowlist, per-record ownership checks, approval gates, audit logging. For each finding give severity and the smallest code or config fix.</p>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">09</span> Quiz</h2>
+      <p class="sub">Five questions. Click an answer &mdash; you get the explanation right away.</p>
+      <div id="quiz">
+<div class="quiz-q" data-answer="1"><p class="qq">1. What is the clean split between OAuth 2.0 and OpenID Connect?</p><div class="qopts"><button class="qopt" data-i="0">OAuth is for mobile apps; OpenID Connect is for web apps.</button>
+<button class="qopt" data-i="1">OAuth is delegated authorization &mdash; an access token (audience: the resource server) saying what a client may do. OIDC adds identity on top &mdash; an ID token (audience: the client) saying who signed in.</button>
+<button class="qopt" data-i="2">They are two names for the same protocol; use either token anywhere.</button>
+<button class="qopt" data-i="3">OAuth verifies passwords; OIDC issues API keys.</button></div><p class="qexp" hidden></p></div>
+<div class="quiz-q" data-answer="2"><p class="qq">2. Your agent feature only reads the user&rsquo;s calendar. What should it request at sign-in?</p><div class="qopts"><button class="qopt" data-i="0">The resource&rsquo;s .default scope, so future features never prompt again.</button>
+<button class="qopt" data-i="1">ReadWrite calendar plus ReadWrite mail &mdash; writes included just in case.</button>
+<button class="qopt" data-i="2">Only the calendar read scope for that resource &mdash; and step up later, per feature, if a write is ever needed.</button>
+<button class="qopt" data-i="3">offline_access alone &mdash; it quietly covers all resources.</button></div><p class="qexp" hidden></p></div>
+<div class="quiz-q" data-answer="0"><p class="qq">3. An MCP server receives a valid, unexpired token that was issued for a different server. What must it do?</p><div class="qopts"><button class="qopt" data-i="0">Reject it. Validate audience on every request: accept only tokens issued for its own resources, and never accept or transit another service&rsquo;s token.</button>
+<button class="qopt" data-i="1">Accept it &mdash; the same authorization server signed it, so it is trustworthy here too.</button>
+<button class="qopt" data-i="2">Forward it to the upstream API and let that service decide.</button>
+<button class="qopt" data-i="3">Accept it for read operations only.</button></div><p class="qexp" hidden></p></div>
+<div class="quiz-q" data-answer="3"><p class="qq">4. Why is Authorization Code + PKCE now required for every client type, with the implicit grant deprecated?</p><div class="qopts"><button class="qopt" data-i="0">PKCE makes access tokens longer and therefore harder to guess.</button>
+<button class="qopt" data-i="1">Implicit is deprecated only because it is slower in browsers.</button>
+<button class="qopt" data-i="2">PKCE matters only for native apps; SPAs may keep using implicit.</button>
+<button class="qopt" data-i="3">PKCE binds code redemption to the client that started the flow, so an intercepted code cannot be redeemed; implicit exposes tokens through the front channel, where they leak and cannot be sender-constrained.</button></div><p class="qexp" hidden></p></div>
+<div class="quiz-q" data-answer="1"><p class="qq">5. The token is valid and carries mail.send &mdash; but the agent is asked to send mail as a different user than the token&rsquo;s sub. What decides?</p><div class="qopts"><button class="qopt" data-i="0">The scope settles it: mail.send is present, so send.</button>
+<button class="qopt" data-i="1">Your own per-record check decides: scopes are client-level permission, so the handler must verify the token&rsquo;s sub owns the action (and pass the approval gate) &mdash; otherwise refuse or escalate.</button>
+<button class="qopt" data-i="2">Exchange the token for an admin token so the identity mismatch disappears.</button>
+<button class="qopt" data-i="3">Let the model judge whether the request seems reasonable.</button></div><p class="qexp" hidden></p></div>
+</div>
+      <div id="quiz-score" role="status"></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">10</span> Flashcards</h2>
+      <p class="sub">Click a card (or focus it and press Enter / Space) to flip it.</p>
+      <div class="fgrid">
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">OAuth 2.0</div><div class="fface back">A delegated authorization framework: a client obtains limited access to a resource on a user&rsquo;s behalf &mdash; after the user consents at the authorization server &mdash; without ever handling the user&rsquo;s password. Its output is an access token.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">OpenID Connect (OIDC)</div><div class="fface back">The identity layer on top of OAuth 2.0. It adds the ID token &mdash; audience: your client &mdash; so the app can verify who signed in. OAuth alone never tells the app who the user is.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Access token vs ID token</div><div class="fface back">Access token: for the resource server (API), carries scopes, checked on every call. ID token: for the client, proves identity at sign-in. Sending an ID token to an API &mdash; or reading identity off an access token &mdash; mixes up the two audiences.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Scope</div><div class="fface back">A named permission string the client requests and the user (or admin) consents to, e.g. mail.read vs mail.send. Scopes slice a resource&rsquo;s functionality into least-privilege chunks; the resource server enforces them per operation.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">PKCE</div><div class="fface back">Proof Key for Code Exchange (RFC 7636, pronounced &ldquo;pixy&rdquo;): the client sends a hash of a secret (code_challenge) with the authorization request and the secret itself (code_verifier) at redemption &mdash; so a stolen code is worthless. Mandatory, S256, for MCP clients and best practice everywhere.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Audience &amp; resource indicator</div><div class="fface back">Every token is minted for one audience (aud). RFC 8707&rsquo;s resource parameter lets the client name that target &mdash; in MCP, the server&rsquo;s canonical URI &mdash; on both authorize and token requests. The server rejects tokens whose aud is not itself.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Refresh token rotation</div><div class="fface back">Each use of a refresh token returns a new one and invalidates the old. If an old token is ever replayed, someone has a copy &mdash; revoke the whole token family. Rotation (or DPoP / mTLS sender-constraining) is what makes long-lived refresh tokens survivable.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Step-up authorization</div><div class="fface back">Start with minimal scopes; when a call returns 403 insufficient_scope, run a fresh consent for just the extra scope that operation needs. It replaces up-front scope hoarding &mdash; in MCP, the 401 challenge&rsquo;s scope parameter tells the client what to ask for.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Token passthrough / confused deputy</div><div class="fface back">Two faces of one bug: a server forwards a token it received to an upstream service (passthrough), or a privileged agent spends its own credential on a user&rsquo;s behalf (confused deputy). Both destroy attribution &mdash; validate audience, never transit, exchange on-behalf-of instead.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Sender-constrained token (DPoP)</div><div class="fface back">A token cryptographically bound to a key the client holds (DPoP, RFC 9449; or a certificate via mTLS, RFC 8705). A stolen token alone no longer works &mdash; the thief also needs the private key. The upgrade path when plain bearer tokens are too replayable.</div></div></div>
+</div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">11</span> Reach for this when&hellip;</h2>
+      <div class="triggers">
+        <div class="trigger"><strong>Your AI app touches a user&rsquo;s data in another service</strong> &mdash; mail, calendar, files, CRM, code. The moment the app acts on behalf of a person, it needs delegated, consented, scoped access &mdash; not a shared API key and never the user&rsquo;s password.</div>
+        <div class="trigger"><strong>Your agent can write, send, pay, or delete</strong> &mdash; read-only mistakes are embarrassing; write mistakes are incidents. Split read and write scopes, put irreversible tools behind per-record checks and a human approval gate, and make the grant revocable per agent.</div>
+        <div class="trigger"><strong>You expose an API or MCP server to clients you do not control</strong> &mdash; third-party agents will present tokens. Publish Protected Resource Metadata, require PKCE and audience-bound tokens, validate on every call, and never pass a received token through to your own upstreams.</div>
+      </div>
+    </section>
+
+    <a class="back-link" href="../index.html#daily-topics">&larr; Back to daily topics</a>
+  </div>
+
+<script>
+    const status = document.getElementById('live-status');
+    document.querySelectorAll('.copy-btn').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const target = document.getElementById(button.dataset.copy);
+        const text = target.innerText;
+        try {
+          await navigator.clipboard.writeText(text);
+          const original = button.textContent;
+          button.textContent = 'Copied';
+          status.textContent = 'Prompt copied to clipboard.';
+          setTimeout(() => button.textContent = original, 1600);
+        } catch {
+          const range = document.createRange();
+          range.selectNodeContents(target);
+          const selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+          status.textContent = 'Prompt selected. Copy it with your device copy command.';
+        }
+      });
+    });
+    const explanations = [["Protocol choice is not split by app type — both run on the same flows; the split is identity vs authorization.", "Correct. Access token = what the client may do at the resource; ID token = who signed in, for the client. Confusing the two audiences is a classic breach shape.", "Interchangeable tokens are exactly the failure mode: an ID token at an API, or identity read off an access token, breaks audience checking.", "Neither protocol handles passwords at the client at all — that is the point. The user authenticates only at the authorization server."], ["Convenient, and a least-privilege violation: .default pulls every registered permission into one grant, including ones this feature never uses.", "Write scopes 'just in case' double the blast radius of every token the feature ever holds — and make consent harder to grant.", "Correct. Minimal scope now, step-up later: the grant matches the feature, and a leaked token can only read a calendar.", "offline_access concerns refresh tokens, not resource coverage — requesting it does not grant calendar access, and it widens lifetime, not scope."], ["Correct. Audience validation is the resource server's core job — a token for another server is another service's key, and transiting it upstream is the passthrough anti-pattern.", "Same issuer is not same audience: the token names its intended resource, and honouring it elsewhere is how one leaked token becomes every service's key.", "Forwarding is precisely what the MCP spec forbids: servers must not accept or transit tokens not issued for their own resources.", "There is no read-only exception to audience checking — a wrong-audience token is invalid for this server, full stop."], ["Token length is not the mechanism — PKCE works even though the token itself is unchanged.", "Speed is not the stated reason: implicit is deprecated because tokens traverse the front channel, leak via history and scripts, and cannot be sender-constrained.", "RFC 9700 and OAuth 2.1 apply PKCE to all client types, SPAs included — public clients are exactly the ones that cannot keep a secret.", "Correct. PKCE ties redemption to the flow's originator, and code flow keeps tokens out of the front channel entirely."], ["A scope says the client may send mail in general — it says nothing about whose mail. Treating it as the whole decision is how agents act for the wrong user.", "Correct. Client-level scope plus per-record ownership (sub) plus an approval gate for irreversible actions — all three layers, every time.", "Swapping to an admin token erases the user's identity and limits — the confused-deputy pattern, not a fix.", "The model proposes; deterministic code disposes. Identity and ownership checks belong in the harness, not in a judgement call by the LLM."]];
+    const questions = [...document.querySelectorAll('.quiz-q')];
+    let score = 0, answered = 0;
+    questions.forEach((q, qi) => {
+      const correct = parseInt(q.dataset.answer, 10);
+      const exp = q.querySelector('.qexp');
+      q.querySelectorAll('.qopt').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          if (q.dataset.done) return;
+          q.dataset.done = "1";
+          const chosen = parseInt(btn.dataset.i, 10);
+          const ok = chosen === correct;
+          q.querySelectorAll('.qopt').forEach((b) => {
+            b.disabled = true;
+            if (parseInt(b.dataset.i, 10) === correct) b.classList.add('correct');
+          });
+          if (!ok) btn.classList.add('wrong');
+          else score++;
+          answered++;
+          exp.hidden = false;
+          exp.innerHTML = ok
+            ? "<strong class=\"ok\">Correct.</strong> " + explanations[qi][chosen]
+            : "<strong class=\"no\">Not quite.</strong> " + explanations[qi][chosen];
+          if (answered === questions.length) {
+            const box = document.getElementById('quiz-score');
+            box.style.display = "block";
+            box.innerHTML = "You scored <strong>" + score + " / " + questions.length + "</strong>." +
+              (score === questions.length ? " Clean sweep — now go check one agent you run: list its scopes and ask what a prompt injection could do with each." :
+               score >= 3 ? " Solid — re-read the mechanic you missed; identity bugs are usually audience, scope, or passthrough bugs." :
+               " Worth a re-read of sections 04 and 06 before you hand an agent its next credential.");
+          }
+        });
+      });
+    });
+    document.querySelectorAll('.fcard').forEach((card) => {
+      const flip = () => card.classList.toggle('flipped');
+      card.addEventListener('click', flip);
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); }
+      });
+    });
+</script>
+</body>
+</html>

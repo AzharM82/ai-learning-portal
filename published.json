@@ -418,5 +418,12 @@
     "date": "2026-11-11",
     "summary": "Cron knows the clock, not the data: declare dependencies as a DAG or asset graph, make every run own exactly one data interval or partition, keep each slice idempotent, and a backfill becomes a safe ranged re-run \u2014 capped, observable, and resumable \u2014 instead of a stampede. Airflow task-centric vs Dagster asset-centric, and how to choose.",
     "skill": "data-pipeline-orchestration"
+  },
+  {
+    "slug": "2026-11-12-identity-and-access-for-ai-apps",
+    "title": "Identity and access for AI apps: OAuth, scoped tokens, and agent permissions",
+    "date": "2026-11-12",
+    "summary": "Never hand an agent the master key: the user consents on the authorization server's own page, the agent gets a short-lived token bound to one audience with only the scopes this task needs, validated on every call \u2014 and per-tool, per-record permission is still enforced in your own code, because a valid token is not permission to do anything.",
+    "skill": "identity-and-access-for-ai-apps"
   }
 ]
