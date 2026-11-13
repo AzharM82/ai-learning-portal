@@ -425,5 +425,12 @@
     "date": "2026-11-12",
     "summary": "Never hand an agent the master key: the user consents on the authorization server's own page, the agent gets a short-lived token bound to one audience with only the scopes this task needs, validated on every call \u2014 and per-tool, per-record permission is still enforced in your own code, because a valid token is not permission to do anything.",
     "skill": "identity-and-access-for-ai-apps"
+  },
+  {
+    "slug": "2026-11-13-forward-deployed-engineering",
+    "title": "Forward deployed engineering: discovery, prototyping, and landing value",
+    "date": "2026-11-13",
+    "summary": "Embed with the customer to find the real problem, not the requested feature: shadow users, name the metric and baseline, prototype on real data in days, gate production on evals, harden inside their boundary, drive adoption until they run it alone \u2014 then pave the gravel road by codifying what worked into the platform.",
+    "skill": "forward-deployed-engineering"
   }
 ]

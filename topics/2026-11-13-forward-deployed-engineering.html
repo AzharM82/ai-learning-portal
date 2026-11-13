@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Forward deployed engineering: discovery, prototyping, and landing value &middot; AI Learning Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+    :root {
+      --ink: #14212b; --muted: #53636f; --paper: #f6f8f7; --white: #ffffff;
+      --line: #cbd5d8; --navy: #163247; --navy-2: #21465e; --teal: #0b8174;
+      --teal-soft: #dff2ee; --orange: #d66332; --orange-soft: #f8e4d8;
+      --gold: #d8a524; --gold-soft: #f7edc8; --blue-soft: #e3eef4;
+      --red: #b3402e; --red-soft: #f9e3de; --green: #1e7a3c; --green-soft: #e2f2e6;
+      --shadow: 0 18px 45px rgba(20, 33, 43, .09); --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; color: var(--ink); background: linear-gradient(rgba(20,33,43,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(20,33,43,.035) 1px, transparent 1px), var(--paper); background-size: 28px 28px; font-family: "Source Sans 3", sans-serif; font-size: 17px; line-height: 1.58; }
+    .shell { width: min(960px, calc(100% - 40px)); margin: 0 auto; }
+    .portal-nav{position:sticky;top:0;z-index:50;background:rgba(22,50,71,.97);border-bottom:1px solid rgba(255,255,255,.12)}
+    .portal-nav-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;flex-wrap:wrap}
+    .portal-brand{color:#fff;text-decoration:none;font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:15px}
+    .portal-brand span{color:var(--gold);font-weight:400}
+    .portal-links{display:flex;gap:18px;flex-wrap:wrap}
+    .portal-links a{color:#dbe7ee;text-decoration:none;font-size:14.5px}
+    .portal-links a:hover{color:#fff;text-decoration:underline}
+    .hero { padding: 56px 0 36px; }
+    .chapter-mark { display:inline-flex;align-items:center;gap:10px;color:var(--navy); font:600 12px/1.2 "IBM Plex Mono",monospace;letter-spacing:.09em;text-transform:uppercase;margin-bottom:18px; }
+    .chapter-mark::before { content:"";width:42px;height:3px;background:var(--orange); }
+    h1 { font-size: clamp(36px, 5vw, 58px); line-height: 1.02; letter-spacing:-.03em; margin:0 0 14px; }
+    .lede { color: var(--muted); font-size: clamp(18px,2vw,22px); max-width: 64ch; margin:0 0 8px; }
+    .date-line { font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--muted); }
+    section.block { margin: 44px 0; }
+    h2 { font-size: 26px; letter-spacing:-.02em; margin:0 0 6px; display:flex;align-items:center;gap:12px; }
+    h2 .num { font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:600;color:var(--white); background:var(--navy);border-radius:999px;min-width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center; }
+    .sub { color:var(--muted); margin:0 0 18px; max-width: 68ch; }
+    .card { background:var(--white);border:1px solid var(--line);border-radius:var(--radius); padding:24px;box-shadow:var(--shadow); }
+    .skill-card { background:var(--navy);color:#eaf2f7;border-radius:var(--radius);padding:22px 24px; font-family:"IBM Plex Mono",monospace;font-size:14.5px;overflow-x:auto;box-shadow:var(--shadow); }
+    .skill-card .k { color:var(--gold); }
+    .idea { font-size:21px;line-height:1.5;border-left:4px solid var(--teal);padding:6px 0 6px 20px;max-width:62ch; }
+    .idea strong { color:var(--navy); }
+    .mechanics { display:grid;gap:14px; }
+    .mech { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:18px 20px; display:grid;grid-template-columns:44px 1fr;gap:14px;align-items:start; }
+    .mech .mnum { font-family:"IBM Plex Mono",monospace;font-weight:600;color:var(--teal); background:var(--teal-soft);border-radius:10px;width:44px;height:44px;display:flex;align-items:center;justify-content:center; }
+    .mech h3 { margin:0 0 6px;font-size:18px; }
+    .mech p { margin:0;color:var(--muted);font-size:15.5px; }
+    .mech code, .inline-code { font-family:"IBM Plex Mono",monospace;font-size:.88em;background:var(--blue-soft); padding:2px 7px;border-radius:6px;color:var(--navy); }
+    pre.code { background:#0f2233;color:#e8f1f5;border-radius:14px;padding:20px 22px;overflow-x:auto; font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.6;margin:0; }
+    pre.code .c { color:#8ba3b0; } pre.code .s { color:#ffd479; } pre.code .k { color:#7fd6c2; }
+    .fail { border-left:4px solid var(--orange); }
+    .fail h3 .fix { display:block;margin-top:8px;font-size:15px;font-weight:500;color:var(--green); }
+    .ref-list { display:grid;gap:12px; }
+    .ref { display:flex;gap:14px;align-items:flex-start;background:var(--white);border:1px solid var(--line); border-radius:14px;padding:16px 18px;text-decoration:none;color:inherit; }
+    .ref:hover { border-color:var(--teal); }
+    .ref .badge { flex:none;font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;letter-spacing:.06em; padding:5px 10px;border-radius:999px;text-transform:uppercase; }
+    .badge.doc { background:var(--blue-soft);color:var(--navy); }
+    .badge.vid { background:var(--orange-soft);color:var(--orange); }
+    .ref h3 { margin:0 0 4px;font-size:17px; }
+    .ref p { margin:0;color:var(--muted);font-size:14.5px; }
+    .prompt-block { background:#0f2233;border-radius:var(--radius);overflow:hidden;margin-bottom:18px;box-shadow:var(--shadow); }
+    .prompt-top { display:flex;justify-content:space-between;align-items:center;gap:12px; padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.12); }
+    .prompt-top strong { color:#fff;font-size:13px;letter-spacing:.06em;font-family:"IBM Plex Mono",monospace; }
+    .copy-btn { border:1px solid #6c8796;background:transparent;color:#fff;border-radius:6px;padding:7px 11px; cursor:pointer;font-weight:700;font-size:14px; }
+    .copy-btn:hover { background:rgba(255,255,255,.1); }
+    .copy-btn:focus-visible { outline:2px solid var(--gold);outline-offset:2px; }
+    .prompt-text { color:#e8f1f5;font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.65; padding:18px;white-space:pre-wrap;margin:0; }
+    .sr-only { position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0); }
+    .quiz-q { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px; }
+    .quiz-q .qq { font-weight:700;margin:0 0 12px;font-size:18px; }
+    .qopts { display:grid;gap:8px; }
+    .qopt { text-align:left;background:var(--paper);border:1px solid var(--line);border-radius:10px; padding:12px 14px;cursor:pointer;font-size:15.5px;color:var(--ink); }
+    .qopt:hover:not(:disabled) { border-color:var(--navy); }
+    .qopt:disabled { cursor:default;opacity:.85; }
+    .qopt.correct { background:var(--green-soft);border-color:var(--green); }
+    .qopt.wrong { background:var(--red-soft);border-color:var(--red); }
+    .qexp { margin:12px 0 0;font-size:15px;color:var(--muted); }
+    .qexp strong.ok { color:var(--green); } .qexp strong.no { color:var(--red); }
+    #quiz-score { display:none;margin-top:8px;background:var(--navy);color:#fff;border-radius:14px; padding:20px 24px;font-size:19px; }
+    #quiz-score strong { color:var(--gold); }
+    .fgrid { display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px; }
+    .fcard { perspective:900px;cursor:pointer;min-height:170px; }
+    .fcard-inner { position:relative;width:100%;height:100%;min-height:170px;transform-style:preserve-3d;transition:transform .45s; }
+    .fcard.flipped .fcard-inner { transform:rotateY(180deg); }
+    .fface { position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden; border-radius:14px;padding:18px;display:flex;align-items:center;justify-content:center;text-align:center; border:1px solid var(--line);background:var(--white);box-shadow:var(--shadow);font-size:15.5px; }
+    .fface.front { font-weight:700;color:var(--navy); }
+    .fface.back { transform:rotateY(180deg);background:var(--teal-soft);color:var(--ink);font-size:14.5px; }
+    .fcard:focus-visible { outline:2px solid var(--teal);outline-offset:3px;border-radius:14px; }
+    .triggers { display:grid;gap:10px; }
+    .trigger { background:var(--gold-soft);border-radius:12px;padding:14px 18px;font-size:16px; }
+    .trigger strong { color:var(--navy); }
+    .back-link { display:inline-block;margin:8px 0 60px;font-weight:600;color:var(--teal);text-decoration:none;font-size:17px; }
+    .back-link:hover { text-decoration:underline; }
+    .fig { background:var(--white);border:1px solid var(--line);border-radius:var(--radius); padding:12px;box-shadow:var(--shadow);overflow-x:auto; }
+    .fig svg { display:block;width:100%;height:auto; }
+    .flow-anim { stroke-dasharray: 8 6; animation: dashmove 1.2s linear infinite; }
+    @keyframes dashmove { to { stroke-dashoffset: -14; } }
+    @media (prefers-reduced-motion: reduce) { .fcard-inner{transition:none;} .flow-anim{animation:none;} }
+  </style>
+</head>
+<body><nav class="portal-nav">
+    <div class="shell portal-nav-inner">
+      <a class="portal-brand" href="../index.html">AI Engineering <span>&middot; Learning Portal</span></a>
+      <div class="portal-links">
+        <a href="../index.html#daily-topics">Daily topics</a>
+        <a href="../index.html#loop">Loop</a>
+        <a href="../index.html#graph">Graph</a>
+        <a href="../index.html#harness">Harness</a>
+      </div>
+    </div>
+  </nav>
+  <div class="shell">
+    <header class="hero">
+      <div class="chapter-mark">Daily topic &middot; Forward deployed engineering</div>
+      <h1>Forward deployed engineering: discovery, prototyping, and landing value</h1>
+      <p class="lede">A capable model or platform does not deploy itself. Between what the product does and what a customer actually needs sits messy data, legacy systems, security reviews, and users who cannot describe the workflow until they see it working. A forward deployed engineer (FDE) closes that gap from inside the customer: find the real problem, prove it on real data in days, harden it into production, and stay until people actually use it.</p>
+      <p class="date-line">2026-11-13 &middot; Topic 061</p>
+    </header>
+
+    <section class="block">
+      <h2><span class="num">01</span> The skill card</h2>
+      <p class="sub">Every topic on this portal is designed like a Codex skill: a name, a trigger, and concrete steps.</p>
+      <div class="skill-card"><pre style="margin:0">---
+<span class="k">name:</span> forward-deployed-engineering
+<span class="k">description:</span> Reach for this when a complex product must land inside one
+  customer: embed with their users, discover the real problem and
+  its metric, scope the smallest high-leverage wedge, prototype on
+  real data in days, evaluate before you harden, ship inside their
+  security boundary, drive adoption until the customer runs it
+  alone, and codify the pattern back into the platform.
+---</pre></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">02</span> The one-idea version</h2>
+      <p class="idea"><strong>The FDE sells an outcome, not a product or a service.</strong> A platform engineer (Palantir&rsquo;s &ldquo;Dev&rdquo;) builds one capability for many customers; a forward deployed engineer (&ldquo;Delta&rdquo;) applies many capabilities for one customer &mdash; and is measured by that customer&rsquo;s production adoption and workflow impact, not by features shipped. The loop is discover &rarr; prototype &rarr; harden &rarr; land, then pave the gravel road so the next customer starts further ahead.</p>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">03</span> The picture: the deployment loop</h2>
+      <p class="sub">One customer, many capabilities &mdash; and every loop feeds what was learned back into the platform.</p>
+      <div class="fig">
+        <svg viewBox="0 0 960 340" role="img" aria-label="Diagram of the forward deployed engineering loop: discover the real problem with users, prototype on real data, harden with evals security and observability, land adoption and handover, then pave the road by codifying patterns into the platform, which feeds the next discovery.">
+          <g font-family="Source Sans 3, sans-serif" font-size="14">
+            <text x="20" y="26" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="600" fill="#163247">THE LOOP: ONE CUSTOMER, MANY CAPABILITIES</text>
+            <rect x="20" y="44" width="160" height="84" rx="12" fill="#e3eef4" stroke="#163247" stroke-width="2"/>
+            <text x="100" y="72" text-anchor="middle" font-weight="700" fill="#163247">1. Discover</text>
+            <text x="100" y="92" text-anchor="middle" fill="#53636f">shadow users</text>
+            <text x="100" y="110" text-anchor="middle" fill="#53636f">name the metric</text>
+            <text x="192" y="90" text-anchor="middle" font-size="20" font-weight="700" fill="#163247">&#8594;</text>
+            <rect x="210" y="44" width="160" height="84" rx="12" fill="#dff2ee" stroke="#0b8174" stroke-width="2"/>
+            <text x="290" y="72" text-anchor="middle" font-weight="700" fill="#163247">2. Prototype</text>
+            <text x="290" y="92" text-anchor="middle" fill="#53636f">real data, days</text>
+            <text x="290" y="110" text-anchor="middle" fill="#53636f">smallest wedge</text>
+            <text x="382" y="90" text-anchor="middle" font-size="20" font-weight="700" fill="#163247">&#8594;</text>
+            <rect x="400" y="44" width="160" height="84" rx="12" fill="#f8e4d8" stroke="#d66332" stroke-width="2"/>
+            <text x="480" y="72" text-anchor="middle" font-weight="700" fill="#163247">3. Harden</text>
+            <text x="480" y="92" text-anchor="middle" fill="#53636f">evals, security</text>
+            <text x="480" y="110" text-anchor="middle" fill="#53636f">production rollout</text>
+            <text x="572" y="90" text-anchor="middle" font-size="20" font-weight="700" fill="#163247">&#8594;</text>
+            <rect x="590" y="44" width="160" height="84" rx="12" fill="#f7edc8" stroke="#d8a524" stroke-width="2"/>
+            <text x="670" y="72" text-anchor="middle" font-weight="700" fill="#163247">4. Land</text>
+            <text x="670" y="92" text-anchor="middle" fill="#53636f">adoption + impact</text>
+            <text x="670" y="110" text-anchor="middle" fill="#53636f">customer runs it</text>
+            <text x="762" y="90" text-anchor="middle" font-size="20" font-weight="700" fill="#163247">&#8594;</text>
+            <rect x="780" y="44" width="160" height="84" rx="12" fill="#ffffff" stroke="#cbd5d8"/>
+            <text x="860" y="72" text-anchor="middle" font-weight="700" fill="#163247">5. Pave</text>
+            <text x="860" y="92" text-anchor="middle" fill="#53636f">codify patterns</text>
+            <text x="860" y="110" text-anchor="middle" fill="#53636f">into the platform</text>
+            <path d="M860 132 V168 H100 V132" stroke="#0b8174" stroke-width="2" fill="none" class="flow-anim"/>
+            <text x="20" y="200" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="600" fill="#163247">SUCCESS IS NOT GO-LIVE. SUCCESS IS:</text>
+            <rect x="20" y="216" width="920" height="84" rx="12" fill="#163247"/>
+            <text x="480" y="246" text-anchor="middle" fill="#ffffff" font-weight="700">production adoption &middot; measurable workflow impact &middot; eval-driven feedback that changes the roadmap</text>
+            <text x="480" y="268" text-anchor="middle" fill="#cbd5d8" font-size="13">Gravel road first: the FDE builds the rough path for one customer. Core engineering then paves it for the next ten.</text>
+            <text x="480" y="288" text-anchor="middle" fill="#cbd5d8" font-size="13">If the customer cannot run it without you, it has not landed yet.</text>
+          </g>
+        </svg>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">04</span> How it works</h2>
+      <p class="sub">Six mechanics: discover before you build, wedge small, prototype on real data, evaluate before hardening, land adoption, and pave what you learned.</p>
+      <div class="mechanics">
+<div class="mech"><div class="mnum">1</div><div><h3>Discover in the workflow, not the meeting room</h3><p>Sit with the people who do the work. Watch the current process end to end, note where time, re-typing, and workarounds live, and separate the <strong>requested feature</strong> from the <strong>real problem</strong>. OpenAI&rsquo;s FDE description puts discovery and technical scoping first for a reason: the customer often cannot articulate the need until an engineer sees the workflow. Write the problem in the customer&rsquo;s words &mdash; who hurts, how often, at what cost &mdash; and name the metric and its baseline before any code.</p></div></div>
+<div class="mech"><div class="mnum">2</div><div><h3>Scope the smallest high-leverage wedge</h3><p>Pick one workflow, one user group, and one outcome you can move in weeks &mdash; not the whole transformation. Define success criteria, non-goals, the sponsor who can unblock you, and a kill criterion if the data or access never arrives. Sequence delivery explicitly and remove blockers early (data access, security review, identity) because those, not modelling, are what usually stall enterprise AI. A narrow wedge that lands beats a broad plan that demos.</p></div></div>
+<div class="mech"><div class="mnum">3</div><div><h3>Prototype on real data, in days, in front of real users</h3><p>Build the smallest end-to-end slice against the customer&rsquo;s real (or faithfully sanitized) data and systems, and demo it to the actual users this week. A slide is not a prototype and synthetic data proves almost nothing: the failures that matter &mdash; messy fields, permissions, edge cases &mdash; only appear on real data. Throwaway code is acceptable here; the prototype&rsquo;s job is to test whether the value is real, fast enough that a wrong direction costs days, not a quarter.</p></div></div>
+<div class="mech"><div class="mnum">4</div><div><h3>Evaluate before you harden</h3><p>Turn the prototype&rsquo;s real cases into an eval set with expected outcomes, graded with users or domain experts. OpenAI measures FDE work through <em>eval-driven feedback</em>: the eval tells you whether a change helped, gives the customer a reason to trust the system, and gives product and research a precise account of where the model succeeds and fails. Do not productionize a demo nobody has graded &mdash; harden only what the eval says is good enough for the stated risk.</p></div></div>
+<div class="mech"><div class="mnum">5</div><div><h3>Harden inside the customer&rsquo;s boundary</h3><p>Now do the unglamorous engineering: integrate with their identity, data, and existing tools; pass their security and compliance review; add observability, retries, and a runbook; and deploy where their sensitive data is allowed to live. Contribute production-grade code, not a notebook hand-off. Make trade-offs between scope, speed, and quality explicitly with the customer, and protect the delivery date by cutting scope &mdash; never by silently cutting the safety or eval gates.</p></div></div>
+<div class="mech"><div class="mnum">6</div><div><h3>Land it, then pave the road behind you</h3><p>Go-live is the midpoint. Train and pair with the customer&rsquo;s own engineers, watch adoption signals, fix the friction users actually hit, and measure the workflow impact against the baseline from step 1. Then do the second half of the job: codify working patterns into tools, playbooks, and platform features, and carry field feedback back to product &mdash; Palantir notes some of its most valuable product additions originated in the field this way. Leave the customer able to run and extend the system without you.</p></div></div>
+</div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">05</span> Code sketch</h2>
+      <p class="sub">An engagement as code: no prototype without a baseline, no production without an eval gate.</p>
+      <pre class="code"><span class="k">from</span> dataclasses <span class="k">import</span> dataclass, field
+
+@dataclass
+<span class="k">class</span> Engagement:
+    problem: str            <span class="c"># in the customer's words, not a feature request</span>
+    metric: str             <span class="c"># e.g. "minutes per claim summary"</span>
+    baseline: float | None = None
+    eval_cases: list = field(default_factory=list)  <span class="c"># real cases, graded</span>
+    wedge: str = <span class="s">""</span>         <span class="c"># one workflow, one user group</span>
+
+    <span class="k">def</span> can_prototype(self) -&gt; bool:
+        <span class="k">return</span> self.baseline <span class="k">is not</span> None <span class="k">and</span> bool(self.wedge)
+
+    <span class="k">def</span> can_ship(self, eval_score: float, threshold: float = 0.9) -&gt; bool:
+        <span class="c"># Eval gate first, then adoption is measured against baseline.</span>
+        <span class="k">return</span> len(self.eval_cases) &gt;= 20 <span class="k">and</span> eval_score &gt;= threshold
+
+<span class="k">def</span> land(eng: Engagement, before: float, after: float) -&gt; dict:
+    <span class="k">assert</span> eng.can_prototype(), <span class="s">"discovery incomplete: no baseline / wedge"</span>
+    impact = (before - after) / before
+    <span class="k">return</span> {<span class="s">"impact_pct"</span>: round(100 * impact, 1),
+            <span class="s">"landed"</span>: impact &gt; 0,  <span class="c"># value, not go-live, is the verdict</span>
+            <span class="s">"pave"</span>: <span class="s">"codify the pattern for the platform team"</span>}</pre>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">06</span> Failure modes</h2>
+      <p class="sub">Five ways an FDE engagement fails &mdash; each with a one-line fix.</p>
+      <div class="mechanics">
+<div class="mech fail"><div class="mnum">1</div><div><h3>Building the requested feature<span class="fix">Fix: shadow the work first and re-state the problem, metric, and baseline in the customer&rsquo;s words before scoping anything.</span></h3><p>The sponsor asks for a chatbot, a dashboard, or &ldquo;AI for this team,&rdquo; and the engineer builds exactly that &mdash; only to discover the real cost was data entry between two systems nobody mentioned. Discovery skipped is scope wasted.</p></div></div>
+<div class="mech fail"><div class="mnum">2</div><div><h3>Slideware and synthetic-data demos<span class="fix">Fix: get a real, sanitized data sample in week one and demo the smallest end-to-end slice to actual users.</span></h3><p>The POC shines in a steering meeting and dies on contact with production data, permissions, and edge cases. Everyone agreed to a fiction, and the rework arrives after the credibility is spent.</p></div></div>
+<div class="mech fail"><div class="mnum">3</div><div><h3>Prototype debt shipped as production<span class="fix">Fix: label prototype code as throwaway, pass the eval gate, then deliberately harden &mdash; security, observability, runbook &mdash; before rollout.</span></h3><p>The two-week demo quietly becomes the system of record: no evals, no monitoring, no owner. It works until it doesn&rsquo;t, in front of the customer who trusted you most.</p></div></div>
+<div class="mech fail"><div class="mnum">4</div><div><h3>Consulting drift: everything bespoke, nothing generalizes<span class="fix">Fix: build on shared platform primitives and log every one-off; if a pattern repeats twice, propose it as a platform feature or playbook.</span></h3><p>Each engagement becomes custom services work. Margins sink, the product learns nothing, and the FDE team turns into a consultancy with better branding &mdash; exactly the trap Kevin Bai&rsquo;s 101 warns against.</p></div></div>
+<div class="mech fail"><div class="mnum">5</div><div><h3>Go-live mistaken for done<span class="fix">Fix: define landing as adoption + measured impact + a customer team that can run it alone, and stay until all three are true.</span></h3><p>The system deploys, the launch email goes out, usage flatlines, and the workflow quietly reverts to spreadsheets. The FDE has left, so nobody owns the adoption problem &mdash; and the renewal pays for it.</p></div></div>
+</div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">07</span> Go deeper</h2>
+      <p class="sub">Verified references &mdash; every link opened and checked before publishing.</p>
+      <div class="ref-list">
+        <a class="ref" href="https://openai.com/careers/forward-deployed-engineer-(fde)-seattle-seattle/"><span class="badge doc">Role</span><div><h3>Forward Deployed Engineer (FDE) &mdash; Seattle &mdash; OpenAI</h3><p>The current frontier-lab definition in one page: own discovery, scoping, system design, build, and production rollout; success is production adoption, measurable workflow impact, and eval-driven feedback that changes product and model roadmaps.</p></div></a>
+        <a class="ref" href="https://blog.palantir.com/a-day-in-the-life-of-a-palantir-forward-deployed-software-engineer-45ef2de257b1"><span class="badge doc">Article</span><div><h3>A day in the life of a Palantir Forward Deployed Software Engineer &mdash; Palantir Blog</h3><p>From the company that invented the role: a Delta embeds with one customer and enables many capabilities for them (the inverse of a Dev), implements the solution with end users, and carries field configurations back so they become product for everyone.</p></div></a>
+        <a class="ref" href="https://posthog.com/blog/forward-deployed-engineer"><span class="badge doc">Article</span><div><h3>WTF is a forward deployed engineer? (and why everyone is hiring them) &mdash; PostHog</h3><p>The accessible explainer: filling the gap between what the product does and what the customer needs, the gravel-road-to-superhighway division of labour, and an honest test for when an FDE does &mdash; and does not &mdash; make economic sense.</p></div></a>
+        <a class="ref" href="https://www.youtube.com/watch?v=KwhgfwOSToQ"><span class="badge vid">Video</span><div><h3>Forward Deployed Engineering 101 &mdash; Kevin Bai, AI Engineer</h3><p>The best single primer: Bai (Anthropic, ex-Palantir, founding FDE at Rippling) on selling an outcome rather than a product or a service, why the work must sit on a reusable platform, and the two questions to ask before starting an FDE motion.</p></div></a>
+        <a class="ref" href="https://www.youtube.com/watch?v=cBD7_R-Cizg"><span class="badge vid">Video</span><div><h3>Colin Jarvis, Head of Forward Deployed Engineering at OpenAI: Trust. Product. Impact.</h3><p>FDE at frontier scale, from the person who runs it at OpenAI: embedding with Morgan Stanley and others, eval-driven development in the field, what not to do, and how customer engagements turn into platform and product.</p></div></a>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">08</span> Sample prompts</h2>
+      <p class="sub">Copy one into your AI assistant and apply it to your own work.</p>
+      <p id="live-status" class="sr-only" role="status"></p>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>RUN DISCOVERY FOR AN ENGAGEMENT</strong><button class="copy-btn" data-copy="p1">Copy</button></div>
+        <p class="prompt-text" id="p1">Act as a forward deployed engineer starting discovery at this customer: [describe the company, the team, and what they asked for]. Do not propose a solution yet. Give me: (1) the questions I should ask while shadowing users, grouped by workflow, data, systems, and constraints, (2) how to separate the requested feature from the real problem, with the re-statement I should test with the sponsor, (3) the metric and baseline I should capture before building, and how to measure the baseline honestly, (4) the access and blockers to surface in week one — data, security, identity, procurement — and (5) a one-page discovery summary template I can fill in and get signed off.</p>
+      </div>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>SCOPE A TWO-WEEK PROTOTYPE</strong><button class="copy-btn" data-copy="p2">Copy</button></div>
+        <p class="prompt-text" id="p2">Scope a two-week forward deployed prototype from this discovery summary: [paste it]. Give me: (1) the wedge — one workflow, one user group, one measurable outcome — and what is explicitly out of scope, (2) a day-by-day plan that gets real (or faithfully sanitized) customer data flowing by day two and a demo in front of actual users by the end of week one, (3) the eval set: 20+ real cases with expected outcomes and who grades them, plus the pass threshold that would justify hardening, (4) the risks that would kill the prototype (access, data quality, security review) and the fallback for each, and (5) the demo script: what I show, in what order, and the decision I ask for at the end.</p>
+      </div>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>LAND IT AND PAVE THE ROAD</strong><button class="copy-btn" data-copy="p3">Copy</button></div>
+        <p class="prompt-text" id="p3">This prototype worked and the customer wants it in production: [describe the prototype, the users, and the customer&rsquo;s environment]. Give me a landing plan with: (1) the hardening checklist — integrations, identity and permissions, security/compliance review, observability, runbook, and ownership — in dependency order, (2) the rollout and adoption plan: pilot group, training, the friction signals to watch, and how impact is measured against the discovery baseline, (3) the handover: what the customer&rsquo;s own engineers must be able to do before I step back, and how I verify it, and (4) the pave-the-road memo to my product team: which parts generalize, which stay bespoke and why, and the platform feature or playbook I am proposing.</p>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">09</span> Quiz</h2>
+      <p class="sub">Five questions. Click an answer &mdash; you get the explanation right away.</p>
+      <div id="quiz">
+<div class="quiz-q" data-answer="1"><p class="qq">1. What most cleanly distinguishes a forward deployed engineer (Delta) from a platform engineer (Dev)?</p><div class="qopts"><button class="qopt" data-i="0">Deltas write less code and mostly advise the customer.</button>
+<button class="qopt" data-i="1">A Dev builds one capability for many customers; a Delta applies many capabilities for one customer and is measured by that customer&rsquo;s outcome.</button>
+<button class="qopt" data-i="2">Deltas work for the customer; Devs work for the vendor.</button>
+<button class="qopt" data-i="3">A Delta is a senior Dev who travels more.</button></div><p class="qexp" hidden></p></div>
+<div class="quiz-q" data-answer="2"><p class="qq">2. A sponsor opens with &ldquo;we need an AI chatbot for support.&rdquo; What is the FDE&rsquo;s first move?</p><div class="qopts"><button class="qopt" data-i="0">Demo the chatbot platform so the sponsor can react to something concrete.</button>
+<button class="qopt" data-i="1">Ask for the chatbot requirements document and start scoping features.</button>
+<button class="qopt" data-i="2">Shadow support agents, find where the time and pain actually are, and re-state the problem with a metric and baseline before proposing any solution.</button>
+<button class="qopt" data-i="3">Propose a two-week chatbot POC on sample tickets.</button></div><p class="qexp" hidden></p></div>
+<div class="quiz-q" data-answer="0"><p class="qq">3. Why must the prototype run on real customer data rather than synthetic data?</p><div class="qopts"><button class="qopt" data-i="0">Because the failures that decide the engagement &mdash; messy fields, permissions, edge cases, real distributions &mdash; only appear on real data; a synthetic demo can prove a fiction.</button>
+<button class="qopt" data-i="1">Synthetic data is illegal in enterprise engagements.</button>
+<button class="qopt" data-i="2">Real data makes the demo look more impressive to executives.</button>
+<button class="qopt" data-i="3">It does not matter, as long as the model is the same.</button></div><p class="qexp" hidden></p></div>
+<div class="quiz-q" data-answer="3"><p class="qq">4. The prototype demos well. What gates the move to production?</p><div class="qopts"><button class="qopt" data-i="0">The sponsor&rsquo;s enthusiasm at the demo.</button>
+<button class="qopt" data-i="1">A signed expansion contract.</button>
+<button class="qopt" data-i="2">Rewriting the prototype in the platform&rsquo;s preferred language.</button>
+<button class="qopt" data-i="3">An eval set of real, graded cases clearing an agreed threshold &mdash; then deliberate hardening: security, observability, and a runbook.</button></div><p class="qexp" hidden></p></div>
+<div class="quiz-q" data-answer="1"><p class="qq">5. The system is live, but usage is flat and the team is back in spreadsheets. What is true?</p><div class="qopts"><button class="qopt" data-i="0">The engagement succeeded &mdash; go-live was the deliverable; adoption is the customer&rsquo;s problem.</button>
+<button class="qopt" data-i="1">It has not landed. Landing means adoption, measured impact against the baseline, and a customer team that can run it &mdash; the FDE stays and fixes the friction until then.</button>
+<button class="qopt" data-i="2">The fix is a bigger launch announcement and more licences.</button>
+<button class="qopt" data-i="3">The model needs to be bigger; usage follows capability.</button></div><p class="qexp" hidden></p></div>
+</div>
+      <div id="quiz-score" role="status"></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">10</span> Flashcards</h2>
+      <p class="sub">Click a card (or focus it and press Enter / Space) to flip it.</p>
+      <div class="fgrid">
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Forward deployed engineer (FDE)</div><div class="fface back">A software engineer employed by the vendor who embeds with one customer to make the product deliver a real outcome there: discovery, prototyping, integration, production rollout, and adoption &mdash; writing production code throughout, not advising from the side.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Dev vs Delta</div><div class="fface back">Palantir&rsquo;s split: a Dev builds one capability for many customers on the core platform; a Delta (the FDE) applies many capabilities for one customer. Same engineering bar, opposite direction of generalization.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Discovery</div><div class="fface back">The phase before building: shadow users in their real workflow, separate the requested feature from the real problem, and capture the metric and its baseline. Discovery decides what the real work is; skipping it scopes the wrong thing beautifully.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">The wedge</div><div class="fface back">The smallest first scope that can land: one workflow, one user group, one measurable outcome, in weeks. Land the wedge, earn trust and access, then expand &mdash; land-and-expand beats the big-bang transformation that never ships.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Prototype on real data</div><div class="fface back">The smallest end-to-end slice, built in days against the customer&rsquo;s real or faithfully sanitized data and demoed to actual users. Synthetic data and slides hide exactly the failures &mdash; mess, permissions, edge cases &mdash; that decide the engagement.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Eval gate</div><div class="fface back">A set of real cases with expected outcomes, graded before production. It is the trust mechanism with the customer, the go/no-go for hardening, and the feedback channel that tells product and research where the model actually fails.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Gravel road &rarr; paved highway</div><div class="fface back">The FDE builds the rough first path for one customer; core engineering then generalizes it into the platform so the next ten customers get a paved road. If nothing gets paved, the motion has drifted into consulting.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Landing value</div><div class="fface back">The finish line is not go-live: it is production adoption, workflow impact measured against the discovery baseline, and a customer team that can run and extend the system without the FDE.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Consulting drift</div><div class="fface back">The failure mode where every engagement becomes bespoke services work: no shared primitives, nothing codified back, product learns nothing. The guardrails are a real platform to build on and a pave-the-road step in every engagement.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">When FDE does not fit</div><div class="fface back">If the product is self-serve, the buyer is technical, and contracts are small, embedding engineers cannot pay for themselves. FDE fits complex products, non-technical buyers, regulated or integrated environments, and deals large enough to carry the cost.</div></div></div>
+</div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">11</span> Reach for this when&hellip;</h2>
+      <div class="triggers">
+        <div class="trigger"><strong>A capable product keeps stalling inside customers</strong> &mdash; pilots demo well and never reach production. The gap is data, integration, workflow, and trust, and that gap is engineering work done inside the customer, not more features.</div>
+        <div class="trigger"><strong>The buyer cannot specify what they need</strong> &mdash; a complex platform sold to a non-technical organization. Nobody can write the requirements document; an embedded engineer has to discover the problem by watching the work and prototyping against it.</div>
+        <div class="trigger"><strong>You are entering a new vertical or landing a flagship account</strong> &mdash; you do not yet know what the product should become there. One landed customer, with its patterns paved back into the platform, teaches more than a year of market research.</div>
+      </div>
+    </section>
+
+    <a class="back-link" href="../index.html#daily-topics">&larr; Back to daily topics</a>
+  </div>
+
+<script>
+    const status = document.getElementById('live-status');
+    document.querySelectorAll('.copy-btn').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const target = document.getElementById(button.dataset.copy);
+        const text = target.innerText;
+        try {
+          await navigator.clipboard.writeText(text);
+          const original = button.textContent;
+          button.textContent = 'Copied';
+          status.textContent = 'Prompt copied to clipboard.';
+          setTimeout(() => button.textContent = original, 1600);
+        } catch {
+          const range = document.createRange();
+          range.selectNodeContents(target);
+          const selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+          status.textContent = 'Prompt selected. Copy it with your device copy command.';
+        }
+      });
+    });
+    const explanations = [["Advising is the consultant shape — Deltas implement the solution with end users and carry the engineering bar of any product engineer.", "Correct. One capability for many vs many capabilities for one — and the Delta's scorecard is the customer's outcome, not the roadmap.", "Deltas remain vendor engineers; that is what lets their field work feed the vendor's platform instead of becoming the customer's IT department.", "Travel is a symptom, not the definition — some FDEs are remote. The distinction is direction of focus and the success metric."], ["A platform demo answers a question nobody has verified yet — discovery first, then the demo means something.", "A requirements document for an unspecified problem just formalizes the guess. The FDE's job is to replace the guess with observation.", "Correct. Watch the work, find where time and pain live, re-state the problem with a metric and baseline — then scope.", "Even a POC is too early: on sample tickets it would test the requested feature, not the real problem."], ["Correct. Real data is where the engagement is actually decided — distributions, mess, and permissions are the work.", "Synthetic data is not illegal; it is just weak evidence. Sanitized real data is the usual enterprise compromise.", "Executive impressiveness is not the point — user trust built on their own real cases is.", "Same model, different data, different result: retrieval, prompts, and edge cases all behave differently on production distributions."], ["Enthusiasm is not evidence — demo audiences reward polish, evals reward correctness.", "A contract funds the work; it does not grade it. Plenty of paid systems never survive contact with real cases.", "Language choice is an implementation detail; it says nothing about whether the system is good enough to harden.", "Correct. Grade real cases against an agreed bar first, then spend the hardening effort — security, observability, runbook — only on what passed."], ["Go-live is a deployment event, not value. If nobody uses it, the customer bought a launch, not an outcome.", "Correct. Adoption + measured impact + customer self-sufficiency is the landing definition — flat usage means the FDE's work is not done.", "Announcements do not fix workflow friction; watching users and removing what blocks them does.", "Capability was rarely the blocker — fit to workflow, data, and trust was. A bigger model widens none of those gaps by itself."]];
+    const questions = [...document.querySelectorAll('.quiz-q')];
+    let score = 0, answered = 0;
+    questions.forEach((q, qi) => {
+      const correct = parseInt(q.dataset.answer, 10);
+      const exp = q.querySelector('.qexp');
+      q.querySelectorAll('.qopt').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          if (q.dataset.done) return;
+          q.dataset.done = "1";
+          const chosen = parseInt(btn.dataset.i, 10);
+          const ok = chosen === correct;
+          q.querySelectorAll('.qopt').forEach((b) => {
+            b.disabled = true;
+            if (parseInt(b.dataset.i, 10) === correct) b.classList.add('correct');
+          });
+          if (!ok) btn.classList.add('wrong');
+          else score++;
+          answered++;
+          exp.hidden = false;
+          exp.innerHTML = ok
+            ? "<strong class=\"ok\">Correct.</strong> " + explanations[qi][chosen]
+            : "<strong class=\"no\">Not quite.</strong> " + explanations[qi][chosen];
+          if (answered === questions.length) {
+            const box = document.getElementById('quiz-score');
+            box.style.display = "block";
+            box.innerHTML = "You scored <strong>" + score + " / " + questions.length + "</strong>." +
+              (score === questions.length ? " Clean sweep — now pick one stalled pilot you know and write its problem statement, metric, and baseline in the customer's words." :
+               score >= 3 ? " Solid — re-read the mechanic you missed; FDE failures are usually discovery, eval, or adoption failures." :
+               " Worth a re-read of sections 04 and 06 before your next customer engagement.");
+          }
+        });
+      });
+    });
+    document.querySelectorAll('.fcard').forEach((card) => {
+      const flip = () => card.classList.toggle('flipped');
+      card.addEventListener('click', flip);
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); }
+      });
+    });
+</script>
+</body>
+</html>

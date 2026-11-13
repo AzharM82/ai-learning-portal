@@ -1,7 +1,6 @@
 {
   "note": "Azharuddin's requested topics, in order. He adds topics by messaging Azhar.AI in chat. The daily publisher takes from here first; when empty, it picks from curriculum.md.",
   "queue": [
-    "Forward deployed engineering: discovery, prototyping, and landing value",
     "Pricing and promotions systems: elasticity, discounting, and guardrails",
     "Solutions architecture for AI: patterns, trade-offs, and reference designs",
     "LLM evaluation: benchmarks, judges, and regression suites",

@@ -1,0 +1,8 @@
+{
+  "id": "1a1d0d201f29ffeb",
+  "labelIds": [
+    "SENT"
+  ],
+  "threadId": "1a1d0d201f29ffeb"
+}
+Final sent message (supersedes the original request): {"from":null,"to":["reachazhar@hotmail.com"],"cc":["mazhar@microsoft.com"],"bcc":[],"subject":"Today's AI topic: Identity and access for AI apps: OAuth, scoped tokens, and agent permissions","body":"<p>Today&rsquo;s topic is live: <a href=\"https://azharm82.github.io/ai-learning-portal/topics/2026-11-12-identity-and-access-for-ai-apps.html\"><strong>Identity and access for AI apps: OAuth, scoped tokens, and agent permissions</strong></a></p><p>An agent is only as safe as the credential it carries. This lesson covers the valet-key model &mdash; OAuth delegated authorization with Authorization Code + PKCE, least-privilege scopes with step-up instead of hoarding, audience-bound tokens validated on every call (including the MCP authorization rules), and the per-tool, per-record permission checks your own code still has to enforce &mdash; plus a 5-question quiz and flashcards.</p><p>Why it matters: every AI feature that reads mail, writes to a CRM, or calls tools on a user&rsquo;s behalf inherits the blast radius of its token; getting scopes, audiences, and token handling right is the difference between a contained incident and a full-account compromise.</p><p>The next topic arrives tomorrow.</p>","attachments":[],"user_edited":false}
