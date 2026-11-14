@@ -1,0 +1,8 @@
+{
+  "id": "1a1d5f8274a4a7c7",
+  "labelIds": [
+    "SENT"
+  ],
+  "threadId": "1a1d5f8274a4a7c7"
+}
+Final sent message (supersedes the original request): {"from":null,"to":["reachazhar@hotmail.com"],"cc":["mazhar@microsoft.com"],"bcc":[],"subject":"Today's AI topic: Forward deployed engineering: discovery, prototyping, and landing value","body":"<p>Today&rsquo;s AI learning portal topic is live:</p><p><strong><a href=\"https://azharm82.github.io/ai-learning-portal/topics/2026-11-13-forward-deployed-engineering.html\">Forward deployed engineering: discovery, prototyping, and landing value</a></strong></p><p>Models and platforms do not deploy themselves &mdash; the gap between what a product does and what a customer needs is closed by engineers embedded in the workflow, and that gap is exactly where AI deployments succeed or stall. This lesson covers the FDE loop &mdash; discover the real problem and its baseline, prototype on real data in days, gate production on evals, and land adoption &mdash; plus the gravel-road-to-paved-highway discipline that turns one customer&rsquo;s solution into platform value, a pattern central to both frontier-lab FDE roles and senior engineering leadership.</p><p>The next topic arrives tomorrow.</p>","attachments":[],"user_edited":false}

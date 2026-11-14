@@ -432,5 +432,12 @@
     "date": "2026-11-13",
     "summary": "Embed with the customer to find the real problem, not the requested feature: shadow users, name the metric and baseline, prototype on real data in days, gate production on evals, harden inside their boundary, drive adoption until they run it alone \u2014 then pave the gravel road by codifying what worked into the platform.",
     "skill": "forward-deployed-engineering"
+  },
+  {
+    "slug": "2026-11-14-pricing-promotions-systems",
+    "title": "Pricing and promotions systems: elasticity, discounting, and guardrails",
+    "date": "2026-11-14",
+    "summary": "A price is a control, not a label: estimate elasticity (%\u0394Q / %\u0394P) by segment and price point, discount only with a coupon object that has floors, caps, expiry and stacking rules, and put every automated change behind floors, ceilings, speed limits, approvals and a kill switch \u2014 so a promo lifts incremental margin, not just conversion.",
+    "skill": "pricing-promotions-systems"
   }
 ]

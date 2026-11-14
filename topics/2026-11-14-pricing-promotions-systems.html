@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pricing and promotions systems: elasticity, discounting, and guardrails &middot; AI Learning Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+    :root { --ink: #14212b; --muted: #53636f; --paper: #f6f8f7; --white: #ffffff; --line: #cbd5d8; --navy: #163247; --navy-2: #21465e; --teal: #0b8174; --teal-soft: #dff2ee; --orange: #d66332; --orange-soft: #f8e4d8; --gold: #d8a524; --gold-soft: #f7edc8; --blue-soft: #e3eef4; --red: #b3402e; --red-soft: #f9e3de; --green: #1e7a3c; --green-soft: #e2f2e6; --shadow: 0 18px 45px rgba(20, 33, 43, .09); --radius: 18px; }
+    * { box-sizing: border-box; }
+    body { margin: 0; color: var(--ink); background: linear-gradient(rgba(20,33,43,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(20,33,43,.035) 1px, transparent 1px), var(--paper); background-size: 28px 28px; font-family: "Source Sans 3", sans-serif; font-size: 17px; line-height: 1.58; }
+    .shell { width: min(960px, calc(100% - 40px)); margin: 0 auto; }
+    .portal-nav{position:sticky;top:0;z-index:50;background:rgba(22,50,71,.97);border-bottom:1px solid rgba(255,255,255,.12)}
+    .portal-nav-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;flex-wrap:wrap}
+    .portal-brand{color:#fff;text-decoration:none;font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:15px}
+    .portal-brand span{color:var(--gold);font-weight:400}
+    .portal-links{display:flex;gap:18px;flex-wrap:wrap}
+    .portal-links a{color:#dbe7ee;text-decoration:none;font-size:14.5px}
+    .portal-links a:hover{color:#fff;text-decoration:underline}
+    .hero { padding: 56px 0 36px; }
+    .chapter-mark { display:inline-flex;align-items:center;gap:10px;color:var(--navy); font:600 12px/1.2 "IBM Plex Mono",monospace;letter-spacing:.09em;text-transform:uppercase;margin-bottom:18px; }
+    .chapter-mark::before { content:"";width:42px;height:3px;background:var(--orange); }
+    h1 { font-size: clamp(36px, 5vw, 58px); line-height: 1.02; letter-spacing:-.03em; margin:0 0 14px; }
+    .lede { color: var(--muted); font-size: clamp(18px,2vw,22px); max-width: 64ch; margin:0 0 8px; }
+    .date-line { font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--muted); }
+    section.block { margin: 44px 0; }
+    h2 { font-size: 26px; letter-spacing:-.02em; margin:0 0 6px; display:flex;align-items:center;gap:12px; }
+    h2 .num { font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:600;color:var(--white); background:var(--navy);border-radius:999px;min-width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center; }
+    .sub { color:var(--muted); margin:0 0 18px; max-width: 68ch; }
+    .skill-card { background:var(--navy);color:#eaf2f7;border-radius:var(--radius);padding:22px 24px; font-family:"IBM Plex Mono",monospace;font-size:14.5px;overflow-x:auto;box-shadow:var(--shadow); }
+    .skill-card .k { color:var(--gold); }
+    .idea { font-size:21px;line-height:1.5;border-left:4px solid var(--teal);padding:6px 0 6px 20px;max-width:62ch; }
+    .idea strong { color:var(--navy); }
+    .mechanics { display:grid;gap:14px; }
+    .mech { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:18px 20px; display:grid;grid-template-columns:44px 1fr;gap:14px;align-items:start; }
+    .mech .mnum { font-family:"IBM Plex Mono",monospace;font-weight:600;color:var(--teal); background:var(--teal-soft);border-radius:10px;width:44px;height:44px;display:flex;align-items:center;justify-content:center; }
+    .mech h3 { margin:0 0 6px;font-size:18px; }
+    .mech p { margin:0;color:var(--muted);font-size:15.5px; }
+    .mech code, .inline-code { font-family:"IBM Plex Mono",monospace;font-size:.88em;background:var(--blue-soft); padding:2px 7px;border-radius:6px;color:var(--navy); }
+    pre.code { background:#0f2233;color:#e8f1f5;border-radius:14px;padding:20px 22px;overflow-x:auto; font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.6;margin:0; }
+    pre.code .c { color:#8ba3b0; } pre.code .s { color:#ffd479; } pre.code .k { color:#7fd6c2; }
+    .fail { border-left:4px solid var(--orange); }
+    .fail h3 .fix { display:block;margin-top:8px;font-size:15px;font-weight:500;color:var(--green); }
+    .ref-list { display:grid;gap:12px; }
+    .ref { display:flex;gap:14px;align-items:flex-start;background:var(--white);border:1px solid var(--line); border-radius:14px;padding:16px 18px;text-decoration:none;color:inherit; }
+    .ref:hover { border-color:var(--teal); }
+    .ref .badge { flex:none;font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;letter-spacing:.06em; padding:5px 10px;border-radius:999px;text-transform:uppercase; }
+    .badge.doc { background:var(--blue-soft);color:var(--navy); }
+    .badge.vid { background:var(--orange-soft);color:var(--orange); }
+    .ref h3 { margin:0 0 4px;font-size:17px; }
+    .ref p { margin:0;color:var(--muted);font-size:14.5px; }
+    .prompt-block { background:#0f2233;border-radius:var(--radius);overflow:hidden;margin-bottom:18px;box-shadow:var(--shadow); }
+    .prompt-top { display:flex;justify-content:space-between;align-items:center;gap:12px; padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.12); }
+    .prompt-top strong { color:#fff;font-size:13px;letter-spacing:.06em;font-family:"IBM Plex Mono",monospace; }
+    .copy-btn { border:1px solid #6c8796;background:transparent;color:#fff;border-radius:6px;padding:7px 11px; cursor:pointer;font-weight:700;font-size:14px; }
+    .copy-btn:hover { background:rgba(255,255,255,.1); }
+    .copy-btn:focus-visible { outline:2px solid var(--gold);outline-offset:2px; }
+    .prompt-text { color:#e8f1f5;font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.65; padding:18px;white-space:pre-wrap;margin:0; }
+    .sr-only { position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0); }
+    .quiz-q { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px; }
+    .quiz-q .qq { font-weight:700;margin:0 0 12px;font-size:18px; }
+    .qopts { display:grid;gap:8px; }
+    .qopt { text-align:left;background:var(--paper);border:1px solid var(--line);border-radius:10px; padding:12px 14px;cursor:pointer;font-size:15.5px;color:var(--ink); }
+    .qopt:hover:not(:disabled) { border-color:var(--navy); }
+    .qopt:disabled { cursor:default;opacity:.85; }
+    .qopt.correct { background:var(--green-soft);border-color:var(--green); }
+    .qopt.wrong { background:var(--red-soft);border-color:var(--red); }
+    .qexp { margin:12px 0 0;font-size:15px;color:var(--muted); }
+    .qexp strong.ok { color:var(--green); } .qexp strong.no { color:var(--red); }
+    #quiz-score { display:none;margin-top:8px;background:var(--navy);color:#fff;border-radius:14px; padding:20px 24px;font-size:19px; }
+    #quiz-score strong { color:var(--gold); }
+    .fgrid { display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px; }
+    .fcard { perspective:900px;cursor:pointer;min-height:170px; }
+    .fcard-inner { position:relative;width:100%;height:100%;min-height:170px;transform-style:preserve-3d;transition:transform .45s; }
+    .fcard.flipped .fcard-inner { transform:rotateY(180deg); }
+    .fface { position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden; border-radius:14px;padding:18px;display:flex;align-items:center;justify-content:center;text-align:center; border:1px solid var(--line);background:var(--white);box-shadow:var(--shadow);font-size:15.5px; }
+    .fface.front { font-weight:700;color:var(--navy); }
+    .fface.back { transform:rotateY(180deg);background:var(--teal-soft);color:var(--ink);font-size:14.5px; }
+    .fcard:focus-visible { outline:2px solid var(--teal);outline-offset:3px;border-radius:14px; }
+    .triggers { display:grid;gap:10px; }
+    .trigger { background:var(--gold-soft);border-radius:12px;padding:14px 18px;font-size:16px; }
+    .trigger strong { color:var(--navy); }
+    .back-link { display:inline-block;margin:8px 0 60px;font-weight:600;color:var(--teal);text-decoration:none;font-size:17px; }
+    .back-link:hover { text-decoration:underline; }
+    .fig { background:var(--white);border:1px solid var(--line);border-radius:var(--radius); padding:12px;box-shadow:var(--shadow);overflow-x:auto; }
+    .fig svg { display:block;width:100%;height:auto; }
+    .flow-anim { stroke-dasharray: 8 6; animation: dashmove 1.2s linear infinite; }
+    @keyframes dashmove { to { stroke-dashoffset: -14; } }
+    @media (prefers-reduced-motion: reduce) { .fcard-inner{transition:none;} .flow-anim{animation:none;} }
+  </style>
+</head>
+<body><nav class="portal-nav">
+    <div class="shell portal-nav-inner">
+      <a class="portal-brand" href="../index.html">AI Engineering <span>&middot; Learning Portal</span></a>
+      <div class="portal-links">
+        <a href="../index.html#daily-topics">Daily topics</a>
+        <a href="../index.html#loop">Loop</a>
+        <a href="../index.html#graph">Graph</a>
+        <a href="../index.html#harness">Harness</a>
+      </div>
+    </div>
+  </nav>
+  <div class="shell">
+    <header class="hero">
+      <div class="chapter-mark">Daily topic &middot; Pricing and promotions</div>
+      <h1>Pricing and promotions systems: elasticity, discounting, and guardrails</h1>
+      <p class="lede">Every price change is a bet about how demand will move, and every discount is code that spends margin. A pricing system makes both bets explicit: estimate elasticity by segment, encode promotions as bounded objects with floors and expiry, and put automated changes behind guardrails &mdash; so you learn what a discount actually bought instead of just watching conversion go up.</p>
+      <p class="date-line">2026-11-14 &middot; Topic 062</p>
+    </header>
+
+    <section class="block">
+      <h2><span class="num">01</span> The skill card</h2>
+      <p class="sub">Every topic on this portal is designed like a Codex skill: a name, a trigger, and concrete steps.</p>
+      <div class="skill-card"><pre style="margin:0">---
+<span class="k">name:</span> pricing-promotions-systems
+<span class="k">description:</span> Reach for this when you set, change, or discount a price:
+  estimate price elasticity (% change in quantity / % change in
+  price) by segment and price point, encode every promotion as a
+  bounded coupon object (value, eligibility, stacking, expiry,
+  redemption cap), evaluate on incremental margin with a holdout,
+  and enforce floors, ceilings, speed limits, approvals, and a
+  kill switch on every automated price change.
+---</pre></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">02</span> The one-idea version</h2>
+      <p class="idea"><strong>A price is a control, not a label &mdash; and elasticity tells you what the control does.</strong> Elasticity <em>E = %&Delta;Q / %&Delta;P</em>: if |E| &gt; 1 demand is elastic (cut price, volume more than compensates; raise it and revenue falls), if |E| &lt; 1 it is inelastic (a rise lifts revenue), and at |E| = 1 revenue is flat. A promotion is just a temporary, targeted price cut &mdash; so it obeys the same math, and it only earns its cost if the <em>incremental</em> margin, measured against a holdout, beats giving the discount to people who would have paid full price anyway.</p>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">03</span> The picture: from list price to guarded checkout</h2>
+      <p class="sub">Elasticity informs the price; the promotion engine applies bounded discounts; guardrails veto anything unsafe before checkout sees it.</p>
+      <div class="fig">
+        <svg viewBox="0 0 960 340" role="img" aria-label="Diagram: elasticity estimate and cost feed a price decision, a promotion object with eligibility and caps is applied, guardrails check floor ceiling speed and budget, then checkout charges the final price and the result is measured against a holdout.">
+          <g font-family="Source Sans 3, sans-serif" font-size="14">
+            <text x="20" y="26" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="600" fill="#163247">PRICE &rarr; PROMO &rarr; GUARDRAILS &rarr; CHECKOUT &rarr; MEASURE</text>
+            <rect x="20" y="44" width="160" height="84" rx="12" fill="#e3eef4" stroke="#163247" stroke-width="2"/>
+            <text x="100" y="72" text-anchor="middle" font-weight="700" fill="#163247">1. Estimate</text>
+            <text x="100" y="92" text-anchor="middle" fill="#53636f">elasticity by segment</text>
+            <text x="100" y="110" text-anchor="middle" fill="#53636f">E = %&Delta;Q / %&Delta;P</text>
+            <text x="192" y="90" text-anchor="middle" font-size="20" font-weight="700" fill="#163247">&#8594;</text>
+            <rect x="210" y="44" width="160" height="84" rx="12" fill="#dff2ee" stroke="#0b8174" stroke-width="2"/>
+            <text x="290" y="72" text-anchor="middle" font-weight="700" fill="#163247">2. Price</text>
+            <text x="290" y="92" text-anchor="middle" fill="#53636f">list price + promo</text>
+            <text x="290" y="110" text-anchor="middle" fill="#53636f">coupon object, capped</text>
+            <text x="382" y="90" text-anchor="middle" font-size="20" font-weight="700" fill="#163247">&#8594;</text>
+            <rect x="400" y="44" width="160" height="84" rx="12" fill="#f8e4d8" stroke="#d66332" stroke-width="2"/>
+            <text x="480" y="72" text-anchor="middle" font-weight="700" fill="#163247">3. Guardrails</text>
+            <text x="480" y="92" text-anchor="middle" fill="#53636f">floor &middot; ceiling &middot; speed</text>
+            <text x="480" y="110" text-anchor="middle" fill="#53636f">budget &middot; kill switch</text>
+            <text x="572" y="90" text-anchor="middle" font-size="20" font-weight="700" fill="#163247">&#8594;</text>
+            <rect x="590" y="44" width="160" height="84" rx="12" fill="#f7edc8" stroke="#d8a524" stroke-width="2"/>
+            <text x="670" y="72" text-anchor="middle" font-weight="700" fill="#163247">4. Checkout</text>
+            <text x="670" y="92" text-anchor="middle" fill="#53636f">one final price</text>
+            <text x="670" y="110" text-anchor="middle" fill="#53636f">shown = charged</text>
+            <text x="762" y="90" text-anchor="middle" font-size="20" font-weight="700" fill="#163247">&#8594;</text>
+            <rect x="780" y="44" width="160" height="84" rx="12" fill="#ffffff" stroke="#cbd5d8"/>
+            <text x="860" y="72" text-anchor="middle" font-weight="700" fill="#163247">5. Measure</text>
+            <text x="860" y="92" text-anchor="middle" fill="#53636f">vs holdout</text>
+            <text x="860" y="110" text-anchor="middle" fill="#53636f">incremental margin</text>
+            <path d="M860 132 V168 H100 V132" stroke="#0b8174" stroke-width="2" fill="none" class="flow-anim"/>
+            <text x="20" y="200" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="600" fill="#163247">THE TWO QUESTIONS EVERY PROMO MUST ANSWER:</text>
+            <rect x="20" y="216" width="920" height="84" rx="12" fill="#163247"/>
+            <text x="480" y="246" text-anchor="middle" fill="#ffffff" font-weight="700">Did it create new demand &mdash; or just discount demand we already had?</text>
+            <text x="480" y="268" text-anchor="middle" fill="#cbd5d8" font-size="13">Elastic: |E| &gt; 1, a cut can grow revenue. Inelastic: |E| &lt; 1, a cut mostly gives margin away.</text>
+            <text x="480" y="288" text-anchor="middle" fill="#cbd5d8" font-size="13">If you cannot name the floor, the cap, and the holdout, the promotion is not ready to ship.</text>
+          </g>
+        </svg>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">04</span> How it works</h2>
+      <p class="sub">Seven mechanics: measure elasticity honestly, price from it, encode promos as objects, control stacking, experiment, guardrail, and reconcile.</p>
+      <div class="mechanics">
+<div class="mech"><div class="mnum">1</div><div><h3>Estimate elasticity &mdash; by segment, at a price point, with the midpoint method</h3><p>Compute <code>E = %&Delta;Q / %&Delta;P</code> using midpoint (arc) percentages &mdash; change divided by the average of the two values &mdash; so the estimate is the same whether price rose or fell (OpenStax 5.1). Never quote one global elasticity: elasticity varies <em>along</em> the same demand curve (0.45 in one interval, 1.47 in another in the OpenStax example), by segment, channel, and time horizon. Estimate it from price experiments or clean natural variation, log the price range it was observed in, and refuse to extrapolate far outside that range. Cross-price elasticity (positive = substitutes, negative = complements) tells you when discounting one product just cannibalises another.</p></div></div>
+<div class="mech"><div class="mnum">2</div><div><h3>Let elasticity set the direction, margin set the limit</h3><p>Use the revenue rule from OpenStax 5.3: elastic &rarr; a cut can raise total revenue; inelastic &rarr; a rise raises revenue and a cut destroys it; unitary &rarr; revenue is unchanged, so decide on margin and strategy instead. Then check profit, not just revenue: the Lerner intuition &mdash; optimal markup over marginal cost shrinks as demand gets more elastic &mdash; means highly elastic products cannot carry fat margins. Price to the segment&rsquo;s elasticity and willingness to pay, keep a single auditable list price per SKU/channel, and version every price change with who, why, experiment ID, and effective window.</p></div></div>
+<div class="mech"><div class="mnum">3</div><div><h3>Encode every promotion as a bounded object, never as ad-hoc math</h3><p>Model the Stripe split: a <strong>coupon</strong> is the discount logic (percent_off or amount_off, duration, currency), and a <strong>promotion code</strong> is the customer-facing string that wraps it with distribution controls. Every promo object must carry: eligible products/SKUs, eligible customers or first-time-only flag, minimum basket, start and expiry (<code>redeem_by</code> / <code>expires_at</code>), <code>max_redemptions</code> overall and per customer, and active/inactive state. If a field is missing, the promo does not launch. Deleting or deactivating must stop <em>new</em> redemptions without rewriting history on orders already placed.</p></div></div>
+<div class="mech"><div class="mnum">4</div><div><h3>Decide stacking, ordering, and the floor &mdash; before anyone finds the loophole</h3><p>Write the precedence rules in code: can codes stack with each other, with sale prices, with loyalty points? In what order do percentage and fixed discounts apply, and is tax computed before or after? Cap the <em>combined</em> discount, and enforce a hard floor &mdash; final price never below cost + fees + minimum margin, and never negative. Validate eligibility again at checkout (not just when the code was entered), make redemption atomic so a single-use code cannot be spent twice in parallel sessions, and return a clear reason when a code is rejected instead of silently dropping it.</p></div></div>
+<div class="mech"><div class="mnum">5</div><div><h3>Run discounts as experiments with a holdout</h3><p>Conversion almost always rises when something gets cheaper &mdash; that proves nothing. Randomise a holdout that sees no promo (or use geo/time holdouts where user-level is impossible), pre-register the primary metric as <em>incremental contribution margin per eligible visitor</em>, and measure the tail: repeat purchase at full price, returns, support contacts, and pull-forward (did the promo just borrow next month&rsquo;s sales?). Report cannibalisation explicitly: full-price buyers who used the code are a cost, not a win. Kill or shrink promos whose lift is rented, not created.</p></div></div>
+<div class="mech"><div class="mnum">6</div><div><h3>Put guardrails around every automated price change</h3><p>Five limits, enforced in the pricing service &mdash; not in a wiki: (1) <strong>floor</strong> from cost, fees, and minimum margin plus any contractual/MAP constraints; (2) <strong>ceiling</strong> from list/MSRP and fairness/trust limits; (3) <strong>speed limit</strong> &mdash; max % change per day/week and a minimum interval between changes, and never change a price mid-checkout for a customer already paying; (4) <strong>approval ladder</strong> &mdash; auto-approve inside the band, human review near the edges or on key-value items, escalate outside; (5) <strong>kill switch</strong> &mdash; a named owner can freeze all automated changes in minutes when feeds go stale or wrong. Refuse to price from stale inputs: timestamp every signal and fail closed, not to zero.</p></div></div>
+<div class="mech"><div class="mnum">7</div><div><h3>Reconcile, audit, and watch for abuse as a first-class signal</h3><p>Every order stores list price, each discount applied (code, coupon ID, amount), final price, and the price version &mdash; so finance can reconcile promo spend to the cent and support can answer &ldquo;why did I pay this?&rdquo; without archaeology. Monitor redemption velocity, code-sharing sites, bot-like redemption patterns, employee-code leakage, and refund-and-keep-discount abuse; alert on spikes the same day, not at month-end. Close the loop monthly: which promos created incremental margin, which trained customers to wait for sales, and what elasticity estimates need re-measuring.</p></div></div>
+</div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">05</span> Code sketch</h2>
+      <p class="sub">A guarded price calculation: elasticity is context, the promo is an object, the floor always wins.</p>
+      <pre class="code"><span class="k">from</span> dataclasses <span class="k">import</span> dataclass
+<span class="k">from</span> datetime <span class="k">import</span> datetime, timezone
+
+@dataclass
+<span class="k">class</span> Promo:
+    percent_off: float          <span class="c"># e.g. 0.20 for 20% off</span>
+    max_redemptions: int
+    redeemed: int = 0
+    expires_at: datetime | None = None
+    first_time_only: bool = False
+
+<span class="k">def</span> elasticity(q1, q2, p1, p2) -&gt; float:  <span class="c"># midpoint / arc method</span>
+    dq = (q2 - q1) / ((q1 + q2) / 2)
+    dp = (p2 - p1) / ((p1 + p2) / 2)
+    <span class="k">return</span> dq / dp <span class="k">if</span> dp != 0 <span class="k">else</span> 0.0
+
+<span class="k">def</span> final_price(list_price: float, promo: Promo | None,
+                  cost_floor: float, is_first: bool) -&gt; float:
+    price = list_price
+    <span class="k">if</span> promo <span class="k">and</span> promo.redeemed &lt; promo.max_redemptions:
+        fresh = promo.expires_at <span class="k">is</span> None <span class="k">or</span> promo.expires_at &gt; datetime.now(timezone.utc)
+        eligible = fresh <span class="k">and</span> (is_first <span class="k">or not</span> promo.first_time_only)
+        <span class="k">if</span> eligible:
+            price = list_price * (1 - promo.percent_off)
+    <span class="k">return</span> round(max(price, cost_floor), 2)  <span class="c"># floor always wins</span></pre>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">06</span> Failure modes</h2>
+      <p class="sub">Five ways pricing and promotions fail &mdash; each with a one-line fix.</p>
+      <div class="mechanics">
+<div class="mech fail"><div class="mnum">1</div><div><h3>One elasticity for everything<span class="fix">Fix: estimate elasticity per segment, channel, and price interval, stamp it with the observed price range, and re-measure after any large move.</span></h3><p>A single &ldquo;our elasticity is &minus;1.8&rdquo; hides that demand is inelastic at today&rsquo;s price for loyal customers and highly elastic for new visitors &mdash; so the same 20% cut is wasteful for one group and insufficient for the other, and extrapolating it to a 50% cut invents precision you never measured.</p></div></div>
+<div class="mech fail"><div class="mnum">2</div><div><h3>Stacking and loophole discounts<span class="fix">Fix: define stacking and ordering in code, cap the combined discount, enforce the floor at checkout, and make single-use redemption atomic.</span></h3><p>Two codes, a sale price, and loyalty points combine into 90% off; a shared &ldquo;single-use&rdquo; code is redeemed in parallel sessions before the counter updates. The margin loss is discovered by finance weeks later, one order at a time.</p></div></div>
+<div class="mech fail"><div class="mnum">3</div><div><h3>Judging a promo by conversion alone<span class="fix">Fix: require a holdout and judge on incremental contribution margin, including full-price cannibalisation and post-promo repeat rate.</span></h3><p>The dashboard glows green &mdash; conversion +30% &mdash; while most redemptions came from people who would have bought anyway, and repeat purchases at full price fall because customers learned to wait for the next code. The promo rented demand and trained the wrong behaviour.</p></div></div>
+<div class="mech fail"><div class="mnum">4</div><div><h3>Unguarded automation: below-cost or runaway prices<span class="fix">Fix: enforce floor, ceiling, and speed limits in the pricing service, refuse stale inputs, and keep a tested kill switch with a named owner.</span></h3><p>A repricing rule follows a bad competitor feed to $1, or a demand spike surges a necessity&rsquo;s price overnight. The rule did exactly what it was told &mdash; nobody told it where to stop &mdash; and the correction costs more in refunds and trust than the automation ever saved.</p></div></div>
+<div class="mech fail"><div class="mnum">5</div><div><h3>Leaked, immortal, or untraceable codes<span class="fix">Fix: give every code an expiry, a redemption cap, and per-customer limits; store code + coupon + amounts on the order; alert on redemption-velocity spikes.</span></h3><p>An influencer code with no cap ends up on coupon sites, a &ldquo;temporary&rdquo; code from last year still works, and nobody can say how much any of it cost because orders never recorded which discount was applied. Promotions you cannot trace you cannot stop.</p></div></div>
+</div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">07</span> Go deeper</h2>
+      <p class="sub">Verified references &mdash; every link opened and checked before publishing.</p>
+      <div class="ref-list">
+        <a class="ref" href="https://openstax.org/books/principles-economics-3e/pages/5-1-price-elasticity-of-demand-and-price-elasticity-of-supply"><span class="badge doc">Docs</span><div><h3>5.1 Price Elasticity of Demand and Price Elasticity of Supply &mdash; OpenStax, Principles of Economics 3e</h3><p>The canonical foundation: elasticity as %&Delta;Q / %&Delta;P, the midpoint method that gives the same answer in either direction, elastic / inelastic / unitary, and why elasticity is not slope and changes along the curve.</p></div></a>
+        <a class="ref" href="https://openstax.org/books/principles-economics-3e/pages/5-3-elasticity-and-pricing?message=retired"><span class="badge doc">Docs</span><div><h3>5.3 Elasticity and Pricing &mdash; OpenStax, Principles of Economics 3e</h3><p>Elasticity applied to money: the table of real elasticities (housing 0.12 to restaurant meals 2.27), when raising or cutting price raises revenue, and how inelastic sides bear costs and taxes.</p></div></a>
+        <a class="ref" href="https://docs.stripe.com/payments/checkout/discounts?locale=en-GB"><span class="badge doc">Docs</span><div><h3>Add discounts &mdash; Stripe Documentation</h3><p>The production data model for promotions: coupons hold the discount logic (percent_off / amount_off), promotion codes wrap them with customer, first-time, minimum-amount, expiry, and max_redemptions restrictions.</p></div></a>
+        <a class="ref" href="https://www.youtube.com/watch?v=sY-tChXvNVc"><span class="badge vid">Video</span><div><h3>Chapter 5: Elasticity | Principles of Macroeconomics 3e (OpenStax)</h3><p>A full worked lecture on the OpenStax chapter: midpoint calculations (0.45 inelastic, 1.47 elastic), slope vs elasticity, and the Netflix 2011 lesson &mdash; a 60% rise that lost 810,000 subscribers because elasticity was misjudged.</p></div></a>
+        <a class="ref" href="https://www.youtube.com/watch?v=mja8qjDJONw"><span class="badge vid">Video</span><div><h3>Is This The End Of The Price Tag? | So Expensive | Business Insider</h3><p>Dynamic and personalised pricing in the wild &mdash; airlines, rides, tickets, groceries &mdash; and why undisclosed per-person prices erode trust: the fairness case for ceilings, transparency, and guardrails.</p></div></a>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">08</span> Sample prompts</h2>
+      <p class="sub">Copy one into your AI assistant and apply it to your own work.</p>
+      <p id="live-status" class="sr-only" role="status"></p>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>ESTIMATE ELASTICITY FROM OUR DATA</strong><button class="copy-btn" data-copy="p1">Copy</button></div>
+        <p class="prompt-text" id="p1">Help me estimate price elasticity for this product: [paste price/quantity history, segments, channels, and any promos or seasonality in the window]. Give me: (1) midpoint (arc) elasticity calculations per segment and per price interval, with the formula shown, (2) the confounders that could corrupt each estimate (promos, stockouts, competitor moves, seasonality) and how to control for them, (3) where the data is too thin or the price range too narrow to trust the number, (4) a small price experiment design that would sharpen the estimate — price points, sample size logic, duration, and guardrails — and (5) what decision each plausible elasticity value (elastic, unitary, inelastic) would imply for price direction.</p>
+      </div>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>DESIGN A PROMOTION THAT CANNOT LEAK</strong><button class="copy-btn" data-copy="p2">Copy</button></div>
+        <p class="prompt-text" id="p2">Design a promotion for this goal: [goal, product, audience, budget, dates]. Give me the full promo object: (1) coupon logic — percent or amount, duration — and the customer-facing code strategy (single shared code vs unique codes, and why), (2) every restriction: eligible products, eligible customers, first-time-only, minimum basket, expiry, max redemptions overall and per customer, (3) stacking and ordering rules against sale prices, other codes, and loyalty, plus the combined-discount cap and the absolute price floor with the margin math, (4) abuse cases (sharing, bots, parallel redemption, refund abuse) and the control for each, and (5) the exact fields stored on every order so finance can reconcile the spend.</p>
+      </div>
+      <div class="prompt-block">
+        <div class="prompt-top"><strong>AUDIT A PRICING CHANGE BEFORE IT SHIPS</strong><button class="copy-btn" data-copy="p3">Copy</button></div>
+        <p class="prompt-text" id="p3">Audit this proposed pricing/promotion change before launch: [paste the proposal, current prices, costs, and any automation involved]. Give me: (1) a guardrail check — floor (cost + fees + minimum margin), ceiling, max change per period, mid-checkout price stability, approval level required — with pass/fail on each, (2) the experiment plan: holdout design, primary metric (incremental contribution margin), cannibalisation and pull-forward measures, and the kill criteria, (3) the failure rehearsal: bad feed, stale data, leaked code, stacking bug — detection signal and kill-switch step for each, and (4) the launch checklist in dependency order, ending with what we will review at day 7 and day 30.</p>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">09</span> Quiz</h2>
+      <p class="sub">Five questions. Click an answer &mdash; you get the explanation right away.</p>
+      <div id="quiz">
+<div class="quiz-q" data-answer="1"><p class="qq">1. Price rises 10% (midpoint) and quantity falls 4.5% (midpoint). What is true?</p><div class="qopts"><button class="qopt" data-i="0">Elasticity is about &minus;2.2, demand is elastic, and the rise cut revenue.</button>
+<button class="qopt" data-i="1">Elasticity is about &minus;0.45, demand is inelastic in this interval, and the rise increases total revenue (before costs).</button>
+<button class="qopt" data-i="2">Elasticity equals the slope of the demand curve, so it is the same at every price.</button>
+<button class="qopt" data-i="3">Nothing &mdash; elasticity cannot be computed from two points.</button></div><p class="qexp" hidden></p></div>
+<div class="quiz-q" data-answer="2"><p class="qq">2. Why use the midpoint (arc) method instead of simple percent change from the starting value?</p><div class="qopts"><button class="qopt" data-i="0">It makes elasticity larger, which is more conservative for pricing.</button>
+<button class="qopt" data-i="1">It is required by accounting standards for revenue reporting.</button>
+<button class="qopt" data-i="2">It uses the average of the two prices/quantities as the base, so the same interval gives the same elasticity whether price rose or fell.</button>
+<button class="qopt" data-i="3">It removes the need to know quantity at all.</button></div><p class="qexp" hidden></p></div>
+<div class="quiz-q" data-answer="0"><p class="qq">3. In the Stripe model, what is the difference between a coupon and a promotion code?</p><div class="qopts"><button class="qopt" data-i="0">The coupon holds the discount logic (percent/amount, duration); the promotion code is the customer-facing string wrapping it, adding restrictions like customer, first-time-only, minimum amount, expiry, and redemption caps. Many codes can map to one coupon.</button>
+<button class="qopt" data-i="1">They are synonyms; either name works in the API.</button>
+<button class="qopt" data-i="2">A coupon is for subscriptions only; a promotion code is for one-time payments only.</button>
+<button class="qopt" data-i="3">A promotion code holds the discount value; a coupon is just the printed slip.</button></div><p class="qexp" hidden></p></div>
+<div class="quiz-q" data-answer="3"><p class="qq">4. A promo lifts conversion 30%. The holdout shows most redeemers would have bought at full price, and full-price repeat purchases fall. Verdict?</p><div class="qopts"><button class="qopt" data-i="0">Success &mdash; conversion is the metric promotions exist to move.</button>
+<button class="qopt" data-i="1">Inconclusive &mdash; run the same promo longer at a deeper discount.</button>
+<button class="qopt" data-i="2">Success, as long as revenue (not margin) went up.</button>
+<button class="qopt" data-i="3">Failure on the metric that matters: incremental margin is negative once cannibalisation counts, and the promo trained customers to wait for discounts. Shrink or kill it.</button></div><p class="qexp" hidden></p></div>
+<div class="quiz-q" data-answer="1"><p class="qq">5. An automated repricer gets a corrupted competitor feed showing $1. What should have prevented a $1 price?</p><div class="qopts"><button class="qopt" data-i="0">Nothing could &mdash; automation risk is the price of dynamic pricing.</button>
+<button class="qopt" data-i="1">Guardrails in the pricing service: a cost-based floor, a max-change speed limit, stale/bad-input rejection, and a kill switch &mdash; the rule may propose, but the limits dispose.</button>
+<button class="qopt" data-i="2">A better machine-learning model with more features.</button>
+<button class="qopt" data-i="3">Checking the dashboard more often in the morning.</button></div><p class="qexp" hidden></p></div>
+</div>
+      <div id="quiz-score" role="status"></div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">10</span> Flashcards</h2>
+      <p class="sub">Click a card (or focus it and press Enter / Space) to flip it.</p>
+      <div class="fgrid">
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Price elasticity of demand</div><div class="fface back">E = % change in quantity demanded / % change in price. Always negative in sign (price up, quantity down); reported as an absolute value. It measures responsiveness, not slope.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Elastic vs inelastic</div><div class="fface back">|E| &gt; 1 = elastic: quantity moves more than price, so a cut can raise revenue and a rise lowers it. |E| &lt; 1 = inelastic: quantity moves less, so a rise raises revenue. |E| = 1 = unitary: revenue unchanged.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Midpoint (arc) elasticity</div><div class="fface back">Percent changes computed against the average of the two values, not the starting value. The same interval then yields the same elasticity whether price increased or decreased.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Elasticity is not slope</div><div class="fface back">Slope is constant along a straight-line demand curve; elasticity is not &mdash; it is high at high prices / low quantities and low at low prices / high quantities, because it works in percentages.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Cross-price elasticity</div><div class="fface back">% change in quantity of good A / % change in price of good B. Positive = substitutes (discounting B steals A&rsquo;s sales), negative = complements, zero = unrelated. Use it to spot cannibalisation.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Coupon vs promotion code</div><div class="fface back">Stripe&rsquo;s split: the coupon is the backend discount object (percent_off / amount_off, duration); the promotion code is the customer-facing string on top of it, carrying who/when/how-often restrictions. Many codes can point to one coupon.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Price floor</div><div class="fface back">The lowest allowed final price: unit cost + channel/payment fees + minimum acceptable margin, plus any contractual or MAP constraints. Enforced at checkout after all discounts stack &mdash; the floor always wins.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Incrementality / holdout</div><div class="fface back">A promo&rsquo;s real value is what happened versus a comparable group that got no promo: incremental margin, not raw conversion. Redemptions by people who would have paid full price are cannibalisation &mdash; a cost.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Pricing guardrails (the five)</div><div class="fface back">Floor, ceiling, speed limit (max change per period, no mid-checkout changes), approval ladder (auto inside the band, review at the edges, escalate outside), and a kill switch a named owner can pull in minutes.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Pull-forward &amp; discount training</div><div class="fface back">Two hidden promo costs: pull-forward borrows future sales into the promo window (next month dips), and repeated discounting trains customers to never pay list price &mdash; both show up only if you measure after the promo ends.</div></div></div>
+</div>
+    </section>
+
+    <section class="block">
+      <h2><span class="num">11</span> Reach for this when&hellip;</h2>
+      <div class="triggers">
+        <div class="trigger"><strong>You are about to change a price on instinct</strong> &mdash; someone says &ldquo;raise it 10%&rdquo; or &ldquo;run 20% off.&rdquo; Estimate elasticity for that segment and interval first, run the revenue and margin math for elastic vs inelastic, and let the number pick the direction.</div>
+        <div class="trigger"><strong>A promotion is being launched from a spreadsheet or a chat message</strong> &mdash; no object, no caps, no expiry. Stop and encode it properly: eligibility, stacking, floor, redemption limits, order-level audit fields, and a holdout, before the first code goes out.</div>
+        <div class="trigger"><strong>Anything automated can change prices</strong> &mdash; a repricer, a dynamic-pricing model, or an AI agent with pricing tools. The automation proposes; floors, ceilings, speed limits, approvals, stale-data rejection, and the kill switch decide what customers ever see.</div>
+      </div>
+    </section>
+
+    <a class="back-link" href="../index.html#daily-topics">&larr; Back to daily topics</a>
+  </div>
+
+<script>
+    const status = document.getElementById('live-status');
+    document.querySelectorAll('.copy-btn').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const target = document.getElementById(button.dataset.copy);
+        const text = target.innerText;
+        try {
+          await navigator.clipboard.writeText(text);
+          const original = button.textContent;
+          button.textContent = 'Copied';
+          status.textContent = 'Prompt copied to clipboard.';
+          setTimeout(() => button.textContent = original, 1600);
+        } catch {
+          const range = document.createRange();
+          range.selectNodeContents(target);
+          const selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+          status.textContent = 'Prompt selected. Copy it with your device copy command.';
+        }
+      });
+    });
+    const explanations = [["That ratio would need quantity to move more than twice the price move — here it moved less than half.", "Correct. −4.5% / +10% ≈ −0.45: inelastic in this interval (the OpenStax A–B example), so the rise lifts total revenue.", "Slope is constant on a straight-line curve; elasticity is a percentage ratio and changes along it.", "Two points are exactly what arc elasticity uses — with midpoint percentages for both price and quantity."], ["A larger number is not the goal; consistency is.", "No standard requires it — it is an economics convention for measuring intervals.", "Correct. Averaging the endpoints removes the direction asymmetry of simple percent change.", "Quantity is half the formula — without it there is no elasticity."], ["Correct. Logic in the coupon, distribution and limits in the code — which is why FALLPROMO and SPRINGPROMO can both map to one 25%-off coupon.", "They are distinct objects with distinct jobs; conflating them is how restrictions get lost.", "Both work across payments and subscriptions; the split is logic vs customer-facing code, not payment type.", "Backwards: the coupon carries the value logic, the code carries the string and its restrictions."], ["Conversion rising when prices fall is arithmetic, not evidence of value.", "A deeper, longer version of a cannibalising promo mostly buys more cannibalisation.", "Revenue can rise while margin falls — the discount is paid on every unit, including the ones that were never in doubt.", "Correct. Judge promos on incremental margin vs the holdout, and count the behaviour they teach."], ["Plenty could — that is what guardrails are for; unguarded automation is a choice, not a law of nature.", "Correct. Floors, speed limits, input validation, and a kill switch turn a bad feed into a rejected proposal instead of a $1 price.", "A smarter model still needs hard limits; models propose, guardrails dispose.", "Morning dashboard checks are detection, not prevention — the bad price sells all night first."]];
+    const questions = [...document.querySelectorAll('.quiz-q')];
+    let score = 0, answered = 0;
+    questions.forEach((q, qi) => {
+      const correct = parseInt(q.dataset.answer, 10);
+      const exp = q.querySelector('.qexp');
+      q.querySelectorAll('.qopt').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          if (q.dataset.done) return;
+          q.dataset.done = "1";
+          const chosen = parseInt(btn.dataset.i, 10);
+          const ok = chosen === correct;
+          q.querySelectorAll('.qopt').forEach((b) => {
+            b.disabled = true;
+            if (parseInt(b.dataset.i, 10) === correct) b.classList.add('correct');
+          });
+          if (!ok) btn.classList.add('wrong');
+          else score++;
+          answered++;
+          exp.hidden = false;
+          exp.innerHTML = ok
+            ? "<strong class=\"ok\">Correct.</strong> " + explanations[qi][chosen]
+            : "<strong class=\"no\">Not quite.</strong> " + explanations[qi][chosen];
+          if (answered === questions.length) {
+            const box = document.getElementById('quiz-score');
+            box.style.display = "block";
+            box.innerHTML = "You scored <strong>" + score + " / " + questions.length + "</strong>." +
+              (score === questions.length ? " Clean sweep — now take one live promotion you own and write down its floor, its combined-discount cap, and its holdout. If any is missing, that is the work." :
+               score >= 3 ? " Solid — re-read the mechanic you missed; pricing failures are usually elasticity, stacking, or guardrail failures." :
+               " Worth a re-read of sections 04 and 06 before your next price change or promo launch.");
+          }
+        });
+      });
+    });
+    document.querySelectorAll('.fcard').forEach((card) => {
+      const flip = () => card.classList.toggle('flipped');
+      card.addEventListener('click', flip);
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); }
+      });
+    });
+</script>
+</body>
+</html>
