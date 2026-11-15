@@ -446,5 +446,12 @@
     "date": "2026-11-14",
     "summary": "Five releases in three days - Claude Sheets and Data, Businesses in ChatGPT, Gemini 4, self-hosted Claude Managed Agents, and OpenAI Daybreak - each in one plain paragraph with one interview talking point tied to finance and commerce leadership: governed data, pricing integrity, unit economics, deployment boundaries, and security automation.",
     "skill": "workplace-agent-releases-interview-talk-track"
+  },
+  {
+    "slug": "2026-11-15-solutions-architecture-for-ai",
+    "title": "Solutions architecture for AI: patterns, trade-offs, and reference designs",
+    "date": "2026-11-15",
+    "summary": "A demo proves a model can answer; a reference architecture proves a system can answer safely, reliably, and affordably every day: rank quality attributes, pick the simplest pattern (prompt, RAG, workflow, agent), put a gateway in front of every model, ground with permission-trimmed retrieval, guard in code, and gate launches on evals.",
+    "skill": "solutions-architecture-for-ai"
   }
 ]
