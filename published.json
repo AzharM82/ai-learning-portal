@@ -439,5 +439,12 @@
     "date": "2026-11-14",
     "summary": "A price is a control, not a label: estimate elasticity (%\u0394Q / %\u0394P) by segment and price point, discount only with a coupon object that has floors, caps, expiry and stacking rules, and put every automated change behind floors, ceilings, speed limits, approvals and a kill switch \u2014 so a promo lifts incremental margin, not just conversion.",
     "skill": "pricing-promotions-systems"
+  },
+  {
+    "slug": "2026-11-14-workplace-agent-releases-interview-talk-track",
+    "title": "Workplace agent releases, Nov 10-12: interview talk-track for finance & commerce leaders",
+    "date": "2026-11-14",
+    "summary": "Five releases in three days - Claude Sheets and Data, Businesses in ChatGPT, Gemini 4, self-hosted Claude Managed Agents, and OpenAI Daybreak - each in one plain paragraph with one interview talking point tied to finance and commerce leadership: governed data, pricing integrity, unit economics, deployment boundaries, and security automation.",
+    "skill": "workplace-agent-releases-interview-talk-track"
   }
 ]
