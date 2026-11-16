@@ -3,6 +3,14 @@
   "queue": [
     "LLM evaluation: benchmarks, judges, and regression suites",
     "Lakehouse and warehouse engineering: Iceberg, Delta, and table design",
-    "Observability for AI systems: tracing, drift, and quality monitoring"
+    "Observability for AI systems: tracing, drift, and quality monitoring",
+    "Kubernetes and container platforms: operators, autoscaling, multi-tenancy",
+    "LLM inference optimization: latency, throughput, and cost per token",
+    "Procurement and spend systems: sourcing workflows and contract intelligence",
+    "Marketplace engineering: supply, demand, matching, and trust",
+    "ML platform engineering: training infrastructure and feature stores",
+    "Analytics engineering: dbt, semantic layers, and metric definitions",
+    "GPU infrastructure: clusters, scheduling, and utilization",
+    "Payments and billing platforms: ledgers, invoicing, and reconciliation"
   ]
 }
