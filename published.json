@@ -453,5 +453,12 @@
     "date": "2026-11-15",
     "summary": "A demo proves a model can answer; a reference architecture proves a system can answer safely, reliably, and affordably every day: rank quality attributes, pick the simplest pattern (prompt, RAG, workflow, agent), put a gateway in front of every model, ground with permission-trimmed retrieval, guard in code, and gate launches on evals.",
     "skill": "solutions-architecture-for-ai"
+  },
+  {
+    "slug": "2026-11-16-llm-evaluation-benchmarks-judges-regression",
+    "title": "LLM evaluation: benchmarks, judges, and regression suites",
+    "date": "2026-11-16",
+    "summary": "Public benchmarks tell you what a model can do in general; your own regression suite tells you whether your system still works. Separate capability from regression, grade with code first then a calibrated judge, run multiple trials, and gate every change.",
+    "skill": "llm-evaluation-benchmarks-judges"
   }
 ]
