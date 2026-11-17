@@ -460,5 +460,12 @@
     "date": "2026-11-16",
     "summary": "Public benchmarks tell you what a model can do in general; your own regression suite tells you whether your system still works. Separate capability from regression, grade with code first then a calibrated judge, run multiple trials, and gate every change.",
     "skill": "llm-evaluation-benchmarks-judges"
+  },
+  {
+    "slug": "2026-11-17-lakehouse-warehouse-engineering",
+    "title": "Lakehouse and warehouse engineering: Iceberg, Delta, and table design",
+    "date": "2026-11-17",
+    "summary": "Keep data as open files in cheap object storage, then add warehouse guarantees with a table format: Iceberg's metadata tree vs Delta's transaction log, hidden partitioning and evolution, medallion layers, file sizing, and the maintenance jobs that stop a lakehouse rotting.",
+    "skill": "lakehouse-warehouse-engineering"
   }
 ]
