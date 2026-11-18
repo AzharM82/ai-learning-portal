@@ -467,5 +467,12 @@
     "date": "2026-11-17",
     "summary": "Keep data as open files in cheap object storage, then add warehouse guarantees with a table format: Iceberg's metadata tree vs Delta's transaction log, hidden partitioning and evolution, medallion layers, file sizing, and the maintenance jobs that stop a lakehouse rotting.",
     "skill": "lakehouse-warehouse-engineering"
+  },
+  {
+    "slug": "2026-11-18-observability-for-ai-systems",
+    "title": "Observability for AI systems: tracing, drift, and quality monitoring",
+    "date": "2026-11-18",
+    "summary": "AI systems fail silently \u2014 they return fluent, wrong answers while latency and cost creep. Trace every run with OpenTelemetry GenAI spans, watch inputs and outputs for drift against a reference window, and score quality continuously with sampled evals and feedback \u2014 so you catch decay before users do.",
+    "skill": "observability-for-ai-systems"
   }
 ]

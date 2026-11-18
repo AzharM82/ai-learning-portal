@@ -1,0 +1,8 @@
+{
+  "id": "1a1ea8f39d23c88c",
+  "labelIds": [
+    "SENT"
+  ],
+  "threadId": "1a1ea8f39d23c88c"
+}
+Final sent message (supersedes the original request): {"from":null,"to":["reachazhar@hotmail.com"],"cc":["mazhar@microsoft.com"],"bcc":[],"subject":"Today's AI topic: Lakehouse and warehouse engineering: Iceberg, Delta, and table design","body":"<p>Today's AI learning portal topic is live:</p><p><strong><a href=\"https://azharm82.github.io/ai-learning-portal/topics/2026-11-17-lakehouse-warehouse-engineering.html\">Lakehouse and warehouse engineering: Iceberg, Delta, and table design</a></strong></p><p>A lakehouse is files plus a metadata contract: Parquet in object storage, with Iceberg's metadata tree or Delta's transaction log providing ACID commits, snapshots, and schema evolution. For an AI/software engineer this matters because every feature store, eval dataset, and analytics pipeline eventually hits the same questions — how do we update data safely, reproduce what a model saw last week, and let Spark, SQL, and ML read one governed copy instead of drifting duplicates.</p><p>Today's lesson covers choosing Iceberg vs Delta by engine mix, hidden partitioning and partition evolution, bronze/silver/gold design, file sizing, and the compaction and snapshot-expiry jobs that keep a lakehouse fast.</p><p>The next topic arrives tomorrow.</p>","attachments":[],"user_edited":false}
