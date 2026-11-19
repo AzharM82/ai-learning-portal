@@ -1,0 +1,9 @@
+{
+  "id": "1a1f4db9f2262c91",
+  "labelIds": [
+    "SENT"
+  ],
+  "threadId": "1a1f4db9f2262c91"
+}
+Final sent message (supersedes the original request): {"from":null,"to":["reachazhar@hotmail.com"],"cc":["mazhar@microsoft.com"],"bcc":[],"subject":"Today's AI topic: Kubernetes and container platforms: operators, autoscaling, multi-tenancy","body":"<html><body style=\"font-family:Arial,sans-serif;color:#14212b;line-height:1.6\">\n<h2 style=\"color:#163247\">Today's AI topic: <a href=\"https://azharm82.github.io/ai-learning-portal/topics/2026-11-19-kubernetes-container-platforms.html\">Kubernetes and container platforms: operators, autoscaling, multi-tenancy</a></h2>\n<p>Kubernetes is the platform layer underneath most AI and software systems you will lead: operators let you encode backup, upgrade, and failover knowledge as code, the three autoscalers (HPA, VPA, and node autoscaling) decide how capacity follows demand, and multi-tenancy controls are what make one shared cluster safe for many teams. Getting these trade-offs right is the difference between a platform that scales with the org and one that becomes its bottleneck.</p>\n<p>Today's lesson covers the operator pattern (CRD + idempotent reconcile loop), the HPA formula and why requests are its denominator, and the layered tenant template — namespaces, RBAC, ResourceQuota + LimitRange, default-deny NetworkPolicy, and Pod Security — with a quiz and flashcards.</p>\n<p style=\"color:#53636f\">The next topic arrives tomorrow.</p>\n</body></html>","attachments":[],"user_edited":false}
+Sent. Tell the user who it went to and the subject. Keep Gmail message, thread and draft IDs out of your reply unless the user asked for them.
