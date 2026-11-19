@@ -474,5 +474,12 @@
     "date": "2026-11-18",
     "summary": "AI systems fail silently \u2014 they return fluent, wrong answers while latency and cost creep. Trace every run with OpenTelemetry GenAI spans, watch inputs and outputs for drift against a reference window, and score quality continuously with sampled evals and feedback \u2014 so you catch decay before users do.",
     "skill": "observability-for-ai-systems"
+  },
+  {
+    "slug": "2026-11-19-kubernetes-container-platforms",
+    "title": "Kubernetes and container platforms: operators, autoscaling, multi-tenancy",
+    "date": "2026-11-19",
+    "summary": "Kubernetes is a reconciliation engine you program: extend it with operators (CRD + idempotent reconcile loop) that encode backup, upgrade, and failover knowledge, scale on three axes with HPA, VPA, and node autoscaling without letting them fight, and share one cluster safely with namespaces, RBAC, quotas, LimitRanges, and network policies per tenant.",
+    "skill": "kubernetes-container-platforms"
   }
 ]

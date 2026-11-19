@@ -1,0 +1,13 @@
+rc: 0
+stdout:
+{
+  "id": "1a1efb5df5658730",
+  "labelIds": [
+    "SENT"
+  ],
+  "threadId": "1a1efb5df5658730"
+}
+
+stderr:
+Final sent message (supersedes the original request): {"from":null,"to":["reachazhar@hotmail.com"],"cc":["mazhar@microsoft.com"],"bcc":[],"subject":"Today's AI topic: Observability for AI systems: tracing, drift, and quality monitoring","body":"<p>Today's AI topic is live:</p>\n<p><strong><a href=\"https://azharm82.github.io/ai-learning-portal/topics/2026-11-18-observability-for-ai-systems.html\">Observability for AI systems: tracing, drift, and quality monitoring</a></strong></p>\n<p>AI systems fail silently — they return fluent, wrong answers while latency and cost creep, with no stack trace to follow. This lesson covers the three loops that catch that decay: tracing every run with OpenTelemetry GenAI spans, comparing current traffic against a reference window for data, prediction, and concept drift, and scoring quality continuously with sampled evals and user feedback sliced by segment.</p>\n<p>For an AI/software engineer, this is the difference between discovering a regression from your own dashboard and discovering it from a customer — and it is the operational backbone for every agent, RAG, and model change you ship.</p>\n<p>The next topic arrives tomorrow.</p>","attachments":[],"user_edited":false}
+

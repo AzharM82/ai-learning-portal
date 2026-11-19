@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kubernetes and container platforms: operators, autoscaling, multi-tenancy &middot; AI Learning Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+    :root { --ink: #14212b; --muted: #53636f; --paper: #f6f8f7; --white: #ffffff; --line: #cbd5d8; --navy: #163247; --navy-2: #21465e; --teal: #0b8174; --teal-soft: #dff2ee; --orange: #d66332; --orange-soft: #f8e4d8; --gold: #d8a524; --gold-soft: #f7edc8; --blue-soft: #e3eef4; --red: #b3402e; --red-soft: #f9e3de; --green: #1e7a3c; --green-soft: #e2f2e6; --shadow: 0 18px 45px rgba(20, 33, 43, .09); --radius: 18px; }
+    * { box-sizing: border-box; }
+    body { margin: 0; color: var(--ink); background: linear-gradient(rgba(20,33,43,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(20,33,43,.035) 1px, transparent 1px), var(--paper); background-size: 28px 28px; font-family: "Source Sans 3", sans-serif; font-size: 17px; line-height: 1.58; }
+    .shell { width: min(960px, calc(100% - 40px)); margin: 0 auto; }
+    .portal-nav{position:sticky;top:0;z-index:50;background:rgba(22,50,71,.97);border-bottom:1px solid rgba(255,255,255,.12)}
+    .portal-nav-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;flex-wrap:wrap}
+    .portal-brand{color:#fff;text-decoration:none;font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:15px}
+    .portal-brand span{color:var(--gold);font-weight:400}
+    .portal-links{display:flex;gap:18px;flex-wrap:wrap}
+    .portal-links a{color:#dbe7ee;text-decoration:none;font-size:14.5px}
+    .portal-links a:hover{color:#fff;text-decoration:underline}
+    .hero { padding: 56px 0 36px; }
+    .chapter-mark { display:inline-flex;align-items:center;gap:10px;color:var(--navy); font:600 12px/1.2 "IBM Plex Mono",monospace;letter-spacing:.09em;text-transform:uppercase;margin-bottom:18px; }
+    .chapter-mark::before { content:"";width:42px;height:3px;background:var(--orange); }
+    h1 { font-size: clamp(36px, 5vw, 58px); line-height: 1.02; letter-spacing:-.03em; margin:0 0 14px; }
+    .lede { color: var(--muted); font-size: clamp(18px,2vw,22px); max-width: 64ch; margin:0 0 8px; }
+    .date-line { font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--muted); }
+    section.block { margin: 44px 0; }
+    h2 { font-size: 26px; letter-spacing:-.02em; margin:0 0 6px; display:flex;align-items:center;gap:12px; }
+    h2 .num { font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:600;color:var(--white); background:var(--navy);border-radius:999px;min-width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center; }
+    .sub { color:var(--muted); margin:0 0 18px; max-width: 68ch; }
+    .skill-card { background:var(--navy);color:#eaf2f7;border-radius:var(--radius);padding:22px 24px; font-family:"IBM Plex Mono",monospace;font-size:14.5px;overflow-x:auto;box-shadow:var(--shadow); }
+    .skill-card .k { color:var(--gold); }
+    .idea { font-size:21px;line-height:1.5;border-left:4px solid var(--teal);padding:6px 0 6px 20px;max-width:62ch; }
+    .idea strong { color:var(--navy); }
+    .mechanics { display:grid;gap:14px; }
+    .mech { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:18px 20px; display:grid;grid-template-columns:44px 1fr;gap:14px;align-items:start; }
+    .mech .mnum { font-family:"IBM Plex Mono",monospace;font-weight:600;color:var(--teal); background:var(--teal-soft);border-radius:10px;width:44px;height:44px;display:flex;align-items:center;justify-content:center; }
+    .mech h3 { margin:0 0 6px;font-size:18px; }
+    .mech p { margin:0;color:var(--muted);font-size:15.5px; }
+    .mech code, .inline-code { font-family:"IBM Plex Mono",monospace;font-size:.88em;background:var(--blue-soft); padding:2px 7px;border-radius:6px;color:var(--navy); }
+    pre.code { background:#0f2233;color:#e8f1f5;border-radius:14px;padding:20px 22px;overflow-x:auto; font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.6;margin:0; }
+    pre.code .c { color:#8ba3b0; } pre.code .s { color:#ffd479; } pre.code .k { color:#7fd6c2; }
+    .fail { border-left:4px solid var(--orange); }
+    .fail h3 .fix { display:block;margin-top:8px;font-size:15px;font-weight:500;color:var(--green); }
+    .ref-list { display:grid;gap:12px; }
+    .ref { display:flex;gap:14px;align-items:flex-start;background:var(--white);border:1px solid var(--line); border-radius:14px;padding:16px 18px;text-decoration:none;color:inherit; }
+    .ref:hover { border-color:var(--teal); }
+    .ref .badge { flex:none;font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;letter-spacing:.06em; padding:5px 10px;border-radius:999px;text-transform:uppercase; }
+    .badge.doc { background:var(--blue-soft);color:var(--navy); }
+    .badge.vid { background:var(--orange-soft);color:var(--orange); }
+    .ref h3 { margin:0 0 4px;font-size:17px; }
+    .ref p { margin:0;color:var(--muted);font-size:14.5px; }
+    .prompt-block { background:#0f2233;border-radius:var(--radius);overflow:hidden;margin-bottom:18px;box-shadow:var(--shadow); }
+    .prompt-top { display:flex;justify-content:space-between;align-items:center;gap:12px; padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.12); }
+    .prompt-top strong { color:#fff;font-size:13px;letter-spacing:.06em;font-family:"IBM Plex Mono",monospace; }
+    .copy-btn { border:1px solid #6c8796;background:transparent;color:#fff;border-radius:6px;padding:7px 11px; cursor:pointer;font-weight:700;font-size:14px; }
+    .copy-btn:hover { background:rgba(255,255,255,.1); }
+    .copy-btn:focus-visible { outline:2px solid var(--gold);outline-offset:2px; }
+    .prompt-text { color:#e8f1f5;font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.65; padding:18px;white-space:pre-wrap;margin:0; }
+    .sr-only { position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0); }
+    .quiz-q { background:var(--white);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px; }
+    .quiz-q .qq { font-weight:700;margin:0 0 12px;font-size:18px; }
+    .qopts { display:grid;gap:8px; }
+    .qopt { text-align:left;background:var(--paper);border:1px solid var(--line);border-radius:10px; padding:12px 14px;cursor:pointer;font-size:15.5px;color:var(--ink); }
+    .qopt:hover:not(:disabled) { border-color:var(--navy); }
+    .qopt:disabled { cursor:default;opacity:.85; }
+    .qopt.correct { background:var(--green-soft);border-color:var(--green); }
+    .qopt.wrong { background:var(--red-soft);border-color:var(--red); }
+    .qexp { margin:12px 0 0;font-size:15px;color:var(--muted); }
+    .qexp strong.ok { color:var(--green); } .qexp strong.no { color:var(--red); }
+    #quiz-score { display:none;margin-top:8px;background:var(--navy);color:#fff;border-radius:14px; padding:20px 24px;font-size:19px; }
+    #quiz-score strong { color:var(--gold); }
+    .fgrid { display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px; }
+    .fcard { perspective:900px;cursor:pointer;min-height:170px; }
+    .fcard-inner { position:relative;width:100%;height:100%;min-height:170px;transform-style:preserve-3d;transition:transform .45s; }
+    .fcard.flipped .fcard-inner { transform:rotateY(180deg); }
+    .fface { position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden; border-radius:14px;padding:18px;display:flex;align-items:center;justify-content:center;text-align:center; border:1px solid var(--line);background:var(--white);box-shadow:var(--shadow);font-size:15.5px; }
+    .fface.front { font-weight:700;color:var(--navy); }
+    .fface.back { transform:rotateY(180deg);background:var(--teal-soft);color:var(--ink);font-size:14.5px; }
+    .fcard:focus-visible { outline:2px solid var(--teal);outline-offset:3px;border-radius:14px; }
+    .triggers { display:grid;gap:10px; }
+    .trigger { background:var(--gold-soft);border-radius:12px;padding:14px 18px;font-size:16px; }
+    .trigger strong { color:var(--navy); }
+    .back-link { display:inline-block;margin:8px 0 60px;font-weight:600;color:var(--teal);text-decoration:none;font-size:17px; }
+    .back-link:hover { text-decoration:underline; }
+    .fig { background:var(--white);border:1px solid var(--line);border-radius:var(--radius); padding:12px;box-shadow:var(--shadow);overflow-x:auto; }
+    .fig svg { display:block;width:100%;height:auto; }
+    .flow-anim { stroke-dasharray: 8 6; animation: dashmove 1.2s linear infinite; }
+    @keyframes dashmove { to { stroke-dashoffset: -14; } }
+    @media (prefers-reduced-motion: reduce) { .fcard-inner{transition:none;} .flow-anim{animation:none;} }
+  </style></head>
+<body><nav class="portal-nav"><div class="shell portal-nav-inner"><a class="portal-brand" href="../index.html">AI Engineering <span>&middot; Learning Portal</span></a><div class="portal-links"><a href="../index.html#daily-topics">Daily topics</a><a href="../index.html#loop">Loop</a><a href="../index.html#graph">Graph</a><a href="../index.html#harness">Harness</a></div></div></nav>
+<div class="shell">
+<header class="hero"><div class="chapter-mark">Daily topic &middot; Software engineering</div><h1>Kubernetes and container platforms: operators, autoscaling, multi-tenancy</h1><p class="lede">Kubernetes is not just a container runner — it is a platform you program. Extend it with operators that encode operational knowledge, scale it with three distinct autoscalers, and share it safely with quotas, RBAC, and network policies per tenant.</p><p class="date-line">2026-11-19 &middot; Topic 069</p></header>
+<section class="block"><h2><span class="num">01</span> The skill card</h2><p class="sub">Every topic on this portal is designed like a Codex skill: a name, a trigger, and concrete steps.</p><div class="skill-card"><pre style="margin:0">---
+<span class="k">name:</span> kubernetes-container-platforms
+<span class="k">description:</span> Reach for this when you run shared Kubernetes in production:
+  automate a complex app with an operator (CRD + reconcile loop),
+  scale pods, pod size, and nodes with the right autoscaler,
+  and isolate tenants with namespaces, quotas, RBAC, and policies.
+---</pre></div></section>
+<section class="block"><h2><span class="num">02</span> The one-idea version</h2><p class="idea"><strong>Kubernetes is a reconciliation engine, and a platform is what you build on top of it.</strong> You declare desired state; controllers loop forever making reality match it. Operators extend that loop with your domain knowledge, autoscalers let the loop change how much capacity exists, and multi-tenancy controls decide who is allowed to declare what — and how much they may consume.</p></section>
+<section class="block"><h2><span class="num">03</span> The picture: declare, reconcile, scale, isolate</h2><p class="sub">One cluster, three platform jobs stacked on the same control loop.</p><div class="fig"><svg viewBox="0 0 960 340" role="img" aria-label="Diagram: desired state flows through operators and controllers to pods, autoscalers adjust replicas and nodes, tenants are isolated by namespaces with quotas and policies."><g font-family="Source Sans 3, sans-serif" font-size="14"><text x="20" y="26" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="600" fill="#163247">DESIRED STATE &#8594; RECONCILE &#8594; RUNNING WORK · SCALE · ISOLATE</text>
+<rect x="20" y="44" width="170" height="84" rx="12" fill="#e3eef4" stroke="#163247" stroke-width="2"/><text x="105" y="72" text-anchor="middle" font-weight="700" fill="#163247">1. Declare</text><text x="105" y="92" text-anchor="middle" fill="#53636f">Deployment, CRD, HPA</text><text x="105" y="110" text-anchor="middle" fill="#53636f">YAML in the API server</text><text x="202" y="90" text-anchor="middle" font-size="20" font-weight="700">&#8594;</text>
+<rect x="220" y="44" width="170" height="84" rx="12" fill="#dff2ee" stroke="#0b8174" stroke-width="2"/><text x="305" y="72" text-anchor="middle" font-weight="700" fill="#163247">2. Operator</text><text x="305" y="92" text-anchor="middle" fill="#53636f">watch &#183; compare &#183; act</text><text x="305" y="110" text-anchor="middle" fill="#53636f">reconcile loop, idempotent</text><text x="402" y="90" text-anchor="middle" font-size="20" font-weight="700">&#8594;</text>
+<rect x="420" y="44" width="220" height="84" rx="12" fill="#f8e4d8" stroke="#d66332" stroke-width="2"/><text x="530" y="72" text-anchor="middle" font-weight="700" fill="#163247">3. Workloads</text><text x="530" y="92" text-anchor="middle" fill="#53636f">pods on nodes</text><text x="530" y="110" text-anchor="middle" fill="#53636f">StatefulSet, services, PVCs</text><text x="652" y="90" text-anchor="middle" font-size="20" font-weight="700">&#8594;</text>
+<rect x="670" y="44" width="170" height="84" rx="12" fill="#f7edc8" stroke="#d8a524" stroke-width="2"/><text x="755" y="72" text-anchor="middle" font-weight="700" fill="#163247">4. Running</text><text x="755" y="92" text-anchor="middle" fill="#53636f">backups, upgrades</text><text x="755" y="110" text-anchor="middle" fill="#53636f">failover, self-healing</text>
+<rect x="20" y="196" width="290" height="84" rx="12" fill="#ffffff" stroke="#cbd5d8"/><text x="165" y="226" text-anchor="middle" font-weight="700" fill="#163247">Scale — HPA / VPA / nodes</text><text x="165" y="248" text-anchor="middle" fill="#53636f" font-size="13">replicas &#183; pod size &#183; node count</text><text x="165" y="268" text-anchor="middle" fill="#53636f" font-size="13">metrics every 15s, slow scale-down</text>
+<rect x="335" y="196" width="290" height="84" rx="12" fill="#dff2ee" stroke="#0b8174"/><text x="480" y="226" text-anchor="middle" font-weight="700" fill="#163247">Isolate — per tenant</text><text x="480" y="248" text-anchor="middle" fill="#53636f" font-size="13">namespace + RBAC + quota</text><text x="480" y="268" text-anchor="middle" fill="#53636f" font-size="13">NetworkPolicy + Pod Security</text>
+<rect x="650" y="196" width="290" height="84" rx="12" fill="#163247"/><text x="795" y="226" text-anchor="middle" font-weight="700" fill="#ffffff">Platform — one shared cluster</text><text x="795" y="248" text-anchor="middle" fill="#cbd5d8" font-size="13">fair, observable, upgradeable</text><text x="795" y="268" text-anchor="middle" fill="#cbd5d8" font-size="13">soft tenancy inside, hard at the edge</text></g></svg></div></section>
+<section class="block"><h2><span class="num">04</span> How it works</h2><p class="sub">Seven mechanics: extend with operators, reconcile idempotently, scale on three axes, and isolate tenants in layers.</p><div class="mechanics">
+<div class="mech"><div class="mnum">1</div><div><h3>Extend the API with a CRD before you write any controller code</h3><p>Define a CustomResourceDefinition that teaches the API server a new kind — for example <code>SampleDB</code> — with an OpenAPI schema, so invalid objects are rejected at admission. Users then declare the app the way they declare a Deployment: <code>kubectl get SampleDB</code>, edit it, delete it. The Kubernetes operator docs are explicit: operators are clients of the API acting as controllers for a Custom Resource, extending cluster behaviour without modifying Kubernetes itself.</p></div></div>
+<div class="mech"><div class="mnum">2</div><div><h3>Make reconcile level-based and idempotent — never edge-triggered</h3><p>On every loop, read desired state from the CR and actual state from the cluster, then create, update, or delete the child objects (StatefulSet, PVCs, Jobs, Services) until they match. Running reconcile twice must be safe, because it will run after every watch event, restart, and resync. Handle upgrades, backups, and leader election inside that same loop, and write progress back to the CR's <code>status</code> — never to local memory the next replica will not have.</p></div></div>
+<div class="mech"><div class="mnum">3</div><div><h3>Scale replicas with HPA — and set requests first, or it cannot work</h3><p>The HorizontalPodAutoscaler is a control loop (default sync every 15 seconds) that computes <code>desiredReplicas = ceil(currentReplicas x currentMetric / targetMetric)</code>, with a 10% tolerance and a 5-minute scale-down stabilization window. CPU utilization is usage divided by the container's <code>requests</code> — no requests, no denominator, no scaling. Metrics come from Metrics Server via <code>metrics.k8s.io</code>, or from custom/external metrics APIs for queue depth and latency.</p></div></div>
+<div class="mech"><div class="mnum">4</div><div><h3>Scale size with VPA and nodes with Cluster Autoscaler / Karpenter — never fight HPA</h3><p>VPA rightsizes a pod's requests from observed history instead of changing replica count. Cluster Autoscaler (or Karpenter) adds nodes when HPA-created pods stay Pending, and removes under-used nodes later. The rule that prevents oscillation: never let HPA and VPA both act on the same CPU/memory metric for the same workload — VPA moving the request moves the denominator HPA divides by.</p></div></div>
+<div class="mech"><div class="mnum">5</div><div><h3>Carve tenants with namespaces — then attach every control at creation</h3><p>A namespace scopes names, RBAC, quotas, and policies; it is logical isolation, not a security boundary by itself. Stamp out each tenant namespace from one template: RoleBindings (least privilege, namespace-scoped only), a ResourceQuota, a LimitRange, a default-deny NetworkPolicy, and Pod Security labels. The official multi-tenancy guidance is blunt: if a tenant can modify another tenant's API objects, every other policy is negated — authorization comes first.</p></div></div>
+<div class="mech"><div class="mnum">6</div><div><h3>Stop noisy neighbours with ResourceQuota + LimitRange, paired</h3><p>ResourceQuota caps aggregate requests, limits, pod/PVC/Service counts per namespace; LimitRange sets per-container defaults and maxima. Pair them: once a quota covers <code>requests.cpu</code>, every pod must declare it or be rejected — the LimitRange supplies the default so legitimate pods are not blocked. Leave 20-30% headroom and alert at 80% quota use, so an HPA scale-up during a spike is not killed by the quota meant to protect the cluster.</p></div></div>
+<div class="mech"><div class="mnum">7</div><div><h3>Choose soft vs hard tenancy by trust, and escalate deliberately</h3><p>Soft tenancy (namespaces + RBAC + quotas + NetworkPolicy + Pod Security) fits trusted internal teams. Hard tenancy — untrusted customers, different compliance domains, tenants who need cluster-scoped resources or their own CRDs — needs virtual clusters (e.g. vCluster) or separate clusters, because tenants still share one API server, one kernel, and one node pool. Network isolation also requires a CNI that actually enforces NetworkPolicy; otherwise the objects are silently ignored.</p></div></div>
+</div></section>
+<section class="block"><h2><span class="num">05</span> Code sketch</h2><p class="sub">A tenant namespace with quota, an HPA with a real denominator, and the reconcile shape every operator follows.</p><pre class="code"><span class="c"># Tenant guardrails + autoscaling (apply per namespace)</span>
+apiVersion: v1
+kind: ResourceQuota
+metadata: {name: tenant-quota, namespace: team-a}
+spec:
+  hard: {requests.cpu: <span class="s">"16"</span>, requests.memory: 64Gi, pods: <span class="s">"100"</span>}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata: {name: web, namespace: team-a}
+spec:
+  scaleTargetRef: {apiVersion: apps/v1, kind: Deployment, name: web}
+  minReplicas: 2
+  maxReplicas: 20
+  metrics:
+  - type: Resource
+    resource: {name: cpu, target: {type: Utilization, averageUtilization: 70}}
+  behavior:
+    scaleDown: {stabilizationWindowSeconds: 300}
+
+<span class="c"># Operator reconcile: level-based, idempotent (pseudocode)</span>
+<span class="k">def</span> reconcile(cr):
+    desired = spec_of(cr)                 <span class="c"># what the user declared</span>
+    actual = read_children(cr)            <span class="c"># StatefulSet, PVC, Service</span>
+    apply_diff(desired, actual)           <span class="c"># safe to run repeatedly</span>
+    write_status(cr, phase=ready_or_progressing(actual))
+</pre></section>
+<section class="block"><h2><span class="num">06</span> Failure modes</h2><p class="sub">Five ways platform work goes wrong — each with a one-line fix.</p><div class="mechanics">
+<div class="mech fail"><div class="mnum">1</div><div><h3>Building an operator for a stateless app a Deployment already handles<span class="fix">Fix: use an operator only when day-2 knowledge (backup, failover, upgrade ordering, leader election) must be encoded — otherwise ship a Helm chart / Deployment.</span></h3><p>Operators are the most complex extension point in Kubernetes. Every CRD is a new API you must version, secure, and support forever.</p></div></div>
+<div class="mech fail"><div class="mnum">2</div><div><h3>HPA shows &lt;unknown&gt; and never scales<span class="fix">Fix: install Metrics Server and set CPU/memory requests on every container — utilization has no denominator without requests.</span></h3><p>The second most common cause is scaling on a custom metric with no adapter exposing it to the custom metrics API.</p></div></div>
+<div class="mech fail"><div class="mnum">3</div><div><h3>HPA and VPA fighting over the same metric<span class="fix">Fix: pick one actor per metric — HPA on CPU with VPA in recommendation (Off) mode, or VPA on size and HPA on a custom metric like queue depth.</span></h3><p>VPA raises requests, HPA's utilization falls, HPA scales down, load per pod rises — an oscillation loop with real outage risk.</p></div></div>
+<div class="mech fail"><div class="mnum">4</div><div><h3>Naked namespaces: isolation assumed, nothing enforced<span class="fix">Fix: no namespace ships without RBAC, ResourceQuota + LimitRange, default-deny NetworkPolicy, and Pod Security labels — automate it at namespace creation.</span></h3><p>By default pods can talk across namespaces, a tenant with broad RBAC can read another's Secrets, and one runaway workload can starve the node for everyone.</p></div></div>
+<div class="mech fail"><div class="mnum">5</div><div><h3>Treating namespaces as a hard security boundary for untrusted tenants<span class="fix">Fix: escalate to virtual clusters or separate clusters when tenants are untrusted, need cluster-scoped resources, or sit in different compliance domains.</span></h3><p>Shared kernel, shared API server, shared nodes: a container escape or a cluster-scoped CRD breaks the namespace story entirely.</p></div></div>
+<div class="mech fail"><div class="mnum">6</div><div><h3>Quota set to exactly today's usage<span class="fix">Fix: set quotas with 20-30% headroom, alert at 80%, and review monthly — quota is a fairness ceiling, not a capacity plan.</span></h3><p>The first traffic spike fails not on node capacity but on an admission rejection, and the HPA gets blamed for a policy decision.</p></div></div>
+</div></section>
+<section class="block"><h2><span class="num">07</span> Go deeper</h2><p class="sub">Verified references — every link opened and checked before publishing.</p><div class="ref-list">
+<a class="ref" href="https://v1-36.docs.kubernetes.io/docs/concepts/extend-kubernetes/operator/"><span class="badge doc">Docs</span><div><h3>Operator pattern — Kubernetes Documentation</h3><p>The canonical definition: operators use custom resources and the control loop to capture a human operator's knowledge — deployment, backup, upgrade, and failover — without modifying Kubernetes itself.</p></div></a>
+<a class="ref" href="https://v1-34.docs.kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/"><span class="badge doc">Docs</span><div><h3>Horizontal Pod Autoscaling — Kubernetes Documentation</h3><p>The HPA algorithm in full: the 15-second loop, desiredReplicas formula, tolerance, readiness handling, and the 5-minute scale-down stabilization window.</p></div></a>
+<a class="ref" href="https://kubernetes.io/docs/concepts/security/multi-tenancy/"><span class="badge doc">Docs</span><div><h3>Multi-tenancy — Kubernetes Documentation</h3><p>The official sharing model: multi-team vs multi-customer tenancy, control-plane isolation (namespaces, RBAC, quotas) and data-plane isolation (network, storage, node), and the hard/soft spectrum.</p></div></a>
+<a class="ref" href="https://www.youtube.com/watch?v=7TaMSrY2LME"><span class="badge vid">Video</span><div><h3>Modern Kubernetes Autoscaling Guide: HPA, VPA, KEDA, Knative, CA &amp; Karpenter</h3><p>The full autoscaling decision matrix in one video: which layer each tool scales, its trigger signal and reaction speed, and the production guardrails that stop autoscalers fighting.</p></div></a>
+<a class="ref" href="https://www.youtube.com/watch?v=8k_ayO1VRXE"><span class="badge vid">Video</span><div><h3>Intro: Operator Framework — Diane Mueller &amp; Sebastian Pahl, Red Hat (KubeCon)</h3><p>The original Operator Framework talk: an operator as the runtime that packages, deploys, and manages a Kubernetes-native application using the Kubernetes APIs themselves.</p></div></a>
+</div></section>
+<section class="block"><h2><span class="num">08</span> Sample prompts</h2><p class="sub">Copy one into your AI assistant and apply it to your own work.</p><p id="live-status" class="sr-only" role="status"></p>
+<div class="prompt-block"><div class="prompt-top"><strong>SHOULD THIS BE AN OPERATOR?</strong><button class="copy-btn" data-copy="p1">Copy</button></div><p class="prompt-text" id="p1">Evaluate whether this application needs a Kubernetes operator: [describe the app, its state, and its day-2 operations — backup, restore, upgrade, failover, scaling]. Give me: (1) what a plain Deployment/Helm chart already handles, (2) the operational knowledge that would justify a CRD + controller, (3) the reconcile steps and status fields if we build it, (4) the API versioning and RBAC cost, and (5) a clear build / don't-build recommendation. If don't-build, give the simpler design.</p></div>
+<div class="prompt-block"><div class="prompt-top"><strong>DESIGN AUTOSCALING FOR THIS WORKLOAD</strong><button class="copy-btn" data-copy="p2">Copy</button></div><p class="prompt-text" id="p2">Design autoscaling for this workload: [traffic pattern, latency target, current requests/limits, queue or CPU signals available]. Specify: (1) HPA metrics, targets, min/max replicas, and behavior (stabilization windows), (2) whether VPA runs, in what mode, and how you avoid an HPA/VPA conflict on the same metric, (3) when node autoscaling (Cluster Autoscaler/Karpenter) must engage and what Pending-pod signal triggers it, (4) PodDisruptionBudget and quota headroom so scaling is not blocked, and (5) the load test that proves it before production.</p></div>
+<div class="prompt-block"><div class="prompt-top"><strong>AUDIT THIS MULTI-TENANT CLUSTER</strong><button class="copy-btn" data-copy="p3">Copy</button></div><p class="prompt-text" id="p3">Audit this shared cluster design for multi-tenancy: [paste namespace layout, RBAC approach, quotas, network policies, tenant trust level]. Check in order: (1) can any tenant read or modify another tenant's API objects, (2) does every namespace have ResourceQuota + LimitRange, default-deny NetworkPolicy, and Pod Security enforcement, (3) can one tenant starve nodes, network, or the API server, (4) is namespace-level (soft) tenancy sufficient for this trust level, or do we need virtual/separate clusters, and (5) the tenant-onboarding template that makes the safe path the default. Rank findings by blast radius.</p></div>
+</section>
+<section class="block"><h2><span class="num">09</span> Quiz</h2><p class="sub">Five questions. Click an answer — you get the explanation right away.</p><div id="quiz">
+<div class="quiz-q" data-answer="1"><p class="qq">1. What two pieces make an operator?</p><div class="qopts"><button class="qopt" data-i="0">A Helm chart and a cron job</button><button class="qopt" data-i="1">A Custom Resource (desired state in the API) and a controller whose reconcile loop makes reality match it</button><button class="qopt" data-i="2">A sidecar and an init container</button><button class="qopt" data-i="3">A fork of Kubernetes and a custom scheduler</button></div><p class="qexp" hidden></p></div>
+<div class="quiz-q" data-answer="2"><p class="qq">2. Four pods target 50% CPU but average 80%. What does HPA compute?</p><div class="qopts"><button class="qopt" data-i="0">Stay at 4 — 80% is under the limit</button><button class="qopt" data-i="1">Scale to 5, one at a time</button><button class="qopt" data-i="2">desiredReplicas = ceil(4 x 80/50) = 7 pods, subject to min/max and behavior limits</button><button class="qopt" data-i="3">Restart the pods at a larger size</button></div><p class="qexp" hidden></p></div>
+<div class="quiz-q" data-answer="1"><p class="qq">3. Why must reconcile be idempotent?</p><div class="qopts"><button class="qopt" data-i="0">To pass the linter</button><button class="qopt" data-i="1">It reruns on every watch event, restart, and resync — level-based convergence must be safe to repeat until desired and actual match</button><button class="qopt" data-i="2">So it can run in parallel</button><button class="qopt" data-i="3">Idempotency is optional for operators</button></div><p class="qexp" hidden></p></div>
+<div class="quiz-q" data-answer="2"><p class="qq">4. A namespace has a ResourceQuota but tenants' pods keep being rejected for missing requests. Fix?</p><div class="qopts"><button class="qopt" data-i="0">Remove the quota</button><button class="qopt" data-i="1">Give tenants cluster-admin</button><button class="qopt" data-i="2">Add a LimitRange that supplies default requests/limits — quota covering a resource requires every pod to declare it</button><button class="qopt" data-i="3">Disable admission control</button></div><p class="qexp" hidden></p></div>
+<div class="quiz-q" data-answer="1"><p class="qq">5. Untrusted external customers will run workloads on your platform. Namespaces alone?</p><div class="qopts"><button class="qopt" data-i="0">Yes — namespaces are a hard boundary</button><button class="qopt" data-i="1">No — namespaces are logical isolation on a shared API server/kernel; untrusted tenants need virtual clusters or separate clusters (hard tenancy)</button><button class="qopt" data-i="2">Yes, if you add labels</button><button class="qopt" data-i="3">Only if NetworkPolicy is off</button></div><p class="qexp" hidden></p></div>
+</div><div id="quiz-score" role="status"></div></section>
+<section class="block"><h2><span class="num">10</span> Flashcards</h2><p class="sub">Click a card (or focus it and press Enter / Space) to flip it.</p><div class="fgrid">
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Operator</div><div class="fface back">A controller for a Custom Resource that encodes a human operator's domain knowledge — install, upgrade, backup, failover — as a reconcile loop against the Kubernetes API.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">CRD / Custom Resource</div><div class="fface back">A CustomResourceDefinition teaches the API server a new kind with a schema; a Custom Resource is one instance of it — the desired state users declare with kubectl.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Reconcile loop</div><div class="fface back">Observe desired vs actual, act to close the gap, repeat forever. Level-based (full state each time) and idempotent — not a one-shot event handler.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">HPA formula</div><div class="fface back">desiredReplicas = ceil(currentReplicas x currentMetric / targetMetric), checked every 15s by default, with 10% tolerance and a 5-minute scale-down stabilization window.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">HPA vs VPA vs Cluster Autoscaler</div><div class="fface back">HPA changes pod count, VPA changes pod size (requests), Cluster Autoscaler/Karpenter changes node count when pods stay Pending. Never let HPA and VPA act on the same metric.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">ResourceQuota / LimitRange</div><div class="fface back">Quota caps aggregate consumption per namespace (requests, limits, object counts); LimitRange sets per-container defaults and maxima. Always pair them.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Soft vs hard tenancy</div><div class="fface back">Soft: trusted teams sharing via namespaces, RBAC, quotas, NetworkPolicy. Hard: untrusted tenants needing virtual or separate clusters — shared kernel/API is not a boundary.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Noisy neighbour</div><div class="fface back">One tenant degrading others by consuming shared CPU, memory, network, or API capacity. Quotas, limits, priority, and node isolation are the mitigations.</div></div></div>
+<div class="fcard" tabindex="0" role="button" aria-label="flashcard"><div class="fcard-inner"><div class="fface front">Requests are the denominator</div><div class="fface back">HPA CPU utilization = usage / request. No request set means no utilization, no scaling decision — the most common reason an HPA shows &lt;unknown&gt;.</div></div></div>
+</div></section>
+<section class="block"><h2><span class="num">11</span> Reach for this when&hellip;</h2><div class="triggers">
+<div class="trigger"><strong>A database or stateful system needs backups, failover, and ordered upgrades on Kubernetes</strong> — that day-2 knowledge is exactly what an operator encodes; a Deployment alone will not do it safely.</div>
+<div class="trigger"><strong>Traffic swings and manual replica changes are always late</strong> — set requests honestly, add HPA on the signal that leads load, and let node autoscaling follow the Pending pods.</div>
+<div class="trigger"><strong>A second team is about to share your cluster</strong> — stamp their namespace from the tenant template (RBAC, quota + LimitRange, default-deny NetworkPolicy, Pod Security) before their first pod lands, not after the first incident.</div>
+</div></section><a class="back-link" href="../index.html#daily-topics">&larr; Back to daily topics</a></div>
+<script>
+const status=document.getElementById('live-status');
+document.querySelectorAll('.copy-btn').forEach(b=>{b.addEventListener('click',async()=>{const t=document.getElementById(b.dataset.copy);try{await navigator.clipboard.writeText(t.innerText);const o=b.textContent;b.textContent='Copied';status.textContent='Prompt copied.';setTimeout(()=>b.textContent=o,1600);}catch{const r=document.createRange();r.selectNodeContents(t);const s=window.getSelection();s.removeAllRanges();s.addRange(r);status.textContent='Prompt selected.';}});});
+const explanations=[["A chart packages manifests; it does not run a control loop.", "Correct. CRD for desired state, controller for convergence — that pair is the operator pattern.", "Sidecars extend a pod, not the API.", "Operators extend Kubernetes without modifying or forking it."], ["Limits throttle a pod; they do not drive the replica calculation.", "HPA does not step one-by-one by default; it computes the target directly (behavior caps the rate).", "Correct. ceil(4 x 1.6) = 7 — then min/max and scale-up behavior bound the move.", "Resizing pods is VPA's job, not HPA's."], ["Style is not the reason — correctness under repetition is.", "Correct. Watch events, restarts, and resyncs all re-trigger reconcile; it must converge safely every time.", "Parallelism is a separate concern, handled with work queues and leader election.", "Non-idempotent reconcile corrupts state on the second run — and there is always a second run."], ["Removing the quota removes the fairness control, not the root cause.", "Cluster-admin destroys the tenancy model to fix a defaults problem.", "Correct. Quota requires declared requests; LimitRange supplies them by default.", "Admission is what enforces the quota — disabling it disables tenancy."], ["Namespaces scope names and policies; they share kernel, nodes, and API server.", "Correct. Hard tenancy needs a stronger boundary: virtual clusters or separate clusters.", "Labels organise; they do not isolate.", "NetworkPolicy is part of the isolation stack, not an obstacle to it."]];
+const questions=[...document.querySelectorAll('.quiz-q')];let score=0,answered=0;
+questions.forEach((q,qi)=>{const correct=parseInt(q.dataset.answer,10);const exp=q.querySelector('.qexp');q.querySelectorAll('.qopt').forEach(btn=>{btn.addEventListener('click',()=>{if(q.dataset.done)return;q.dataset.done="1";const chosen=parseInt(btn.dataset.i,10);const ok=chosen===correct;q.querySelectorAll('.qopt').forEach(x=>{x.disabled=true;if(parseInt(x.dataset.i,10)===correct)x.classList.add('correct');});if(!ok)btn.classList.add('wrong');else score++;answered++;exp.hidden=false;exp.innerHTML=ok?"<strong class=\"ok\">Correct.</strong> "+explanations[qi][chosen]:"<strong class=\"no\">Not quite.</strong> "+explanations[qi][chosen];if(answered===questions.length){const box=document.getElementById('quiz-score');box.style.display="block";box.innerHTML="You scored <strong>"+score+" / "+questions.length+"</strong>."+(score===questions.length?" Clean sweep — now check one HPA in your cluster for its requests denominator.":score>=3?" Solid — re-read the mechanic you missed.":" Worth a re-read of sections 04 and 06 before your next platform change.");}});});});
+document.querySelectorAll('.fcard').forEach(c=>{const f=()=>c.classList.toggle('flipped');c.addEventListener('click',f);c.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();f();}});});
+</script></body></html>
