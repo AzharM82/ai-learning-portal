@@ -481,5 +481,12 @@
     "date": "2026-11-19",
     "summary": "Kubernetes is a reconciliation engine you program: extend it with operators (CRD + idempotent reconcile loop) that encode backup, upgrade, and failover knowledge, scale on three axes with HPA, VPA, and node autoscaling without letting them fight, and share one cluster safely with namespaces, RBAC, quotas, LimitRanges, and network policies per tenant.",
     "skill": "kubernetes-container-platforms"
+  },
+  {
+    "slug": "2026-11-20-llm-inference-optimization-latency-throughput-cost",
+    "title": "LLM inference optimization: latency, throughput, and cost per token",
+    "date": "2026-11-20",
+    "summary": "Inference is a three-way trade: prefill sets TTFT, decode sets TPOT, batching sets throughput \u2014 and cost per token is GPU-hours divided by goodput. Measure TTFT/TPOT/p99 first, then move fewer bytes (quantization, PagedAttention), keep the GPU busy (continuous + chunked prefill), and size on the latency-throughput curve, not averages.",
+    "skill": "llm-inference-optimization"
   }
 ]
