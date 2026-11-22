@@ -1,0 +1,9 @@
+{
+  "id": "1a1fa0210fe63707",
+  "labelIds": [
+    "SENT"
+  ],
+  "threadId": "1a1fa0210fe63707"
+}
+Final sent message (supersedes the original request): {"from":null,"to":["reachazhar@hotmail.com"],"cc":["mazhar@microsoft.com"],"bcc":[],"subject":"Today's AI topic: LLM inference optimization: latency, throughput, and cost per token","body":"<h2 style=\"color:#163247\">Today's AI topic: <a href=\"https://azharm82.github.io/ai-learning-portal/topics/2026-11-20-llm-inference-optimization-latency-throughput-cost.html\">LLM inference optimization: latency, throughput, and cost per token</a></h2><p>Inference is where AI products are won or lost on economics: training is a one-time bill, but every user request pays for prefill, decode, and GPU time again. This lesson gives you the operating model senior AI engineers use — prefill is compute-bound and sets time to first token, decode is memory-bound and sets time per output token, and cost per token is simply GPU cost divided by goodput at your latency target.</p><p>It covers continuous batching and chunked prefill, PagedAttention and KV-cache budgeting, FP8 quantization and speculative decoding, and how to size a fleet from the latency-throughput Pareto curve instead of peak benchmarks — with a code sketch, quiz, and flashcards.</p><p style=\"color:#53636f\">The next topic arrives tomorrow.</p>","attachments":[],"user_edited":false}
+Sent. Tell the user who it went to and the subject. Keep Gmail message, thread and draft IDs out of your reply unless the user asked for them.

@@ -488,5 +488,12 @@
     "date": "2026-11-20",
     "summary": "Inference is a three-way trade: prefill sets TTFT, decode sets TPOT, batching sets throughput \u2014 and cost per token is GPU-hours divided by goodput. Measure TTFT/TPOT/p99 first, then move fewer bytes (quantization, PagedAttention), keep the GPU busy (continuous + chunked prefill), and size on the latency-throughput curve, not averages.",
     "skill": "llm-inference-optimization"
+  },
+  {
+    "slug": "2026-11-22-procurement-spend-systems",
+    "title": "Procurement and spend systems: sourcing workflows and contract intelligence",
+    "date": "2026-11-22",
+    "summary": "Procurement value leaks at the handoffs: build the spend cube (collect, cleanse, normalize, classify), triage intake into catalog/RFQ/RFP, lock RFx criteria before bids open, convert award into a contract whose clauses, obligations and renewals are extracted as data, and enforce it with contract-linked POs and three-way match \u2014 savings count only when they survive the invoice.",
+    "skill": "procurement-spend-systems"
   }
 ]
