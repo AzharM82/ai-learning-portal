@@ -5,6 +5,8 @@
     "ML platform engineering: training infrastructure and feature stores",
     "Analytics engineering: dbt, semantic layers, and metric definitions",
     "GPU infrastructure: clusters, scheduling, and utilization",
-    "Payments and billing platforms: ledgers, invoicing, and reconciliation"
+    "Payments and billing platforms: ledgers, invoicing, and reconciliation",
+    "Retrieval-augmented generation in production: chunking, ranking, grounding",
+    "Security automation: remediation pipelines and compliance at scale"
   ]
 }
