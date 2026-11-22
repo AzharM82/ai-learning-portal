@@ -1,0 +1,9 @@
+{
+  "id": "1a201f446fb5b6e9",
+  "labelIds": [
+    "SENT"
+  ],
+  "threadId": "1a201f446fb5b6e9"
+}
+Final sent message (supersedes the original request): {"from":null,"to":["reachazhar@hotmail.com"],"cc":["mazhar@microsoft.com"],"bcc":[],"subject":"Today's AI topic: Procurement and spend systems: sourcing workflows and contract intelligence","body":"<h2 style=\"color:#163247\">Today's AI topic: <a href=\"https://azharm82.github.io/ai-learning-portal/topics/2026-11-22-procurement-spend-systems.html\">Procurement and spend systems: sourcing workflows and contract intelligence</a></h2><p>Procurement is where your pricing and contract work becomes real money: a discount negotiated in a sourcing event is worth nothing if buying bypasses the contract or the renewal nobody tracked auto-rolls. This lesson walks the full source-to-contract chain — spend cube, intake triage, RFx events with criteria locked before bids open, and contract intelligence that turns signed PDFs into queryable obligations.</p><p>It is directly relevant to finance and commerce systems work: three-way match, spend under contract, and savings validated at the invoice (not claimed at award) are the controls that separate a sourcing press release from a P&amp;L result — with a code sketch, quiz, and flashcards.</p><p style=\"color:#53636f\">The next topic arrives tomorrow.</p>","attachments":[],"user_edited":false}
+Sent. Tell the user who it went to and the subject. Keep Gmail message, thread and draft IDs out of your reply unless the user asked for them.
