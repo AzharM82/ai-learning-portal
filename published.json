@@ -495,5 +495,12 @@
     "date": "2026-11-22",
     "summary": "Procurement value leaks at the handoffs: build the spend cube (collect, cleanse, normalize, classify), triage intake into catalog/RFQ/RFP, lock RFx criteria before bids open, convert award into a contract whose clauses, obligations and renewals are extracted as data, and enforce it with contract-linked POs and three-way match \u2014 savings count only when they survive the invoice.",
     "skill": "procurement-spend-systems"
+  },
+  {
+    "slug": "2026-11-23-marketplace-engineering",
+    "title": "Marketplace engineering: supply, demand, matching, and trust",
+    "date": "2026-11-23",
+    "summary": "A marketplace does not sell inventory \u2014 it sells a successful match: seed liquidity in one narrow atomic network, gate eligibility before ranking, rank for acceptance not clicks, hold money and reputation in escrow, and make trust visible at the decision moment \u2014 so strangers transact and come back.",
+    "skill": "marketplace-engineering"
   }
 ]
