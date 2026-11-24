@@ -1,0 +1,9 @@
+{
+  "id": "1a2068eaeab1c581",
+  "labelIds": [
+    "SENT"
+  ],
+  "threadId": "1a2068eaeab1c581"
+}
+Final sent message (supersedes the original request): {"from":null,"to":["reachazhar@hotmail.com"],"cc":["mazhar@microsoft.com"],"bcc":[],"subject":"Today's AI topic: Marketplace engineering: supply, demand, matching, and trust","body":"<h2 style=\"color:#163247\">Today's AI topic: <a href=\"https://azharm82.github.io/ai-learning-portal/topics/2026-11-23-marketplace-engineering.html\">Marketplace engineering: supply, demand, matching, and trust</a></h2><p>A marketplace owns no inventory — its product is a successful transaction between strangers. This lesson covers seeding liquidity in one atomic network, gating eligibility before ranking, ranking for acceptance rather than clicks, and splitting payments through connected accounts with a ledger.</p><p>For an AI/software engineer, marketplaces are a compact masterclass in systems that must be correct under adversarial, two-sided pressure: state machines, ranking with fairness, escrow-style payments, and a trust stack of identity, reviews, and guarantees — with a code sketch, quiz, and flashcards.</p><p style=\"color:#53636f\">The next topic arrives tomorrow.</p>","attachments":[],"user_edited":false}
+Sent. Tell the user who it went to and the subject. Keep Gmail message, thread and draft IDs out of your reply unless the user asked for them.

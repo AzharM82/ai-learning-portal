@@ -502,5 +502,12 @@
     "date": "2026-11-23",
     "summary": "A marketplace does not sell inventory \u2014 it sells a successful match: seed liquidity in one narrow atomic network, gate eligibility before ranking, rank for acceptance not clicks, hold money and reputation in escrow, and make trust visible at the decision moment \u2014 so strangers transact and come back.",
     "skill": "marketplace-engineering"
+  },
+  {
+    "slug": "2026-11-24-ml-platform-engineering",
+    "title": "ML platform engineering: training infrastructure and feature stores",
+    "date": "2026-11-24",
+    "summary": "An ML platform is a paved road, not a pile of GPUs: one feature definition serves training and inference with point-in-time correctness, training runs are reproducible and scheduled against quotas, and every model is registered with lineage \u2014 so teams ship models instead of rebuilding plumbing.",
+    "skill": "ml-platform-engineering"
   }
 ]
