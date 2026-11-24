@@ -1,0 +1,9 @@
+{
+  "id": "1a20bb98c45f11dd",
+  "labelIds": [
+    "SENT"
+  ],
+  "threadId": "1a20bb98c45f11dd"
+}
+Final sent message (supersedes the original request): {"from":null,"to":["reachazhar@hotmail.com"],"cc":["mazhar@microsoft.com"],"bcc":[],"subject":"Today's AI topic: ML platform engineering: training infrastructure and feature stores","body":"<html><body style=\"font-family:Arial,sans-serif;color:#14212b;line-height:1.5\">\n<h2 style=\"color:#163247\">Today's AI topic: <a href=\"https://azharm82.github.io/ai-learning-portal/topics/2026-11-24-ml-platform-engineering.html\">ML platform engineering: training infrastructure and feature stores</a></h2>\n<p>An ML platform is what separates a one-off notebook model from a system many teams can train, retrain, and serve reliably: one feature definition serving both training and inference, point-in-time correctness that prevents leakage, and reproducible, well-scheduled training jobs. For an AI/software engineer leading platform work, this is the layer where GPU spend, data quality, and model trust are actually decided — get the feature store, scheduling, and registry right and every model on top gets cheaper and safer.</p>\n<p>The lesson includes verified Feast, MLflow, and Ray Train references, two verified videos, copyable prompts, a 5-question quiz, and flashcards.</p>\n<p style=\"color:#53636f\">The next topic arrives tomorrow.</p>\n</body></html>","attachments":[],"user_edited":false}
+Sent. Tell the user who it went to and the subject. Keep Gmail message, thread and draft IDs out of your reply unless the user asked for them.
