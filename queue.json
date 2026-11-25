@@ -1,7 +1,6 @@
 {
   "note": "Azharuddin's requested topics, in order. He adds topics by messaging Azhar.AI in chat. The daily publisher takes from here first; when empty, it picks from curriculum.md.",
   "queue": [
-    "Analytics engineering: dbt, semantic layers, and metric definitions",
     "GPU infrastructure: clusters, scheduling, and utilization",
     "Payments and billing platforms: ledgers, invoicing, and reconciliation",
     "Retrieval-augmented generation in production: chunking, ranking, grounding",

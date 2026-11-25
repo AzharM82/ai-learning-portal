@@ -509,5 +509,12 @@
     "date": "2026-11-24",
     "summary": "An ML platform is a paved road, not a pile of GPUs: one feature definition serves training and inference with point-in-time correctness, training runs are reproducible and scheduled against quotas, and every model is registered with lineage \u2014 so teams ship models instead of rebuilding plumbing.",
     "skill": "ml-platform-engineering"
+  },
+  {
+    "slug": "2026-11-25-analytics-engineering-dbt-semantic-layers",
+    "title": "Analytics engineering: dbt, semantic layers, and metric definitions",
+    "date": "2026-11-25",
+    "summary": "Define the metric once, in code, and let machines generate the SQL: declare sources in dbt, stage 1-to-1, build tested fct_/dim_ marts at a declared grain, then define each metric once in MetricFlow so every dashboard, API and AI agent returns the same number.",
+    "skill": "analytics-engineering-dbt-semantic-layers"
   }
 ]
