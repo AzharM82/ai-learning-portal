@@ -1,0 +1,9 @@
+{
+  "id": "1a210db004a9b3c0",
+  "labelIds": [
+    "SENT"
+  ],
+  "threadId": "1a210db004a9b3c0"
+}
+Final sent message (supersedes the original request): {"from":null,"to":["reachazhar@hotmail.com"],"cc":["mazhar@microsoft.com"],"bcc":[],"subject":"Today's AI topic: Analytics engineering: dbt, semantic layers, and metric definitions","body":"<html><body style=\"font-family:Arial,sans-serif;color:#14212b;line-height:1.5\">\n<h2 style=\"color:#163247\">Today's AI topic: <a href=\"https://azharm82.github.io/ai-learning-portal/topics/2026-11-25-analytics-engineering-dbt-semantic-layers.html\">Analytics engineering: dbt, semantic layers, and metric definitions</a></h2>\n<p>When two dashboards disagree on revenue, the problem is rarely the chart — it is that the metric was defined twice, in two tools, in two dialects of SQL. This lesson covers the fix an AI/software engineer can reuse everywhere: layered, tested dbt models (sources, staging, marts at a declared grain) with a semantic layer on top, where MetricFlow defines each metric once and generates the SQL for every BI tool, API and AI agent.</p>\n<p>That governed-definition pattern matters even more as agents start answering data questions — an agent querying a certified metric is trustworthy in a way an agent guessing SQL over raw tables is not.</p>\n<p>The next topic arrives tomorrow.</p>\n</body></html>","attachments":[],"user_edited":false}
+Sent. Tell the user who it went to and the subject. Keep Gmail message, thread and draft IDs out of your reply unless the user asked for them.

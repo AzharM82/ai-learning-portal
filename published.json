@@ -516,5 +516,12 @@
     "date": "2026-11-25",
     "summary": "Define the metric once, in code, and let machines generate the SQL: declare sources in dbt, stage 1-to-1, build tested fct_/dim_ marts at a declared grain, then define each metric once in MetricFlow so every dashboard, API and AI agent returns the same number.",
     "skill": "analytics-engineering-dbt-semantic-layers"
+  },
+  {
+    "slug": "2026-11-26-gpu-infrastructure-clusters-scheduling-utilization",
+    "title": "GPU infrastructure: clusters, scheduling, and utilization",
+    "date": "2026-11-26",
+    "summary": "A GPU earns its cost only when its SMs do useful work: inventory node/GPU/NVLink/fabric topology, expose GPUs via device plugin (Kubernetes) or GRES (Slurm), schedule multi-GPU jobs gang and topology-aware with quotas and preemption, share small jobs with MIG/time-slicing/MPS, and judge utilization by DCGM SM activity \u2014 never by allocation or GPU-Util alone.",
+    "skill": "gpu-infrastructure"
   }
 ]
