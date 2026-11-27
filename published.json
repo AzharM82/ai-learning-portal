@@ -523,5 +523,12 @@
     "date": "2026-11-26",
     "summary": "A GPU earns its cost only when its SMs do useful work: inventory node/GPU/NVLink/fabric topology, expose GPUs via device plugin (Kubernetes) or GRES (Slurm), schedule multi-GPU jobs gang and topology-aware with quotas and preemption, share small jobs with MIG/time-slicing/MPS, and judge utilization by DCGM SM activity \u2014 never by allocation or GPU-Util alone.",
     "skill": "gpu-infrastructure"
+  },
+  {
+    "slug": "2026-11-27-payments-billing-platforms",
+    "title": "Payments and billing platforms: ledgers, invoicing, and reconciliation",
+    "date": "2026-11-27",
+    "summary": "Never update a balance \u2014 derive it from an immutable double-entry ledger where every transaction sums to zero, in integer minor units. Finalize invoices as a state machine (draft to open to paid/void/uncollectible, corrections via credit notes, never edits), make every payment and webhook idempotent, and reconcile three ways \u2014 ledger vs provider vs bank settlement \u2014 daily, with breaks in a suspense queue, not in a spreadsheet.",
+    "skill": "payments-billing-platforms"
   }
 ]

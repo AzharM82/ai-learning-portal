@@ -1,0 +1,9 @@
+{
+  "id": "1a2160190e36ffb6",
+  "labelIds": [
+    "SENT"
+  ],
+  "threadId": "1a2160190e36ffb6"
+}
+Final sent message (supersedes the original request): {"from":null,"to":["reachazhar@hotmail.com"],"cc":["mazhar@microsoft.com"],"bcc":[],"subject":"Today's AI topic: GPU infrastructure: clusters, scheduling, and utilization","body":"<html><body style=\"font-family:Arial,sans-serif;color:#14212b;line-height:1.5\">\n<h2 style=\"color:#163247\">Today's AI topic: <a href=\"https://azharm82.github.io/ai-learning-portal/topics/2026-11-26-gpu-infrastructure-clusters-scheduling-utilization.html\">GPU infrastructure: clusters, scheduling, and utilization</a></h2>\n<p>GPU clusters are usually wasted in three places at once: jobs hold devices they barely use, free GPUs sit scattered in shapes no big job can use, and the GPU-Util metric everyone trusts only proves a kernel ran — not that the SMs did real work. This lesson lays out the operating model an AI/software engineer needs: inventory the node/GPU/NVLink/fabric topology, expose GPUs to a real scheduler (device plugin on Kubernetes, GRES on Slurm), place multi-GPU jobs gang-style and topology-aware, and share small jobs safely with MIG, time-slicing, or MPS.</p>\n<p>It closes with the measurement discipline that makes capacity decisions honest — DCGM SM, tensor, and DRAM activity per job, with showback and idle reaping — so the next GPU purchase request is backed by held-vs-worked numbers, not queue anecdotes.</p>\n<p>The next topic arrives tomorrow.</p>\n</body></html>","attachments":[],"user_edited":false}
+Sent. Tell the user who it went to and the subject. Keep Gmail message, thread and draft IDs out of your reply unless the user asked for them.
