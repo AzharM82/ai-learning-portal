@@ -1,0 +1,9 @@
+{
+  "id": "1a21b275961f2c47",
+  "labelIds": [
+    "SENT"
+  ],
+  "threadId": "1a21b275961f2c47"
+}
+Final sent message (supersedes the original request): {"from":null,"to":["reachazhar@hotmail.com"],"cc":["mazhar@microsoft.com"],"bcc":[],"subject":"Today's AI topic: Payments and billing platforms: ledgers, invoicing, and reconciliation","body":"<html><body style=\"font-family:Arial,sans-serif;color:#14212b;line-height:1.5\">\n<h2 style=\"color:#163247\">Today's AI topic: <a href=\"https://azharm82.github.io/ai-learning-portal/topics/2026-11-27-payments-billing-platforms.html\">Payments and billing platforms: ledgers, invoicing, and reconciliation</a></h2>\n<p>Money systems are where ordinary distributed-systems bugs become expensive and public: a retry double-charges, a timeout leaves a payment in limbo, and the ledger, the provider, and the bank each claim a different truth. This lesson covers the core that survives all of it — deriving every balance from an immutable double-entry ledger in integer minor units, running invoices as a state machine with credit notes instead of edits, and making every payment and webhook idempotent.</p>\n<p>It closes with reconciliation as a daily engineering discipline — three-way matching of ledger vs provider vs bank settlement, with breaks in a suspense queue — the exact skill set behind pricing, commerce, and spend platforms.</p>\n<p>The next topic arrives tomorrow.</p>\n</body></html>","attachments":[],"user_edited":false}
+Sent. Tell the user who it went to and the subject. Keep Gmail message, thread and draft IDs out of your reply unless the user asked for them.

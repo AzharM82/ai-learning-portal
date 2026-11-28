@@ -530,5 +530,12 @@
     "date": "2026-11-27",
     "summary": "Never update a balance \u2014 derive it from an immutable double-entry ledger where every transaction sums to zero, in integer minor units. Finalize invoices as a state machine (draft to open to paid/void/uncollectible, corrections via credit notes, never edits), make every payment and webhook idempotent, and reconcile three ways \u2014 ledger vs provider vs bank settlement \u2014 daily, with breaks in a suspense queue, not in a spreadsheet.",
     "skill": "payments-billing-platforms"
+  },
+  {
+    "slug": "2026-11-28-rag-in-production",
+    "title": "Retrieval-augmented generation in production: chunking, ranking, grounding",
+    "date": "2026-11-28",
+    "summary": "Production RAG is a retrieval system with a generator attached: chunk so each piece answers one idea, retrieve wide with hybrid search, rerank narrow with a cross-encoder, permission-trim before ranking, and ground every claim in cited chunks \u2014 then evaluate retrieval and faithfulness separately so you know which half broke.",
+    "skill": "rag-in-production"
   }
 ]
